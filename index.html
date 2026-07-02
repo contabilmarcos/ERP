@@ -1,0 +1,4049 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERP Local - Fiscal e Cadastros</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #eef3f7;
+      --surface: rgba(255, 255, 255, 0.96);
+      --surface-strong: #ffffff;
+      --surface-muted: #f6f8fb;
+      --sidebar: #0f1e2f;
+      --sidebar-alt: #15283d;
+      --primary: #176087;
+      --primary-strong: #0f4e6f;
+      --accent: #11a47f;
+      --warning: #d97706;
+      --danger: #c24141;
+      --text: #1f2937;
+      --text-soft: #5b6474;
+      --border: #d8e1ea;
+      --shadow: 0 24px 64px rgba(15, 30, 47, 0.12);
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at top right, rgba(23, 96, 135, 0.10), transparent 28%),
+        radial-gradient(circle at left bottom, rgba(17, 164, 127, 0.12), transparent 30%),
+        var(--bg);
+      color: var(--text);
+      font-family: "Manrope", sans-serif;
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 300px 1fr;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 30%),
+        linear-gradient(180deg, var(--sidebar) 0%, var(--sidebar-alt) 100%);
+      color: #f5f8fb;
+      padding: 28px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      z-index: 20;
+      box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .brand {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      padding: 18px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-lg);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand-mark {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, rgba(23, 96, 135, 0.95), rgba(17, 164, 127, 0.9));
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      box-shadow: 0 20px 42px rgba(17, 164, 127, 0.18);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-family: "Fraunces", serif;
+      font-size: 1.15rem;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 0.9rem;
+    }
+
+    .menu-section-label {
+      margin: 0 0 10px;
+      color: rgba(255, 255, 255, 0.55);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .nav-button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border: 1px solid transparent;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.9);
+      text-align: left;
+      transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .nav-button:hover,
+    .nav-button:focus-visible {
+      transform: translateX(4px);
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(255, 255, 255, 0.08);
+      outline: none;
+    }
+
+    .nav-button.active {
+      background: linear-gradient(135deg, rgba(23, 96, 135, 0.35), rgba(17, 164, 127, 0.22));
+      border-color: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 18px 42px rgba(7, 17, 30, 0.22);
+    }
+
+    .nav-icon {
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #9cd0ea, #e8fff7);
+      box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.05);
+      flex-shrink: 0;
+    }
+
+    .nav-title {
+      font-weight: 700;
+      font-size: 0.96rem;
+    }
+
+    .nav-subtitle {
+      display: block;
+      margin-top: 2px;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.78rem;
+      font-weight: 500;
+    }
+
+    .sidebar-foot {
+      margin-top: auto;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+    }
+
+    .sidebar-foot strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.94rem;
+    }
+
+    .sidebar-foot p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.68);
+      font-size: 0.84rem;
+      line-height: 1.6;
+    }
+
+    .content-area {
+      padding: 28px;
+      min-width: 0;
+    }
+
+    .page-frame {
+      min-height: calc(100vh - 56px);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0.88));
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(18px);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 28px 32px 20px;
+      border-bottom: 1px solid rgba(216, 225, 234, 0.85);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(247, 250, 252, 0.78));
+    }
+
+    .title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .title-mark {
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(23, 96, 135, 0.12), rgba(17, 164, 127, 0.16));
+      color: var(--primary-strong);
+      font-weight: 800;
+      box-shadow: inset 0 0 0 1px rgba(23, 96, 135, 0.08);
+    }
+
+    .page-title {
+      margin: 0;
+      font-size: 1.65rem;
+      line-height: 1.2;
+      font-weight: 800;
+    }
+
+    .page-subtitle {
+      margin: 6px 0 0;
+      color: var(--text-soft);
+      font-size: 0.94rem;
+    }
+
+    .topbar-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .icon-button,
+    .ghost-button,
+    .primary-button,
+    .danger-button,
+    .secondary-button {
+      border: 1px solid transparent;
+      border-radius: 14px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .icon-button {
+      width: 46px;
+      height: 46px;
+      background: var(--surface-strong);
+      border-color: var(--border);
+      color: var(--text);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+    }
+
+    .ghost-button,
+    .primary-button,
+    .danger-button,
+    .secondary-button {
+      padding: 12px 16px;
+      font-weight: 700;
+    }
+
+    .ghost-button {
+      background: var(--surface-strong);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .secondary-button {
+      background: rgba(23, 96, 135, 0.08);
+      color: var(--primary-strong);
+      border-color: rgba(23, 96, 135, 0.10);
+    }
+
+    .primary-button {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: #ffffff;
+      box-shadow: 0 18px 34px rgba(23, 96, 135, 0.18);
+    }
+
+    .danger-button {
+      background: rgba(194, 65, 65, 0.10);
+      color: var(--danger);
+      border-color: rgba(194, 65, 65, 0.12);
+    }
+
+    .ghost-button:hover,
+    .primary-button:hover,
+    .danger-button:hover,
+    .secondary-button:hover,
+    .icon-button:hover,
+    .ghost-button:focus-visible,
+    .primary-button:focus-visible,
+    .danger-button:focus-visible,
+    .secondary-button:focus-visible,
+    .icon-button:focus-visible {
+      transform: translateY(-1px);
+      outline: none;
+      box-shadow: 0 14px 26px rgba(15, 30, 47, 0.12);
+    }
+
+    .page-content {
+      padding: 24px 32px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .hero-panel,
+    .card,
+    .table-card,
+    .empty-card,
+    .stats-card,
+    .notice-card {
+      background: var(--surface);
+      border: 1px solid rgba(216, 225, 234, 0.82);
+      border-radius: var(--radius-xl);
+      box-shadow: 0 16px 36px rgba(15, 30, 47, 0.06);
+    }
+
+    .hero-panel {
+      padding: 28px;
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 18px;
+      background:
+        radial-gradient(circle at top right, rgba(17, 164, 127, 0.12), transparent 25%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(246, 249, 252, 0.96));
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(23, 96, 135, 0.08);
+      color: var(--primary-strong);
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .hero-panel h2 {
+      margin: 16px 0 10px;
+      font-size: 2rem;
+      line-height: 1.15;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .hero-panel p {
+      margin: 0;
+      color: var(--text-soft);
+      line-height: 1.7;
+      font-size: 0.97rem;
+    }
+
+    .hero-actions {
+      margin-top: 22px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .hero-stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+    }
+
+    .stats-card {
+      padding: 18px;
+    }
+
+    .stats-card small {
+      color: var(--text-soft);
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      font-size: 0.73rem;
+    }
+
+    .stats-card strong {
+      display: block;
+      margin-top: 12px;
+      font-size: 2rem;
+      line-height: 1;
+      font-weight: 800;
+      color: #101928;
+    }
+
+    .stats-card span {
+      display: block;
+      margin-top: 10px;
+      color: var(--text-soft);
+      font-size: 0.88rem;
+    }
+
+    .card {
+      padding: 24px;
+    }
+
+    .notice-card {
+      padding: 20px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      background: linear-gradient(135deg, rgba(23, 96, 135, 0.08), rgba(17, 164, 127, 0.08));
+    }
+
+    .notice-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.85);
+      font-weight: 800;
+      color: var(--primary-strong);
+      flex-shrink: 0;
+    }
+
+    .notice-card strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 1rem;
+    }
+
+    .notice-card p {
+      margin: 0;
+      color: var(--text-soft);
+      line-height: 1.65;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .section-head h3,
+    .section-head h4 {
+      margin: 0;
+      font-size: 1.08rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .section-head p {
+      margin: 6px 0 0;
+      color: var(--text-soft);
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    .layout-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .form-grid.single-column {
+      grid-template-columns: 1fr;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .field label {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #132333;
+    }
+
+    .field-hint {
+      margin: -2px 0 0;
+      color: var(--text-soft);
+      font-size: 0.76rem;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 14px;
+      min-height: 48px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .field textarea {
+      resize: vertical;
+      min-height: 112px;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      outline: none;
+      border-color: rgba(23, 96, 135, 0.55);
+      box-shadow: 0 0 0 4px rgba(23, 96, 135, 0.12);
+      background: #ffffff;
+    }
+
+    .field-readonly {
+      display: flex;
+      align-items: center;
+      min-height: 48px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px dashed rgba(23, 96, 135, 0.22);
+      background: rgba(23, 96, 135, 0.05);
+      color: var(--primary-strong);
+      font-weight: 700;
+    }
+
+    .field-readonly.compact {
+      min-height: 42px;
+      padding-top: 10px;
+      padding-bottom: 10px;
+      font-size: 0.9rem;
+    }
+
+    .form-actions,
+    .inline-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .inline-actions {
+      margin-top: 0;
+      align-items: center;
+    }
+
+    .table-card {
+      overflow: hidden;
+    }
+
+    .table-toolbar {
+      padding: 22px 22px 18px;
+      display: flex;
+      gap: 14px;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      border-bottom: 1px solid rgba(216, 225, 234, 0.7);
+    }
+
+    .search-input {
+      width: min(100%, 360px);
+      min-height: 46px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #ffffff;
+      padding: 0 14px;
+    }
+
+    .table-scroll {
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+    }
+
+    th,
+    td {
+      padding: 16px 18px;
+      text-align: left;
+      border-bottom: 1px solid rgba(216, 225, 234, 0.72);
+      vertical-align: top;
+    }
+
+    th {
+      font-size: 0.76rem;
+      color: var(--text-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 800;
+      background: rgba(246, 248, 251, 0.88);
+      white-space: nowrap;
+    }
+
+    td {
+      font-size: 0.93rem;
+      color: var(--text);
+    }
+
+    tbody tr:hover {
+      background: rgba(23, 96, 135, 0.04);
+    }
+
+    .table-muted {
+      color: var(--text-soft);
+      font-size: 0.84rem;
+      line-height: 1.5;
+    }
+
+    .table-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .action-chip {
+      border: 1px solid rgba(216, 225, 234, 0.9);
+      background: #ffffff;
+      color: var(--text);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .action-chip.danger {
+      color: var(--danger);
+      border-color: rgba(194, 65, 65, 0.22);
+      background: rgba(194, 65, 65, 0.06);
+    }
+
+    .badge-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      background: rgba(23, 96, 135, 0.08);
+      color: var(--primary-strong);
+    }
+
+    .badge.positive {
+      background: rgba(17, 164, 127, 0.12);
+      color: #0f7a61;
+    }
+
+    .badge.warning {
+      background: rgba(217, 119, 6, 0.14);
+      color: #9a5a06;
+    }
+
+    .badge.danger {
+      background: rgba(194, 65, 65, 0.14);
+      color: #9b2e2e;
+    }
+
+    .account-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .account-tree-preview {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .account-tree-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.74);
+      border: 1px solid rgba(216, 225, 234, 0.9);
+    }
+
+    .account-tree-item.current {
+      background: rgba(23, 96, 135, 0.08);
+      border-color: rgba(23, 96, 135, 0.18);
+    }
+
+    .inline-note {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+
+    .inline-note.warning {
+      background: rgba(217, 119, 6, 0.12);
+      color: #9a5a06;
+    }
+
+    .inline-note.danger {
+      background: rgba(194, 65, 65, 0.12);
+      color: #962f2f;
+    }
+
+    .chart-account-row.synthetic {
+      background: rgba(23, 96, 135, 0.035);
+    }
+
+    .chart-account-name {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 24px;
+    }
+
+    .chart-account-name strong {
+      font-size: 0.93rem;
+    }
+
+    .account-indent-guide {
+      display: inline-block;
+      width: 18px;
+      height: 2px;
+      border-radius: 999px;
+      background: rgba(23, 96, 135, 0.22);
+      flex-shrink: 0;
+    }
+
+    .account-meta {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .empty-card {
+      padding: 30px;
+      text-align: center;
+    }
+
+    .empty-card strong {
+      display: block;
+      font-size: 1.02rem;
+      margin-bottom: 8px;
+    }
+
+    .empty-card p {
+      margin: 0 auto;
+      max-width: 600px;
+      color: var(--text-soft);
+      line-height: 1.7;
+    }
+
+    .empty-card .inline-actions {
+      justify-content: center;
+      margin-top: 18px;
+    }
+
+    .split-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+    }
+
+    .subtle-panel {
+      padding: 18px;
+      border-radius: 18px;
+      border: 1px solid rgba(216, 225, 234, 0.86);
+      background: rgba(246, 248, 251, 0.9);
+    }
+
+    .subtle-panel h4 {
+      margin: 0 0 10px;
+      font-size: 0.98rem;
+      font-weight: 800;
+    }
+
+    .subtle-panel p,
+    .subtle-panel li {
+      color: var(--text-soft);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .subtle-list {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .totals-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .total-card {
+      padding: 18px;
+      border-radius: 18px;
+      border: 1px solid rgba(216, 225, 234, 0.86);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(246, 248, 251, 0.92));
+    }
+
+    .total-card span {
+      color: var(--text-soft);
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .total-card strong {
+      display: block;
+      margin-top: 12px;
+      font-size: 1.42rem;
+      font-weight: 800;
+      color: #0f1724;
+    }
+
+    .total-card small {
+      display: block;
+      margin-top: 10px;
+      color: var(--text-soft);
+      line-height: 1.5;
+    }
+
+    .status-highlight {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 0.88rem;
+      font-weight: 800;
+    }
+
+    .status-highlight.ok {
+      background: rgba(17, 164, 127, 0.12);
+      color: #0f7a61;
+    }
+
+    .status-highlight.warn {
+      background: rgba(217, 119, 6, 0.14);
+      color: #9a5a06;
+    }
+
+    .toast-stack {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 60;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .toast {
+      min-width: 280px;
+      max-width: 360px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(216, 225, 234, 0.82);
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 22px 42px rgba(15, 30, 47, 0.16);
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      pointer-events: auto;
+    }
+
+    .toast strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.92rem;
+    }
+
+    .toast p {
+      margin: 0;
+      color: var(--text-soft);
+      font-size: 0.84rem;
+      line-height: 1.5;
+    }
+
+    .toast.success {
+      border-color: rgba(17, 164, 127, 0.18);
+    }
+
+    .toast.error {
+      border-color: rgba(194, 65, 65, 0.18);
+    }
+
+    .cloud-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(216, 225, 234, 0.92);
+      background: rgba(255, 255, 255, 0.94);
+      font-size: 0.82rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .cloud-chip.ok {
+      color: #0f7a61;
+      background: rgba(17, 164, 127, 0.10);
+      border-color: rgba(17, 164, 127, 0.16);
+    }
+
+    .cloud-chip.syncing {
+      color: #9a5a06;
+      background: rgba(217, 119, 6, 0.10);
+      border-color: rgba(217, 119, 6, 0.16);
+    }
+
+    .cloud-chip.error {
+      color: #9b2e2e;
+      background: rgba(194, 65, 65, 0.10);
+      border-color: rgba(194, 65, 65, 0.16);
+    }
+
+    .cloud-chip.offline {
+      color: var(--text-soft);
+      background: rgba(91, 100, 116, 0.08);
+      border-color: rgba(91, 100, 116, 0.12);
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 16, 28, 0.36);
+      backdrop-filter: blur(3px);
+      z-index: 18;
+    }
+
+    .text-right {
+      text-align: right;
+    }
+
+    .mono {
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+    }
+
+    @media (max-width: 1200px) {
+      .layout-grid,
+      .hero-panel,
+      .split-grid,
+      .totals-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        transform: translateX(-102%);
+        transition: transform 0.24s ease;
+        width: min(86vw, 320px);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .overlay.show {
+        display: block;
+      }
+
+      .content-area {
+        padding: 16px;
+      }
+
+      .icon-button {
+        display: inline-flex;
+      }
+
+      .topbar,
+      .page-content {
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .topbar-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .form-grid,
+      .split-grid,
+      .stats-grid,
+      .totals-grid,
+      .account-preview-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .page-title {
+        font-size: 1.35rem;
+      }
+
+      .hero-panel h2 {
+        font-size: 1.6rem;
+      }
+
+      table {
+        min-width: 640px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    (() => {
+      const STORAGE_KEYS = {
+        costCenters: "erp_cost_centers",
+        suppliers: "erp_suppliers",
+        financialNatures: "erp_financial_natures",
+        chartAccounts: "erp_chart_accounts",
+        items: "erp_items",
+        invoices: "erp_invoices"
+      };
+      const CLOUD_CONFIG_STORAGE_KEY = "erp_cloud_sync_config";
+      const CLOUD_LAST_MODIFIED_STORAGE_KEY = "erp_cloud_last_modified";
+
+      const CODE_CONFIG = {
+        costCenters: { prefix: "CC", digits: 4 },
+        suppliers: { prefix: "FOR", digits: 4 },
+        financialNatures: { prefix: "NAT", digits: 4 },
+        items: { prefix: "ITE", digits: 4 },
+        invoices: { prefix: "NF", digits: 6 }
+      };
+
+      const CHART_ACCOUNT_GROUP_LABELS = {
+        "1": "Ativo",
+        "2": "Passivo",
+        "3": "Patrimônio Líquido",
+        "4": "Receitas",
+        "5": "Custos",
+        "6": "Despesas",
+        "7": "Resultado / Apuração"
+      };
+
+      const CHART_ACCOUNT_BALANCE_DEFAULTS = {
+        "1": "Devedora",
+        "2": "Credora",
+        "3": "Credora",
+        "4": "Credora",
+        "5": "Devedora",
+        "6": "Devedora",
+        "7": "Credora"
+      };
+
+      const CHART_ACCOUNT_CODE_PATTERNS = [
+        { level: 1, regex: /^\d$/ },
+        { level: 2, regex: /^\d\.\d$/ },
+        { level: 3, regex: /^\d\.\d\.\d{2}$/ },
+        { level: 4, regex: /^\d\.\d\.\d{2}\.\d{2}$/ },
+        { level: 5, regex: /^\d\.\d\.\d{2}\.\d{2}\.\d{3}$/ }
+      ];
+
+      const VIEW_META = {
+        dashboard: {
+          icon: "DB",
+          title: "Painel inicial",
+          subtitle: "Acompanhe o estado do ERP e comece seus cadastros a partir de uma base totalmente vazia."
+        },
+        settings: {
+          icon: "CF",
+          title: "Configurações do sistema",
+          subtitle: "Organize parametrizações futuras e mantenha os centros de custo com controle local."
+        },
+        suppliers: {
+          icon: "FO",
+          title: "Cadastro de fornecedores",
+          subtitle: "Gerencie os fornecedores que serão utilizados no lançamento das notas fiscais."
+        },
+        chartAccounts: {
+          icon: "CT",
+          title: "Contas contábeis",
+          subtitle: "Monte a base contábil que sustenta naturezas financeiras, itens e lançamentos fiscais."
+        },
+        financialNatures: {
+          icon: "NF",
+          title: "Natureza financeira",
+          subtitle: "Cadastre naturezas obrigatoriamente vinculadas às contas contábeis."
+        },
+        items: {
+          icon: "IT",
+          title: "Cadastro de itens",
+          subtitle: "Mantenha os itens utilizados nas notas fiscais com vínculo direto à natureza financeira."
+        },
+        fiscal: {
+          icon: "FI",
+          title: "Módulo fiscal",
+          subtitle: "Lance notas fiscais de serviço ou produto com itens, vínculo contábil e parcelas financeiras."
+        }
+      };
+
+      const state = {
+        data: {
+          costCenters: [],
+          suppliers: [],
+          financialNatures: [],
+          chartAccounts: [],
+          items: [],
+          invoices: []
+        },
+        ui: {
+          activeView: "dashboard",
+          sidebarOpen: false,
+          search: {
+            costCenters: "",
+            suppliers: "",
+            chartAccounts: "",
+            financialNatures: "",
+            items: "",
+            invoices: ""
+          },
+          cloudDraft: createEmptyCloudDraft(),
+          chartAccountFormDraft: createEmptyChartAccountDraft(),
+          financialNatureFormDraft: createEmptyFinancialNatureDraft(),
+          itemNaturePreviewId: "",
+          itemFormDraft: createEmptyItemDraft(),
+          editing: {
+            costCenterId: null,
+            supplierId: null,
+            chartAccountId: null,
+            financialNatureId: null,
+            itemId: null
+          },
+          invoiceDraft: createEmptyInvoiceDraft(),
+          toasts: []
+        }
+      };
+
+      function createEmptyInvoiceDraft(invoice) {
+        if (invoice) {
+          return {
+            id: invoice.id,
+            code: invoice.code,
+            type: invoice.type,
+            supplierId: invoice.supplierId,
+            issueDate: invoice.issueDate,
+            description: invoice.description,
+            items: Array.isArray(invoice.items) ? invoice.items.map((item) => ({ ...item })) : [],
+            installments: Array.isArray(invoice.installments) ? invoice.installments.map((installment) => ({ ...installment })) : [],
+            lineForm: {
+              itemId: "",
+              quantity: 1,
+              unitPrice: ""
+            },
+            installmentForm: {
+              installmentNumber: (invoice.installments?.length || 0) + 1,
+              dueDate: "",
+              amount: "",
+              paymentMethod: "",
+              status: "Em aberto"
+            }
+          };
+        }
+
+        return {
+          id: null,
+          code: "",
+          type: "Nota de serviço",
+          supplierId: "",
+          issueDate: getToday(),
+          description: "",
+          items: [],
+          installments: [],
+          lineForm: {
+            itemId: "",
+            quantity: 1,
+            unitPrice: ""
+          },
+          installmentForm: {
+            installmentNumber: 1,
+            dueDate: "",
+            amount: "",
+            paymentMethod: "",
+            status: "Em aberto"
+          }
+        };
+      }
+
+      function createEmptyChartAccountDraft(account) {
+        return {
+          id: account?.id || "",
+          code: account?.code || "",
+          name: account?.name || "",
+          type: account?.type || "Sintética",
+          balanceNature: account?.balanceNature || "Devedora",
+          status: account?.isActive === false ? "Inativa" : "Ativa"
+        };
+      }
+
+      function createEmptyCloudDraft(config) {
+        return {
+          apiKey: config?.apiKey || "",
+          binId: config?.binId || ""
+        };
+      }
+
+      function createEmptyFinancialNatureDraft(nature) {
+        return {
+          id: nature?.id || "",
+          name: nature?.name || "",
+          chartAccountId: nature?.chartAccountId || ""
+        };
+      }
+
+      function createEmptyItemDraft(item) {
+        return {
+          id: item?.id || "",
+          name: item?.name || "",
+          description: item?.description || "",
+          financialNatureId: item?.financialNatureId || ""
+        };
+      }
+
+      function initialize() {
+        loadCollections();
+        CLOUD.init();
+        bindGlobalEvents();
+        renderApp();
+        CLOUD.syncIfNewer(true);
+      }
+
+      function loadCollections() {
+        Object.keys(STORAGE_KEYS).forEach((key) => {
+          state.data[key] = readCollection(STORAGE_KEYS[key]);
+        });
+        migrateCollections();
+      }
+
+      function migrateCollections() {
+        const migratedAccounts = migrateChartAccounts(state.data.chartAccounts);
+        state.data.chartAccounts = migratedAccounts;
+        persistCollection("chartAccounts");
+      }
+
+      function readCollection(storageKey) {
+        try {
+          const raw = localStorage.getItem(storageKey);
+          if (!raw) {
+            return [];
+          }
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+          console.error("Falha ao ler localStorage:", error);
+          return [];
+        }
+      }
+
+      function persistCollection(collectionKey) {
+        localStorage.setItem(STORAGE_KEYS[collectionKey], JSON.stringify(state.data[collectionKey]));
+      }
+
+      function persistAllCollections() {
+        Object.keys(STORAGE_KEYS).forEach((key) => {
+          persistCollection(key);
+        });
+      }
+
+      function getDataSnapshot() {
+        return {
+          costCenters: [...state.data.costCenters],
+          suppliers: [...state.data.suppliers],
+          financialNatures: [...state.data.financialNatures],
+          chartAccounts: [...state.data.chartAccounts],
+          items: [...state.data.items],
+          invoices: [...state.data.invoices]
+        };
+      }
+
+      function getLastCloudModified() {
+        return parseInt(localStorage.getItem(CLOUD_LAST_MODIFIED_STORAGE_KEY) || "0", 10);
+      }
+
+      function setLastCloudModified(value) {
+        localStorage.setItem(CLOUD_LAST_MODIFIED_STORAGE_KEY, String(value || 0));
+      }
+
+      function saveCollection(collectionKey, records) {
+        state.data[collectionKey] = records;
+        persistCollection(collectionKey);
+        CLOUD.schedulePush(getDataSnapshot());
+      }
+
+      // Aplica um snapshot remoto/local completo sem acionar o ciclo de autosave.
+      function applyDataSnapshot(snapshot, options = {}) {
+        Object.keys(STORAGE_KEYS).forEach((key) => {
+          state.data[key] = Array.isArray(snapshot?.[key]) ? snapshot[key] : [];
+        });
+        migrateCollections();
+        persistAllCollections();
+        if (options.lastModified) {
+          setLastCloudModified(options.lastModified);
+        }
+      }
+
+      const CLOUD = {
+        apiKey: null,
+        binId: null,
+        status: "offline",
+        syncTimer: null,
+        syncing: false,
+
+        init() {
+          try {
+            const stored = localStorage.getItem(CLOUD_CONFIG_STORAGE_KEY);
+            if (!stored) {
+              state.ui.cloudDraft = createEmptyCloudDraft();
+              return;
+            }
+            const config = JSON.parse(stored);
+            this.apiKey = clean(config.apiKey);
+            this.binId = clean(config.binId);
+            state.ui.cloudDraft = createEmptyCloudDraft(config);
+            this.status = this.isConfigured() ? "ok" : "offline";
+          } catch (error) {
+            console.error("Falha ao carregar configuração de nuvem:", error);
+            state.ui.cloudDraft = createEmptyCloudDraft();
+            this.status = "error";
+          }
+        },
+
+        isConfigured() {
+          return Boolean(this.apiKey && this.binId);
+        },
+
+        saveConfig(apiKey, binId) {
+          this.apiKey = clean(apiKey);
+          this.binId = clean(binId);
+          localStorage.setItem(CLOUD_CONFIG_STORAGE_KEY, JSON.stringify({ apiKey: this.apiKey, binId: this.binId }));
+          state.ui.cloudDraft = createEmptyCloudDraft({ apiKey: this.apiKey, binId: this.binId });
+          this.status = this.isConfigured() ? "ok" : "offline";
+        },
+
+        clearConfig() {
+          this.apiKey = null;
+          this.binId = null;
+          this.status = "offline";
+          localStorage.removeItem(CLOUD_CONFIG_STORAGE_KEY);
+          state.ui.cloudDraft = createEmptyCloudDraft();
+        },
+
+        async push(snapshot) {
+          if (!this.isConfigured() || this.syncing) {
+            return false;
+          }
+          this.syncing = true;
+          this.status = "syncing";
+          renderApp();
+          try {
+            const ts = Date.now();
+            const payload = { ...snapshot, lastModified: ts };
+            const response = await fetch(`https://api.jsonbin.io/v3/b/${this.binId}`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                "X-Master-Key": this.apiKey,
+                "X-Bin-Versioning": "false"
+              },
+              body: JSON.stringify(payload)
+            });
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+            setLastCloudModified(ts);
+            this.status = "ok";
+            renderApp();
+            return true;
+          } catch (error) {
+            this.status = "error";
+            console.error("Erro ao enviar dados para JSONBin:", error);
+            renderApp();
+            throw error;
+          } finally {
+            this.syncing = false;
+          }
+        },
+
+        async pull() {
+          if (!this.isConfigured()) {
+            return null;
+          }
+          const response = await fetch(`https://api.jsonbin.io/v3/b/${this.binId}/latest`, {
+            headers: {
+              "X-Master-Key": this.apiKey
+            }
+          });
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          const json = await response.json();
+          return json.record || null;
+        },
+
+        async syncIfNewer(silent = false) {
+          if (!this.isConfigured()) {
+            this.status = "offline";
+            renderApp();
+            return false;
+          }
+
+          this.status = "syncing";
+          renderApp();
+
+          try {
+            const remote = await this.pull();
+            const hasKnownData = remote && Object.keys(STORAGE_KEYS).some((key) => Array.isArray(remote[key]));
+            if (!hasKnownData) {
+              this.status = "ok";
+              renderApp();
+              return false;
+            }
+
+            const localTs = getLastCloudModified();
+            const remoteTs = parseInt(remote.lastModified || "0", 10);
+
+            if (remoteTs > localTs) {
+              applyDataSnapshot(remote, { lastModified: remoteTs });
+              this.status = "ok";
+              renderApp();
+              if (!silent) {
+                notify("success", "Sincronização", "Os dados mais novos da nuvem foram aplicados ao ERP.");
+              }
+              return true;
+            }
+
+            this.status = "ok";
+            renderApp();
+            if (!silent) {
+              notify("success", "Sincronização", "A cópia local já está atualizada em relação à nuvem.");
+            }
+            return false;
+          } catch (error) {
+            this.status = "error";
+            console.error("Erro ao sincronizar dados do JSONBin:", error);
+            renderApp();
+            if (!silent) {
+              notify("error", "Sincronização", "Não foi possível verificar os dados na nuvem.");
+            }
+            return false;
+          }
+        },
+
+        schedulePush(snapshot) {
+          if (!this.isConfigured()) {
+            return;
+          }
+          clearTimeout(this.syncTimer);
+          this.syncTimer = window.setTimeout(() => {
+            this.push(snapshot).catch(() => {});
+          }, 1500);
+        }
+      };
+
+      function bindGlobalEvents() {
+        document.addEventListener("click", handleClick);
+        document.addEventListener("submit", handleSubmit);
+        document.addEventListener("input", handleInputOrChange);
+        document.addEventListener("change", handleInputOrChange);
+      }
+
+      function handleClick(event) {
+        const target = event.target.closest("[data-action], [data-nav]");
+        if (!target) {
+          return;
+        }
+
+        if (target.dataset.nav) {
+          event.preventDefault();
+          navigate(target.dataset.nav);
+          return;
+        }
+
+        const { action, id } = target.dataset;
+
+        switch (action) {
+          case "toggle-sidebar":
+            state.ui.sidebarOpen = !state.ui.sidebarOpen;
+            renderApp();
+            break;
+          case "close-sidebar":
+            state.ui.sidebarOpen = false;
+            renderApp();
+            break;
+          case "reset-cost-center":
+            state.ui.editing.costCenterId = null;
+            renderApp();
+            break;
+          case "reset-supplier":
+            state.ui.editing.supplierId = null;
+            renderApp();
+            break;
+          case "reset-chart-account":
+            state.ui.editing.chartAccountId = null;
+            state.ui.chartAccountFormDraft = createEmptyChartAccountDraft();
+            renderApp();
+            break;
+          case "reset-financial-nature":
+            state.ui.editing.financialNatureId = null;
+            state.ui.financialNatureFormDraft = createEmptyFinancialNatureDraft();
+            renderApp();
+            break;
+          case "reset-item":
+            state.ui.editing.itemId = null;
+            state.ui.itemNaturePreviewId = "";
+            state.ui.itemFormDraft = createEmptyItemDraft();
+            renderApp();
+            break;
+          case "new-invoice":
+            state.ui.invoiceDraft = createEmptyInvoiceDraft();
+            navigate("fiscal");
+            break;
+          case "edit-cost-center":
+            state.ui.editing.costCenterId = id;
+            navigate("settings");
+            break;
+          case "edit-supplier":
+            state.ui.editing.supplierId = id;
+            navigate("suppliers");
+            break;
+          case "edit-chart-account":
+            {
+              const account = getChartAccountById(id);
+              state.ui.chartAccountFormDraft = createEmptyChartAccountDraft(account);
+            }
+            state.ui.editing.chartAccountId = id;
+            navigate("chartAccounts");
+            break;
+          case "edit-financial-nature":
+            {
+              const nature = getFinancialNatureById(id);
+              state.ui.financialNatureFormDraft = createEmptyFinancialNatureDraft(nature);
+            }
+            state.ui.editing.financialNatureId = id;
+            navigate("financialNatures");
+            break;
+          case "edit-item":
+            {
+              const item = getItemById(id);
+              state.ui.itemNaturePreviewId = item?.financialNatureId || "";
+              state.ui.itemFormDraft = createEmptyItemDraft(item);
+            }
+            state.ui.editing.itemId = id;
+            navigate("items");
+            break;
+          case "edit-invoice":
+            startInvoiceEdit(id);
+            break;
+          case "delete-cost-center":
+            deleteCostCenter(id);
+            break;
+          case "delete-supplier":
+            deleteSupplier(id);
+            break;
+          case "delete-chart-account":
+            deleteChartAccount(id);
+            break;
+          case "load-default-chart-accounts":
+            loadDefaultChartAccounts();
+            break;
+          case "cloud-disconnect":
+            CLOUD.clearConfig();
+            notify("success", "Sincronização", "A configuração de nuvem foi removida deste navegador.");
+            renderApp();
+            break;
+          case "cloud-sync-now":
+            if (!CLOUD.isConfigured()) {
+              notify("error", "Sincronização", "Informe a Master Key e o Bin ID antes de sincronizar.");
+              break;
+            }
+            CLOUD.push(getDataSnapshot())
+              .then(() => notify("success", "Sincronização", "Dados enviados para a nuvem com sucesso."))
+              .catch(() => notify("error", "Sincronização", "Falha ao enviar os dados para o JSONBin."));
+            break;
+          case "cloud-pull-now":
+            if (!CLOUD.isConfigured()) {
+              notify("error", "Sincronização", "Informe a Master Key e o Bin ID antes de buscar dados.");
+              break;
+            }
+            CLOUD.syncIfNewer(false);
+            break;
+          case "delete-financial-nature":
+            deleteFinancialNature(id);
+            break;
+          case "delete-item":
+            deleteItem(id);
+            break;
+          case "delete-invoice":
+            deleteInvoice(id);
+            break;
+          case "remove-invoice-line":
+            removeInvoiceLine(id);
+            break;
+          case "remove-installment":
+            removeInstallment(id);
+            break;
+          default:
+            break;
+        }
+      }
+
+      function handleSubmit(event) {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement)) {
+          return;
+        }
+
+        const formType = form.dataset.form;
+        if (!formType) {
+          return;
+        }
+
+        event.preventDefault();
+
+        switch (formType) {
+          case "cost-center":
+            submitCostCenter(new FormData(form));
+            break;
+          case "supplier":
+            submitSupplier(new FormData(form));
+            break;
+          case "chart-account":
+            submitChartAccount(new FormData(form));
+            break;
+          case "financial-nature":
+            submitFinancialNature(new FormData(form));
+            break;
+          case "item":
+            submitItem(new FormData(form));
+            break;
+          case "invoice":
+            submitInvoice(new FormData(form));
+            break;
+          case "invoice-line":
+            submitInvoiceLine(new FormData(form));
+            break;
+          case "invoice-installment":
+            submitInstallment(new FormData(form));
+            break;
+          case "cloud-config":
+            submitCloudConfig(new FormData(form));
+            break;
+          default:
+            break;
+        }
+      }
+
+      function handleInputOrChange(event) {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) {
+          return;
+        }
+
+        const searchKey = target.dataset.search;
+        if (searchKey) {
+          state.ui.search[searchKey] = target.value || "";
+          renderApp();
+          return;
+        }
+
+        const form = target.closest("form");
+        if (!(form instanceof HTMLFormElement)) {
+          return;
+        }
+
+        const formType = form.dataset.form;
+        const fieldName = target.name;
+        if (!fieldName) {
+          return;
+        }
+
+        if (formType === "invoice") {
+          state.ui.invoiceDraft[fieldName] = target.value;
+        }
+
+        if (formType === "invoice-line") {
+          state.ui.invoiceDraft.lineForm[fieldName] = target.value;
+          if (fieldName === "itemId") {
+            renderApp();
+          }
+        }
+
+        if (formType === "invoice-installment") {
+          state.ui.invoiceDraft.installmentForm[fieldName] = target.value;
+        }
+
+        if (formType === "item") {
+          state.ui.itemFormDraft[fieldName] = target.value;
+          if (fieldName === "financialNatureId") {
+            state.ui.itemNaturePreviewId = target.value;
+            renderApp();
+          }
+        }
+
+        if (formType === "cloud-config") {
+          state.ui.cloudDraft[fieldName] = target.value;
+        }
+
+        if (formType === "chart-account") {
+          state.ui.chartAccountFormDraft[fieldName] = target.value;
+          syncChartAccountPreview();
+        }
+
+        if (formType === "financial-nature") {
+          state.ui.financialNatureFormDraft[fieldName] = target.value;
+          if (fieldName === "chartAccountId") {
+            renderApp();
+          }
+        }
+      }
+
+      function navigate(view) {
+        state.ui.activeView = view;
+        state.ui.sidebarOpen = false;
+        renderApp();
+      }
+
+      function submitCostCenter(formData) {
+        const id = clean(formData.get("id"));
+        const name = clean(formData.get("name"));
+
+        if (!name) {
+          notify("error", "Centro de custo", "Informe o nome do centro de custo.");
+          return;
+        }
+
+        const existing = state.data.costCenters.find((record) => record.id === id);
+        const record = {
+          id: existing?.id || generateId(),
+          code: existing?.code || generateCode("costCenters"),
+          name,
+          createdAt: existing?.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        upsertRecord("costCenters", record);
+        state.ui.editing.costCenterId = null;
+        notify("success", "Centro de custo", existing ? "Registro atualizado com sucesso." : "Centro de custo cadastrado com sucesso.");
+        renderApp();
+      }
+
+      function submitSupplier(formData) {
+        const id = clean(formData.get("id"));
+        const legalName = clean(formData.get("legalName"));
+        const document = clean(formData.get("document"));
+        const email = clean(formData.get("email"));
+        const phone = clean(formData.get("phone"));
+        const address = clean(formData.get("address"));
+
+        if (!legalName) {
+          notify("error", "Fornecedor", "Informe o nome ou razão social do fornecedor.");
+          return;
+        }
+
+        const existing = state.data.suppliers.find((record) => record.id === id);
+        const record = {
+          id: existing?.id || generateId(),
+          code: existing?.code || generateCode("suppliers"),
+          legalName,
+          document,
+          email,
+          phone,
+          address,
+          createdAt: existing?.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        upsertRecord("suppliers", record);
+        state.ui.editing.supplierId = null;
+        notify("success", "Fornecedor", existing ? "Fornecedor atualizado com sucesso." : "Fornecedor cadastrado com sucesso.");
+        renderApp();
+      }
+
+      function submitChartAccount(formData) {
+        const id = clean(formData.get("id"));
+        const code = formatAccountCode(clean(formData.get("code")));
+        const name = clean(formData.get("name"));
+        const type = clean(formData.get("type"));
+        const balanceNature = clean(formData.get("balanceNature"));
+        const isActive = clean(formData.get("status")) !== "Inativa";
+
+        if (!code || !name || !type || !balanceNature) {
+          notify("error", "Conta contábil", "Preencha código, nome, tipo e natureza do saldo da conta.");
+          return;
+        }
+
+        const existing = state.data.chartAccounts.find((record) => record.id === id);
+        const validation = validateChartAccount({
+          id,
+          code,
+          name,
+          type,
+          balanceNature,
+          isActive
+        });
+
+        if (!validation.valid) {
+          notify("error", "Conta contábil", validation.errors[0]);
+          return;
+        }
+
+        const record = {
+          id: existing?.id || generateId(),
+          code: validation.record.code,
+          normalizedCode: validation.record.normalizedCode,
+          name,
+          type,
+          level: validation.record.level,
+          parentCode: validation.record.parentCode,
+          group: validation.record.group,
+          balanceNature,
+          isActive,
+          requiresCodeAdjustment: false,
+          adjustmentMessage: "",
+          createdAt: existing?.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        upsertRecord("chartAccounts", record);
+        state.ui.editing.chartAccountId = null;
+        state.ui.chartAccountFormDraft = createEmptyChartAccountDraft();
+        notify("success", "Conta contábil", existing ? "Conta contábil atualizada com sucesso." : "Conta contábil cadastrada com sucesso.");
+        renderApp();
+      }
+
+      function submitFinancialNature(formData) {
+        const id = clean(formData.get("id"));
+        const name = clean(formData.get("name"));
+        const chartAccountId = clean(formData.get("chartAccountId"));
+
+        if (!name || !chartAccountId) {
+          notify("error", "Natureza financeira", "Informe o nome e selecione uma conta contábil vinculada.");
+          return;
+        }
+
+        const account = getChartAccountById(chartAccountId);
+        if (!account) {
+          notify("error", "Natureza financeira", "A conta contábil selecionada não foi encontrada.");
+          return;
+        }
+
+        if (!isChartAccountAvailableForLinks(account)) {
+          notify("error", "Natureza financeira", "Selecione uma conta contábil analítica, ativa e válida para vínculo.");
+          return;
+        }
+
+        const existing = state.data.financialNatures.find((record) => record.id === id);
+        const record = {
+          id: existing?.id || generateId(),
+          code: existing?.code || generateCode("financialNatures"),
+          name,
+          chartAccountId,
+          createdAt: existing?.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        upsertRecord("financialNatures", record);
+        state.ui.editing.financialNatureId = null;
+        state.ui.financialNatureFormDraft = createEmptyFinancialNatureDraft();
+        notify("success", "Natureza financeira", existing ? "Natureza financeira atualizada com sucesso." : "Natureza financeira cadastrada com sucesso.");
+        renderApp();
+      }
+
+      function submitItem(formData) {
+        const id = clean(formData.get("id"));
+        const name = clean(formData.get("name"));
+        const description = clean(formData.get("description"));
+        const financialNatureId = clean(formData.get("financialNatureId"));
+
+        if (!name || !financialNatureId) {
+          notify("error", "Item", "Informe o nome do item e vincule uma natureza financeira.");
+          return;
+        }
+
+        const financialNature = getFinancialNatureById(financialNatureId);
+        if (!financialNature) {
+          notify("error", "Item", "A natureza financeira selecionada não foi encontrada.");
+          return;
+        }
+
+        const linkedAccount = getFinancialNatureLinkedAccount(financialNature);
+        if (!linkedAccount || !isChartAccountAvailableForLinks(linkedAccount)) {
+          notify("error", "Item", "A natureza financeira precisa estar vinculada a uma conta contábil analítica e ativa.");
+          return;
+        }
+
+        const existing = state.data.items.find((record) => record.id === id);
+        const record = {
+          id: existing?.id || generateId(),
+          code: existing?.code || generateCode("items"),
+          name,
+          description,
+          financialNatureId,
+          createdAt: existing?.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        upsertRecord("items", record);
+        state.ui.editing.itemId = null;
+        state.ui.itemNaturePreviewId = "";
+        state.ui.itemFormDraft = createEmptyItemDraft();
+        notify("success", "Item", existing ? "Item atualizado com sucesso." : "Item cadastrado com sucesso.");
+        renderApp();
+      }
+
+      function submitCloudConfig(formData) {
+        const apiKey = clean(formData.get("apiKey"));
+        const binId = clean(formData.get("binId"));
+
+        if (!apiKey || !binId) {
+          notify("error", "Sincronização", "Informe a Master Key e o Bin ID do JSONBin.");
+          return;
+        }
+
+        CLOUD.saveConfig(apiKey, binId);
+        notify("success", "Sincronização", "Configuração salva. Verificando se a nuvem possui dados mais novos.");
+        renderApp();
+        CLOUD.syncIfNewer(false);
+      }
+
+      function submitInvoice(formData) {
+        const draft = state.ui.invoiceDraft;
+        draft.type = clean(formData.get("type")) || "Nota de serviço";
+        draft.supplierId = clean(formData.get("supplierId"));
+        draft.issueDate = clean(formData.get("issueDate"));
+        draft.description = clean(formData.get("description"));
+
+        if (!draft.supplierId || !getSupplierById(draft.supplierId)) {
+          notify("error", "Nota fiscal", "Selecione um fornecedor válido.");
+          return;
+        }
+
+        if (!draft.issueDate) {
+          notify("error", "Nota fiscal", "Informe a data de emissão da nota.");
+          return;
+        }
+
+        if (draft.items.length === 0) {
+          notify("error", "Nota fiscal", "Adicione pelo menos um item à nota fiscal.");
+          return;
+        }
+
+        if (draft.installments.length === 0) {
+          notify("error", "Nota fiscal", "Adicione pelo menos uma parcela financeira.");
+          return;
+        }
+
+        const invalidLine = draft.items.find((line) => {
+          const account = getChartAccountById(line.chartAccountId);
+          return !account || !isChartAccountAvailableForLinks(account);
+        });
+
+        if (invalidLine) {
+          notify("error", "Nota fiscal", "Existe item na nota com conta contábil inativa, inválida ou não analítica.");
+          return;
+        }
+
+        const totals = getInvoiceTotals(draft);
+        if (Math.abs(totals.totalItemsAmount - totals.totalInstallmentsAmount) > 0.009) {
+          notify("error", "Nota fiscal", "O total das parcelas precisa ser igual ao total dos itens para salvar a nota.");
+          return;
+        }
+
+        const existing = state.data.invoices.find((invoice) => invoice.id === draft.id);
+        const record = {
+          id: existing?.id || generateId(),
+          code: existing?.code || generateCode("invoices"),
+          type: draft.type,
+          supplierId: draft.supplierId,
+          issueDate: draft.issueDate,
+          description: draft.description,
+          items: draft.items.map((item) => ({ ...item })),
+          installments: draft.installments.map((installment) => ({ ...installment })),
+          totalItemsAmount: totals.totalItemsAmount,
+          totalInstallmentsAmount: totals.totalInstallmentsAmount,
+          createdAt: existing?.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        upsertRecord("invoices", record);
+        state.ui.invoiceDraft = createEmptyInvoiceDraft();
+        notify("success", "Nota fiscal", existing ? "Nota fiscal atualizada com sucesso." : "Nota fiscal lançada com sucesso.");
+        renderApp();
+      }
+
+      function submitInvoiceLine(formData) {
+        const itemId = clean(formData.get("itemId"));
+        const quantity = Number(clean(formData.get("quantity")) || 0);
+        const unitPrice = Number(clean(formData.get("unitPrice")) || 0);
+
+        if (!itemId) {
+          notify("error", "Itens da nota", "Selecione um item para adicionar à nota fiscal.");
+          return;
+        }
+
+        if (!quantity || quantity <= 0 || !unitPrice || unitPrice <= 0) {
+          notify("error", "Itens da nota", "Informe quantidade e valor unitário maiores que zero.");
+          return;
+        }
+
+        const item = getItemById(itemId);
+        const nature = item ? getFinancialNatureById(item.financialNatureId) : null;
+        const account = nature ? getChartAccountById(nature.chartAccountId) : null;
+
+        if (!item || !nature || !account || !isChartAccountAvailableForLinks(account) || !isAnalyticalAccount(account)) {
+          notify("error", "Itens da nota", "O item selecionado precisa possuir conta contábil analítica, ativa e válida para lançamento.");
+          return;
+        }
+
+        state.ui.invoiceDraft.items.push({
+          id: generateId(),
+          itemId: item.id,
+          itemCode: item.code,
+          itemName: item.name,
+          financialNatureId: nature.id,
+          financialNatureName: nature.name,
+          chartAccountId: account.id,
+          chartAccountCode: account.code,
+          chartAccountName: account.name,
+          chartAccountGroup: account.group,
+          chartAccountBalanceNature: account.balanceNature,
+          chartAccountType: account.type,
+          quantity,
+          unitPrice,
+          totalPrice: roundCurrency(quantity * unitPrice)
+        });
+
+        state.ui.invoiceDraft.lineForm = {
+          itemId: "",
+          quantity: 1,
+          unitPrice: ""
+        };
+
+        notify("success", "Itens da nota", "Item adicionado à nota fiscal.");
+        renderApp();
+      }
+
+      function submitInstallment(formData) {
+        const installmentNumber = Number(clean(formData.get("installmentNumber")) || 0);
+        const dueDate = clean(formData.get("dueDate"));
+        const amount = Number(clean(formData.get("amount")) || 0);
+        const paymentMethod = clean(formData.get("paymentMethod"));
+        const status = clean(formData.get("status")) || "Em aberto";
+
+        if (!installmentNumber || installmentNumber <= 0 || !dueDate || !amount || amount <= 0 || !paymentMethod) {
+          notify("error", "Parcelas", "Preencha número da parcela, vencimento, valor e forma de pagamento.");
+          return;
+        }
+
+        const duplicate = state.ui.invoiceDraft.installments.find((installment) => installment.installmentNumber === installmentNumber);
+        if (duplicate) {
+          notify("error", "Parcelas", "Já existe uma parcela com esse número.");
+          return;
+        }
+
+        state.ui.invoiceDraft.installments.push({
+          id: generateId(),
+          installmentNumber,
+          dueDate,
+          amount: roundCurrency(amount),
+          paymentMethod,
+          status
+        });
+
+        state.ui.invoiceDraft.installmentForm = {
+          installmentNumber: state.ui.invoiceDraft.installments.length + 1,
+          dueDate: "",
+          amount: "",
+          paymentMethod: "",
+          status: "Em aberto"
+        };
+
+        notify("success", "Parcelas", "Parcela adicionada à nota fiscal.");
+        renderApp();
+      }
+
+      function startInvoiceEdit(invoiceId) {
+        const invoice = state.data.invoices.find((record) => record.id === invoiceId);
+        if (!invoice) {
+          notify("error", "Nota fiscal", "Nota fiscal não encontrada para edição.");
+          return;
+        }
+
+        state.ui.invoiceDraft = createEmptyInvoiceDraft(invoice);
+        navigate("fiscal");
+      }
+
+      function deleteCostCenter(id) {
+        deleteRecord("costCenters", id, "Centro de custo", "Centro de custo excluído com sucesso.");
+      }
+
+      function deleteSupplier(id) {
+        const linkedInvoice = state.data.invoices.find((invoice) => invoice.supplierId === id);
+        if (linkedInvoice) {
+          notify("error", "Fornecedor", "Não é possível excluir: o fornecedor está vinculado a uma nota fiscal.");
+          return;
+        }
+        deleteRecord("suppliers", id, "Fornecedor", "Fornecedor excluído com sucesso.");
+      }
+
+      function deleteChartAccount(id) {
+        const linkedNature = state.data.financialNatures.find((nature) => nature.chartAccountId === id);
+        const linkedItem = state.data.items.find((item) => {
+          const nature = getFinancialNatureById(item.financialNatureId);
+          return nature?.chartAccountId === id;
+        });
+        const linkedInvoice = state.data.invoices.find((invoice) => invoice.items.some((item) => item.chartAccountId === id));
+        const account = getChartAccountById(id);
+        const hasChildren = account ? accountHasChildren(account) : false;
+
+        if (hasChildren || linkedNature || linkedItem || linkedInvoice) {
+          notify("error", "Conta contábil", "Não é possível excluir: a conta contábil possui vínculos ativos.");
+          return;
+        }
+
+        deleteRecord("chartAccounts", id, "Conta contábil", "Conta contábil excluída com sucesso.");
+      }
+
+      function deleteFinancialNature(id) {
+        const linkedItem = state.data.items.find((item) => item.financialNatureId === id);
+        const linkedInvoice = state.data.invoices.find((invoice) => invoice.items.some((item) => item.financialNatureId === id));
+
+        if (linkedItem || linkedInvoice) {
+          notify("error", "Natureza financeira", "Não é possível excluir: a natureza financeira possui vínculos ativos.");
+          return;
+        }
+
+        deleteRecord("financialNatures", id, "Natureza financeira", "Natureza financeira excluída com sucesso.");
+      }
+
+      function deleteItem(id) {
+        const linkedInvoice = state.data.invoices.find((invoice) => invoice.items.some((item) => item.itemId === id));
+        if (linkedInvoice) {
+          notify("error", "Item", "Não é possível excluir: o item está vinculado a uma nota fiscal.");
+          return;
+        }
+        deleteRecord("items", id, "Item", "Item excluído com sucesso.");
+      }
+
+      function deleteInvoice(id) {
+        deleteRecord("invoices", id, "Nota fiscal", "Nota fiscal excluída com sucesso.");
+      }
+
+      function removeInvoiceLine(lineId) {
+        state.ui.invoiceDraft.items = state.ui.invoiceDraft.items.filter((line) => line.id !== lineId);
+        notify("success", "Itens da nota", "Item removido da nota fiscal.");
+        renderApp();
+      }
+
+      function removeInstallment(installmentId) {
+        state.ui.invoiceDraft.installments = state.ui.invoiceDraft.installments.filter((installment) => installment.id !== installmentId);
+        state.ui.invoiceDraft.installmentForm.installmentNumber = state.ui.invoiceDraft.installments.length + 1;
+        notify("success", "Parcelas", "Parcela removida da nota fiscal.");
+        renderApp();
+      }
+
+      function deleteRecord(collectionKey, id, title, successMessage) {
+        const exists = state.data[collectionKey].some((record) => record.id === id);
+        if (!exists) {
+          notify("error", title, "Registro não encontrado.");
+          return;
+        }
+
+        saveCollection(collectionKey, state.data[collectionKey].filter((record) => record.id !== id));
+
+        Object.keys(state.ui.editing).forEach((key) => {
+          if (state.ui.editing[key] === id) {
+            state.ui.editing[key] = null;
+          }
+        });
+
+        if (state.ui.itemNaturePreviewId && collectionKey === "items") {
+          state.ui.itemNaturePreviewId = "";
+          state.ui.itemFormDraft = createEmptyItemDraft();
+        }
+
+        if (collectionKey === "chartAccounts") {
+          state.ui.chartAccountFormDraft = createEmptyChartAccountDraft();
+        }
+
+        if (collectionKey === "financialNatures") {
+          state.ui.financialNatureFormDraft = createEmptyFinancialNatureDraft();
+        }
+
+        if (state.ui.invoiceDraft.id === id) {
+          state.ui.invoiceDraft = createEmptyInvoiceDraft();
+        }
+
+        notify("success", title, successMessage);
+        renderApp();
+      }
+
+      function upsertRecord(collectionKey, record) {
+        const existingIndex = state.data[collectionKey].findIndex((item) => item.id === record.id);
+        const nextCollection = [...state.data[collectionKey]];
+
+        if (existingIndex >= 0) {
+          nextCollection[existingIndex] = record;
+        } else {
+          nextCollection.unshift(record);
+        }
+
+        saveCollection(collectionKey, collectionKey === "chartAccounts" ? sortAccountsByCode(nextCollection) : nextCollection);
+      }
+
+      function generateCode(collectionKey) {
+        const config = CODE_CONFIG[collectionKey];
+        const max = state.data[collectionKey].reduce((highest, record) => {
+          const number = extractNumericCode(record.code, config.prefix);
+          return number > highest ? number : highest;
+        }, 0);
+        return config.prefix + String(max + 1).padStart(config.digits, "0");
+      }
+
+      function extractNumericCode(code, prefix) {
+        if (!code || typeof code !== "string" || !code.startsWith(prefix)) {
+          return 0;
+        }
+        const digits = Number(code.slice(prefix.length));
+        return Number.isFinite(digits) ? digits : 0;
+      }
+
+      function generateId() {
+        if (window.crypto && typeof window.crypto.randomUUID === "function") {
+          return window.crypto.randomUUID();
+        }
+        return "id-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+      }
+
+      function getChartAccountById(id) {
+        return state.data.chartAccounts.find((record) => record.id === id) || null;
+      }
+
+      function getChartAccountByCode(code) {
+        const formattedCode = formatAccountCode(code);
+        return state.data.chartAccounts.find((record) => record.code === formattedCode) || null;
+      }
+
+      function getFinancialNatureById(id) {
+        return state.data.financialNatures.find((record) => record.id === id) || null;
+      }
+
+      function getSupplierById(id) {
+        return state.data.suppliers.find((record) => record.id === id) || null;
+      }
+
+      function getItemById(id) {
+        return state.data.items.find((record) => record.id === id) || null;
+      }
+
+      function getToday() {
+        return new Date().toISOString().slice(0, 10);
+      }
+
+      function clean(value) {
+        return String(value ?? "").trim();
+      }
+
+      // Normaliza o código para comparações e ordenação, removendo os separadores.
+      function normalizeAccountCode(code) {
+        return clean(code).replace(/\D/g, "");
+      }
+
+      // Aplica a máscara contábil em códigos válidos ou parcialmente válidos do plano.
+      function formatAccountCode(code) {
+        const normalized = normalizeAccountCode(code);
+        const cleaned = clean(code).replace(/[^\d.]/g, "");
+        const segmentsByLength = {
+          1: [1],
+          2: [1, 1],
+          4: [1, 1, 2],
+          6: [1, 1, 2, 2],
+          9: [1, 1, 2, 2, 3]
+        };
+        const segmentLengths = segmentsByLength[normalized.length];
+
+        if (!segmentLengths) {
+          return cleaned;
+        }
+
+        let cursor = 0;
+        return segmentLengths.map((size) => {
+          const value = normalized.slice(cursor, cursor + size);
+          cursor += size;
+          return value;
+        }).join(".");
+      }
+
+      function isValidChartAccountCode(code) {
+        return CHART_ACCOUNT_CODE_PATTERNS.some((pattern) => pattern.regex.test(code));
+      }
+
+      function getAccountLevel(code) {
+        const formattedCode = formatAccountCode(code);
+        const pattern = CHART_ACCOUNT_CODE_PATTERNS.find((item) => item.regex.test(formattedCode));
+        return pattern ? pattern.level : 0;
+      }
+
+      function getParentAccountCode(code) {
+        const formattedCode = formatAccountCode(code);
+        const level = getAccountLevel(formattedCode);
+        if (level <= 1) {
+          return "";
+        }
+        return formattedCode.split(".").slice(0, level - 1).join(".");
+      }
+
+      function getAccountGroup(code) {
+        const digit = clean(code).charAt(0);
+        return CHART_ACCOUNT_GROUP_LABELS[digit] || "Grupo não identificado";
+      }
+
+      function sortAccountsByCode(accounts) {
+        return [...accounts].sort((left, right) => {
+          const leftCode = (left.normalizedCode || normalizeAccountCode(left.code)).padEnd(9, "0");
+          const rightCode = (right.normalizedCode || normalizeAccountCode(right.code)).padEnd(9, "0");
+          return leftCode.localeCompare(rightCode) || (left.level || 0) - (right.level || 0) || left.name.localeCompare(right.name);
+        });
+      }
+
+      function isAnalyticalAccount(account) {
+        return account?.type === "Analítica";
+      }
+
+      function isSyntheticAccount(account) {
+        return account?.type === "Sintética";
+      }
+
+      function getAccountChildren(account) {
+        return state.data.chartAccounts.filter((record) => record.parentCode === account.code);
+      }
+
+      function accountHasChildren(account) {
+        return getAccountChildren(account).length > 0;
+      }
+
+      function getChartAccountLinkSummary(account) {
+        const linkedNatures = state.data.financialNatures.filter((nature) => nature.chartAccountId === account.id);
+        const linkedItems = state.data.items.filter((item) => linkedNatures.some((nature) => nature.id === item.financialNatureId));
+        const linkedInvoices = state.data.invoices.filter((invoice) => invoice.items.some((item) => item.chartAccountId === account.id));
+        return {
+          natures: linkedNatures,
+          items: linkedItems,
+          invoices: linkedInvoices
+        };
+      }
+
+      function isChartAccountAvailableForLinks(account) {
+        return Boolean(account && isAnalyticalAccount(account) && account.isActive !== false && !account.requiresCodeAdjustment);
+      }
+
+      function getSelectableChartAccounts() {
+        return sortAccountsByCode(state.data.chartAccounts.filter((account) => isChartAccountAvailableForLinks(account)));
+      }
+
+      function getFinancialNatureLinkedAccount(nature) {
+        if (!nature) {
+          return null;
+        }
+        return getChartAccountById(nature.chartAccountId);
+      }
+
+      function isFinancialNatureAvailableForLinks(nature) {
+        return isChartAccountAvailableForLinks(getFinancialNatureLinkedAccount(nature));
+      }
+
+      function getSelectableFinancialNatures() {
+        return state.data.financialNatures.filter((nature) => isFinancialNatureAvailableForLinks(nature));
+      }
+
+      function getSelectableItems() {
+        return state.data.items.filter((item) => {
+          const nature = getFinancialNatureById(item.financialNatureId);
+          return Boolean(nature && isFinancialNatureAvailableForLinks(nature));
+        });
+      }
+
+      // Valida a estrutura mínima do plano de contas para preservar hierarquia e vínculos contábeis.
+      function validateChartAccount(record) {
+        const errors = [];
+        const code = formatAccountCode(record.code);
+        const normalizedCode = normalizeAccountCode(code);
+        const level = getAccountLevel(code);
+        const group = getAccountGroup(code);
+        const parentCode = getParentAccountCode(code);
+        const duplicate = state.data.chartAccounts.find((account) => account.id !== record.id && account.normalizedCode === normalizedCode);
+        const parentAccount = parentCode ? getChartAccountByCode(parentCode) : null;
+        const currentRecord = record.id ? getChartAccountById(record.id) : null;
+        const siblingChildren = state.data.chartAccounts.filter((account) => account.id !== record.id && account.parentCode === code);
+
+        if (!isValidChartAccountCode(code)) {
+          errors.push("O código da conta deve seguir a máscara 9.9.99.99.999, usando apenas números e pontos.");
+        }
+
+        if (!CHART_ACCOUNT_GROUP_LABELS[code.charAt(0)]) {
+          errors.push("O primeiro dígito do código deve identificar um grupo contábil válido entre 1 e 7.");
+        }
+
+        if (duplicate) {
+          errors.push("Já existe uma conta contábil com esse código normalizado.");
+        }
+
+        if (level > 1 && !parentAccount) {
+          errors.push("Toda conta abaixo do nível 1 precisa possuir uma conta pai existente.");
+        }
+
+        if (parentAccount && isAnalyticalAccount(parentAccount)) {
+          errors.push("Não é permitido cadastrar conta filha abaixo de uma conta analítica.");
+        }
+
+        if (!["Sintética", "Analítica"].includes(record.type)) {
+          errors.push("Selecione um tipo de conta válido.");
+        }
+
+        if (!["Devedora", "Credora"].includes(record.balanceNature)) {
+          errors.push("Selecione uma natureza do saldo válida.");
+        }
+
+        if (record.type === "Analítica" && siblingChildren.length > 0) {
+          errors.push("Contas analíticas não podem possuir contas filhas.");
+        }
+
+        if (currentRecord && currentRecord.code !== code && accountHasChildren(currentRecord)) {
+          errors.push("Não é possível alterar o código de uma conta que já possui contas filhas.");
+        }
+
+        if (currentRecord && currentRecord.type !== record.type) {
+          const links = getChartAccountLinkSummary(currentRecord);
+          if (record.type === "Sintética" && (links.natures.length || links.items.length || links.invoices.length)) {
+            errors.push("Não é possível transformar a conta em sintética porque ela já possui vínculos de lançamento.");
+          }
+          if (record.type === "Analítica" && accountHasChildren(currentRecord)) {
+            errors.push("Não é possível transformar a conta em analítica porque ela já possui contas filhas.");
+          }
+        }
+
+        return {
+          valid: errors.length === 0,
+          errors,
+          record: {
+            code,
+            normalizedCode,
+            level,
+            parentCode,
+            group
+          }
+        };
+      }
+
+      function migrateChartAccounts(accounts) {
+        return sortAccountsByCode(accounts.map((account) => migrateChartAccountRecord(account)));
+      }
+
+      function migrateChartAccountRecord(account) {
+        const formattedCode = formatAccountCode(account.code);
+        const validCode = isValidChartAccountCode(formattedCode);
+        const level = getAccountLevel(formattedCode);
+        const linkedSummary = getChartAccountLinkSummary({
+          id: account.id,
+          code: account.code
+        });
+        const linked = linkedSummary.natures.length || linkedSummary.items.length || linkedSummary.invoices.length;
+        const groupDigit = clean(account.code).charAt(0);
+        const defaultBalanceNature = CHART_ACCOUNT_BALANCE_DEFAULTS[groupDigit] || "Devedora";
+        const resolvedType = ["Sintética", "Analítica"].includes(account.type)
+          ? account.type
+          : linked || level === 5
+            ? "Analítica"
+            : "Sintética";
+
+        return {
+          ...account,
+          code: validCode ? formattedCode : clean(account.code),
+          normalizedCode: normalizeAccountCode(account.code),
+          name: account.name || "",
+          type: resolvedType,
+          level,
+          parentCode: validCode ? getParentAccountCode(formattedCode) : "",
+          group: getAccountGroup(account.code),
+          balanceNature: ["Devedora", "Credora"].includes(account.balanceNature) ? account.balanceNature : defaultBalanceNature,
+          isActive: typeof account.isActive === "boolean" ? account.isActive : true,
+          requiresCodeAdjustment: !validCode,
+          adjustmentMessage: validCode ? "" : "Código fora da nova máscara contábil. Ajuste recomendado para análise futura.",
+          createdAt: account.createdAt || new Date().toISOString(),
+          updatedAt: account.updatedAt || new Date().toISOString()
+        };
+      }
+
+      function getDefaultChartAccountsSeed() {
+        return [
+          { code: "1", name: "Ativo", type: "Sintética", balanceNature: "Devedora" },
+          { code: "1.1", name: "Ativo Circulante", type: "Sintética", balanceNature: "Devedora" },
+          { code: "1.1.01", name: "Disponibilidades", type: "Sintética", balanceNature: "Devedora" },
+          { code: "1.1.01.01", name: "Caixa e equivalentes", type: "Sintética", balanceNature: "Devedora" },
+          { code: "1.1.01.01.001", name: "Caixa Geral", type: "Analítica", balanceNature: "Devedora" },
+          { code: "2", name: "Passivo", type: "Sintética", balanceNature: "Credora" },
+          { code: "2.1", name: "Passivo Circulante", type: "Sintética", balanceNature: "Credora" },
+          { code: "3", name: "Patrimônio Líquido", type: "Sintética", balanceNature: "Credora" },
+          { code: "4", name: "Receitas", type: "Sintética", balanceNature: "Credora" },
+          { code: "5", name: "Custos", type: "Sintética", balanceNature: "Devedora" },
+          { code: "6", name: "Despesas", type: "Sintética", balanceNature: "Devedora" }
+        ];
+      }
+
+      function loadDefaultChartAccounts() {
+        const existingNormalizedCodes = new Set(state.data.chartAccounts.map((account) => account.normalizedCode));
+        const virtualAccounts = [...state.data.chartAccounts];
+        const additions = [];
+
+        getDefaultChartAccountsSeed().forEach((seed) => {
+          const formattedCode = formatAccountCode(seed.code);
+          const normalizedCode = normalizeAccountCode(formattedCode);
+          if (existingNormalizedCodes.has(normalizedCode)) {
+            return;
+          }
+
+          const parentCode = getParentAccountCode(formattedCode);
+          if (parentCode && !virtualAccounts.some((account) => account.code === parentCode)) {
+            return;
+          }
+
+          const record = {
+            id: generateId(),
+            code: formattedCode,
+            normalizedCode,
+            name: seed.name,
+            type: seed.type,
+            level: getAccountLevel(formattedCode),
+            parentCode,
+            group: getAccountGroup(formattedCode),
+            balanceNature: seed.balanceNature,
+            isActive: true,
+            requiresCodeAdjustment: false,
+            adjustmentMessage: "",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+
+          additions.push(record);
+          virtualAccounts.push(record);
+          existingNormalizedCodes.add(normalizedCode);
+        });
+
+        if (!additions.length) {
+          notify("error", "Plano de contas", "A base inicial já foi carregada ou possui códigos equivalentes cadastrados.");
+          return;
+        }
+
+        saveCollection("chartAccounts", sortAccountsByCode([...state.data.chartAccounts, ...additions]));
+        notify("success", "Plano de contas", `${additions.length} conta(s) de exemplo foram adicionadas ao plano.`);
+        renderApp();
+      }
+
+      function getChartAccountPreviewData(accountDraft) {
+        const formattedCode = formatAccountCode(accountDraft.code);
+        const normalizedCode = normalizeAccountCode(formattedCode);
+        const level = getAccountLevel(formattedCode);
+        const parentCode = getParentAccountCode(formattedCode);
+        const group = getAccountGroup(formattedCode || accountDraft.code);
+        const isValid = isValidChartAccountCode(formattedCode);
+        const parentAccount = parentCode ? getChartAccountByCode(parentCode) : null;
+        const previewCodes = isValid
+          ? formattedCode.split(".").map((_, index, parts) => parts.slice(0, index + 1).join("."))
+          : [];
+
+        return {
+          code: formattedCode,
+          normalizedCode,
+          level,
+          parentCode,
+          group,
+          isValid,
+          parentAccount,
+          previewCodes
+        };
+      }
+
+      function renderChartAccountPreviewPanel(accountDraft) {
+        const preview = getChartAccountPreviewData(accountDraft);
+        return `
+          <div class="subtle-panel">
+            <h4>Prévia estrutural da conta</h4>
+            <div class="account-preview-grid">
+              <div>
+                <span class="table-muted">Grupo</span>
+                <div class="field-readonly compact">${escapeHtml(preview.group)}</div>
+              </div>
+              <div>
+                <span class="table-muted">Nível</span>
+                <div class="field-readonly compact">${preview.level ? escapeHtml(String(preview.level)) : "-"}</div>
+              </div>
+              <div>
+                <span class="table-muted">Conta pai</span>
+                <div class="field-readonly compact">${escapeHtml(preview.parentCode || "-")}</div>
+              </div>
+              <div>
+                <span class="table-muted">Código normalizado</span>
+                <div class="field-readonly compact mono">${escapeHtml(preview.normalizedCode || "-")}</div>
+              </div>
+            </div>
+            <div class="account-tree-preview">
+              ${preview.previewCodes.length ? preview.previewCodes.map((code) => {
+                const account = getChartAccountByCode(code);
+                const isCurrent = code === preview.code;
+                const label = account?.name || (isCurrent ? (accountDraft.name || "Nova conta") : "Nível sem conta cadastrada");
+                return `
+                  <div class="account-tree-item ${isCurrent ? "current" : ""}">
+                    <span class="mono">${escapeHtml(code)}</span>
+                    <strong>${escapeHtml(label)}</strong>
+                  </div>
+                `;
+              }).join("") : `
+                <div class="table-muted">Digite um código no padrão 9.9.99.99.999 para visualizar a hierarquia.</div>
+              `}
+            </div>
+            ${preview.isValid ? "" : `<div class="inline-note warning">O código ainda não está em um nível válido da máscara contábil.</div>`}
+            ${preview.parentCode && !preview.parentAccount ? `<div class="inline-note danger">A conta pai ${escapeHtml(preview.parentCode)} ainda não existe no plano.</div>` : ""}
+          </div>
+        `;
+      }
+
+      function syncChartAccountPreview() {
+        const previewContainer = document.getElementById("chart-account-preview");
+        if (previewContainer) {
+          previewContainer.innerHTML = renderChartAccountPreviewPanel(state.ui.chartAccountFormDraft);
+        }
+      }
+
+      function roundCurrency(value) {
+        return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+      }
+
+      function formatCurrency(value) {
+        return new Intl.NumberFormat("pt-BR", {
+          style: "currency",
+          currency: "BRL"
+        }).format(Number(value || 0));
+      }
+
+      function formatDate(value) {
+        if (!value) {
+          return "-";
+        }
+        const date = new Date(value + "T00:00:00");
+        if (Number.isNaN(date.getTime())) {
+          return value;
+        }
+        return new Intl.DateTimeFormat("pt-BR").format(date);
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function filterRecords(records, searchTerm, builder) {
+        const term = (searchTerm || "").toLowerCase().trim();
+        if (!term) {
+          return records;
+        }
+        return records.filter((record) => builder(record).toLowerCase().includes(term));
+      }
+
+      function getInvoiceTotals(invoice) {
+        const totalItemsAmount = roundCurrency(invoice.items.reduce((sum, item) => sum + Number(item.totalPrice || 0), 0));
+        const totalInstallmentsAmount = roundCurrency(invoice.installments.reduce((sum, installment) => sum + Number(installment.amount || 0), 0));
+        const difference = roundCurrency(totalItemsAmount - totalInstallmentsAmount);
+        return { totalItemsAmount, totalInstallmentsAmount, difference };
+      }
+
+      function getInvoiceStatusClass(difference) {
+        return Math.abs(difference) <= 0.009 ? "ok" : "warn";
+      }
+
+      function notify(type, title, message) {
+        const toast = {
+          id: generateId(),
+          type,
+          title,
+          message
+        };
+        state.ui.toasts = [...state.ui.toasts, toast];
+        renderApp();
+        window.setTimeout(() => {
+          state.ui.toasts = state.ui.toasts.filter((item) => item.id !== toast.id);
+          renderApp();
+        }, 3200);
+      }
+
+      function getActiveEditRecord(collectionKey, id) {
+        return state.data[collectionKey].find((record) => record.id === id) || null;
+      }
+
+      function getCloudStatusMeta() {
+        if (!CLOUD.isConfigured()) {
+          return { className: "offline", label: "So local", detail: "Nuvem desativada" };
+        }
+        if (CLOUD.status === "syncing") {
+          return { className: "syncing", label: "Sincronizando", detail: "JSONBin em andamento" };
+        }
+        if (CLOUD.status === "error") {
+          return { className: "error", label: "Erro na nuvem", detail: "Verifique credenciais ou conexao" };
+        }
+        return { className: "ok", label: "Nuvem conectada", detail: "JSONBin ativo" };
+      }
+
+      function renderCloudStatusChip() {
+        const meta = getCloudStatusMeta();
+        return `<span class="cloud-chip ${meta.className}" title="${escapeHtml(meta.detail)}">☁ ${escapeHtml(meta.label)}</span>`;
+      }
+
+      function renderApp() {
+        const meta = VIEW_META[state.ui.activeView] || VIEW_META.dashboard;
+        const app = document.getElementById("app");
+        app.innerHTML = `
+          <div class="app-shell">
+            <aside class="sidebar ${state.ui.sidebarOpen ? "open" : ""}">
+              ${renderSidebar()}
+            </aside>
+            <div class="overlay ${state.ui.sidebarOpen ? "show" : ""}" data-action="close-sidebar"></div>
+            <main class="content-area">
+              <section class="page-frame">
+                <header class="topbar">
+                  <div class="title-wrap">
+                    <button class="icon-button" type="button" data-action="toggle-sidebar" aria-label="Abrir menu">☰</button>
+                    <div class="title-mark">${escapeHtml(meta.icon)}</div>
+                    <div>
+                      <h1 class="page-title">${escapeHtml(meta.title)}</h1>
+                      <p class="page-subtitle">${escapeHtml(meta.subtitle)}</p>
+                    </div>
+                  </div>
+                  <div class="topbar-actions">
+                    ${renderCloudStatusChip()}
+                    <button class="ghost-button" type="button" data-nav="dashboard">Painel</button>
+                    <button class="secondary-button" type="button" data-nav="settings">Configurações</button>
+                    <button class="primary-button" type="button" data-action="new-invoice">Nova nota fiscal</button>
+                  </div>
+                </header>
+                <div class="page-content">
+                  ${renderActiveView()}
+                </div>
+              </section>
+            </main>
+          </div>
+          <div class="toast-stack">
+            ${state.ui.toasts.map(renderToast).join("")}
+          </div>
+        `;
+      }
+
+      function renderSidebar() {
+        const items = [
+          { view: "dashboard", title: "Painel", subtitle: "Resumo geral" },
+          { view: "settings", title: "Configurações", subtitle: "Centro de custo" },
+          { view: "suppliers", title: "Fornecedores", subtitle: "Cadastro base" },
+          { view: "chartAccounts", title: "Contas contábeis", subtitle: "Estrutura contábil" },
+          { view: "financialNatures", title: "Naturezas", subtitle: "Classificação financeira" },
+          { view: "items", title: "Itens", subtitle: "Base para notas" },
+          { view: "fiscal", title: "Fiscal", subtitle: "Notas fiscais" }
+        ];
+
+        return `
+          <div class="brand">
+            <div class="brand-mark">ERP</div>
+            <div>
+              <h1>ERP Local Modular</h1>
+              <p>Arquivo único, pronto para crescer.</p>
+            </div>
+          </div>
+          <div>
+            <p class="menu-section-label">Módulos</p>
+            <nav class="menu" aria-label="Navegação principal">
+              ${items.map((item) => `
+                <button
+                  type="button"
+                  class="nav-button ${state.ui.activeView === item.view ? "active" : ""}"
+                  data-nav="${item.view}">
+                  <span class="nav-icon" aria-hidden="true"></span>
+                  <span>
+                    <span class="nav-title">${escapeHtml(item.title)}</span>
+                    <span class="nav-subtitle">${escapeHtml(item.subtitle)}</span>
+                  </span>
+                </button>
+              `).join("")}
+            </nav>
+          </div>
+          <div class="sidebar-foot">
+            <strong>Persistência local</strong>
+            <p>Os dados ficam armazenados no navegador usando <code>localStorage</code>, sem backend e sem registros de exemplo.</p>
+            <p style="margin-top:10px;">${renderCloudStatusChip()}</p>
+          </div>
+        `;
+      }
+
+      function renderToast(toast) {
+        const icon = toast.type === "success" ? "OK" : toast.type === "error" ? "ER" : "AV";
+        return `
+          <div class="toast ${escapeHtml(toast.type)}">
+            <div class="notice-icon">${icon}</div>
+            <div>
+              <strong>${escapeHtml(toast.title)}</strong>
+              <p>${escapeHtml(toast.message)}</p>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderActiveView() {
+        switch (state.ui.activeView) {
+          case "settings":
+            return renderSettingsView();
+          case "suppliers":
+            return renderSuppliersView();
+          case "chartAccounts":
+            return renderChartAccountsView();
+          case "financialNatures":
+            return renderFinancialNaturesView();
+          case "items":
+            return renderItemsView();
+          case "fiscal":
+            return renderFiscalView();
+          case "dashboard":
+          default:
+            return renderDashboardView();
+        }
+      }
+
+      function renderDashboardView() {
+        const totals = [
+          { label: "Centros de custo", value: state.data.costCenters.length, helper: "Estrutura interna configurável" },
+          { label: "Fornecedores", value: state.data.suppliers.length, helper: "Base de parceiros fiscais" },
+          { label: "Itens", value: state.data.items.length, helper: "Disponíveis para notas fiscais" },
+          { label: "Notas fiscais", value: state.data.invoices.length, helper: "Lançamentos registrados localmente" }
+        ];
+        const isEmpty = totals.every((item) => item.value === 0);
+
+        return `
+          <section class="hero-panel">
+            <div>
+              <span class="hero-eyebrow">Sistema pronto para configurar</span>
+              <h2>ERP limpo, modular e pronto para começar do zero.</h2>
+              <p>Cadastre primeiro as contas contábeis, depois naturezas financeiras, itens, centros de custo e fornecedores. Em seguida, use o módulo fiscal para lançar suas notas com itens e parcelas financeiras.</p>
+              <div class="hero-actions">
+                <button class="primary-button" type="button" data-nav="chartAccounts">Começar pelas contas</button>
+                <button class="ghost-button" type="button" data-nav="fiscal">Ir para o fiscal</button>
+              </div>
+            </div>
+            <div class="hero-stack">
+              <div class="notice-card">
+                <div class="notice-icon">LS</div>
+                <div>
+                  <strong>Sem backend, sem dados de exemplo</strong>
+                  <p>O sistema inicia vazio e grava tudo no navegador. Você configura a estrutura conforme sua operação real.</p>
+                </div>
+              </div>
+              <div class="notice-card">
+                <div class="notice-icon">MD</div>
+                <div>
+                  <strong>Base preparada para crescer</strong>
+                  <p>A navegação e o armazenamento já estão organizados para receber novos módulos futuramente sem desmontar a estrutura atual.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="stats-grid">
+            ${totals.map((item) => `
+              <article class="stats-card">
+                <small>${escapeHtml(item.label)}</small>
+                <strong class="mono">${escapeHtml(String(item.value))}</strong>
+                <span>${escapeHtml(item.helper)}</span>
+              </article>
+            `).join("")}
+          </section>
+          ${isEmpty ? `
+            <section class="empty-card">
+              <strong>Nenhum registro cadastrado ainda.</strong>
+              <p>Esse comportamento é intencional: o ERP foi iniciado totalmente vazio. Use os atalhos abaixo para montar sua estrutura base antes dos lançamentos fiscais.</p>
+              <div class="inline-actions">
+                <button class="secondary-button" type="button" data-nav="chartAccounts">Cadastrar contas contábeis</button>
+                <button class="secondary-button" type="button" data-nav="financialNatures">Cadastrar naturezas</button>
+                <button class="secondary-button" type="button" data-nav="suppliers">Cadastrar fornecedores</button>
+              </div>
+            </section>
+          ` : ""}
+          <section class="split-grid">
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h3>Fluxo recomendado</h3>
+                  <p>Uma sequência objetiva para manter vínculos contábeis e fiscais consistentes.</p>
+                </div>
+              </div>
+              <div class="subtle-panel">
+                <ol class="subtle-list">
+                  <li>Cadastrar contas contábeis.</li>
+                  <li>Cadastrar naturezas financeiras vinculadas às contas.</li>
+                  <li>Cadastrar itens vinculados às naturezas financeiras.</li>
+                  <li>Cadastrar fornecedores e centros de custo.</li>
+                  <li>Lançar notas fiscais com itens e parcelas.</li>
+                </ol>
+              </div>
+            </article>
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h3>Regras já aplicadas</h3>
+                  <p>O sistema protege dependências para evitar quebra de consistência.</p>
+                </div>
+              </div>
+              <div class="subtle-panel">
+                <ul class="subtle-list">
+                  <li>Item exige natureza financeira vinculada.</li>
+                  <li>Natureza financeira exige conta contábil vinculada.</li>
+                  <li>Notas usam apenas fornecedores e itens já cadastrados.</li>
+                  <li>Exclusões barram registros em uso por outros módulos.</li>
+                </ul>
+              </div>
+            </article>
+          </section>
+        `;
+      }
+
+      function renderSettingsView() {
+        const editing = getActiveEditRecord("costCenters", state.ui.editing.costCenterId);
+        const searchTerm = state.ui.search.costCenters;
+        const cloudStatus = getCloudStatusMeta();
+        const cloudDraft = state.ui.cloudDraft;
+        const lastCloudSync = getLastCloudModified();
+        const records = filterRecords(
+          state.data.costCenters,
+          searchTerm,
+          (record) => `${record.code} ${record.name}`
+        );
+
+        return `
+          <section class="split-grid">
+            <article class="notice-card">
+              <div class="notice-icon">GE</div>
+              <div>
+                <strong>Área de parametrizações gerais</strong>
+                <p>Essa seção já está pronta para receber futuras configurações do sistema. No momento, o cadastro de centro de custo é o primeiro bloco ativo.</p>
+              </div>
+            </article>
+            <article class="notice-card">
+              <div class="notice-icon">CC</div>
+              <div>
+                <strong>Código automático</strong>
+                <p>Cada centro de custo recebe numeração própria no momento do cadastro, sem necessidade de digitação manual.</p>
+              </div>
+            </article>
+          </section>
+          <section class="split-grid">
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h3>Sincronização na nuvem</h3>
+                  <p>Modelo baseado em JSONBin.io: a configuração fica neste navegador e os dados do ERP podem ser enviados ou recuperados de um bin remoto.</p>
+                </div>
+                ${renderCloudStatusChip()}
+              </div>
+              <div class="subtle-panel" style="margin-bottom:18px;">
+                <h4>Como funciona</h4>
+                <ul class="subtle-list">
+                  <li>Informe a Master Key e o Bin ID do JSONBin.</li>
+                  <li>O ERP envia um snapshot completo com carimbo <code>lastModified</code>.</li>
+                  <li>Ao puxar da nuvem, o sistema aplica os dados apenas quando o remoto estiver mais novo.</li>
+                </ul>
+              </div>
+              <form data-form="cloud-config" autocomplete="off">
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="cloud-api-key">Master Key (X-Master-Key)</label>
+                    <input id="cloud-api-key" name="apiKey" value="${escapeHtml(cloudDraft.apiKey || "")}" placeholder="Cole aqui a Master Key do JSONBin" autocomplete="off">
+                  </div>
+                  <div class="field">
+                    <label for="cloud-bin-id">Bin ID</label>
+                    <input id="cloud-bin-id" name="binId" value="${escapeHtml(cloudDraft.binId || "")}" placeholder="Cole aqui o Bin ID" autocomplete="off">
+                  </div>
+                  <div class="field full">
+                    <label>Status atual</label>
+                    <div class="field-readonly">
+                      ${escapeHtml(cloudStatus.label)}${lastCloudSync ? ` | Ultima confirmacao: ${escapeHtml(new Date(lastCloudSync).toLocaleString("pt-BR"))}` : " | Nenhuma sincronizacao confirmada ainda"}
+                    </div>
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button class="primary-button" type="submit">${CLOUD.isConfigured() ? "Salvar configuracao" : "Conectar JSONBin"}</button>
+                  <button class="secondary-button" type="button" data-action="cloud-pull-now" ${CLOUD.isConfigured() ? "" : "disabled"}>Buscar da nuvem</button>
+                  <button class="secondary-button" type="button" data-action="cloud-sync-now" ${CLOUD.isConfigured() ? "" : "disabled"}>Enviar agora</button>
+                  <button class="ghost-button" type="button" data-action="cloud-disconnect" ${CLOUD.isConfigured() ? "" : "disabled"}>Desconectar</button>
+                </div>
+              </form>
+            </article>
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h3>Recomendação de uso</h3>
+                  <p>Esse modelo replica a ideia do site de referência, mas continua preservando o funcionamento local do ERP.</p>
+                </div>
+              </div>
+              <div class="subtle-panel">
+                <ul class="subtle-list">
+                  <li>O armazenamento local continua sendo a base do ERP.</li>
+                  <li>Ao salvar registros, o envio para a nuvem é agendado automaticamente.</li>
+                  <li>O JSONBin recebe um snapshot completo do estado atual do sistema.</li>
+                  <li>Se a nuvem estiver mais nova, os dados remotos podem atualizar o ERP.</li>
+                </ul>
+              </div>
+            </article>
+          </section>
+          <section class="layout-grid">
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h3>${editing ? "Editar centro de custo" : "Novo centro de custo"}</h3>
+                  <p>Cadastre centros de custo para estruturar futuras parametrizações e classificações internas.</p>
+                </div>
+              </div>
+              <form data-form="cost-center" autocomplete="off">
+                <input type="hidden" name="id" value="${escapeHtml(editing?.id || "")}">
+                <div class="form-grid single-column">
+                  <div class="field">
+                    <label for="cost-center-name">Nome do centro de custo</label>
+                    <input id="cost-center-name" name="name" maxlength="120" value="${escapeHtml(editing?.name || "")}" placeholder="Ex.: Administrativo" required>
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button class="primary-button" type="submit">${editing ? "Salvar alterações" : "Cadastrar centro de custo"}</button>
+                  ${editing ? `<button class="ghost-button" type="button" data-action="reset-cost-center">Cancelar edição</button>` : ""}
+                </div>
+              </form>
+            </article>
+            <article class="table-card">
+              <div class="table-toolbar">
+                <div>
+                  <h4>Lista de centros de custo</h4>
+                  <p class="page-subtitle">Cadastre, pesquise, edite e exclua registros conforme necessário.</p>
+                </div>
+                <input class="search-input" data-search="costCenters" placeholder="Pesquisar por código ou nome" value="${escapeHtml(searchTerm)}">
+              </div>
+              ${records.length ? `
+                <div class="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Código</th>
+                        <th>Nome</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${records.map((record) => `
+                        <tr>
+                          <td class="mono">${escapeHtml(record.code)}</td>
+                          <td>${escapeHtml(record.name)}</td>
+                          <td>
+                            <div class="table-actions">
+                              <button class="action-chip" type="button" data-action="edit-cost-center" data-id="${escapeHtml(record.id)}">Editar</button>
+                              <button class="action-chip danger" type="button" data-action="delete-cost-center" data-id="${escapeHtml(record.id)}">Excluir</button>
+                            </div>
+                          </td>
+                        </tr>
+                      `).join("")}
+                    </tbody>
+                  </table>
+                </div>
+              ` : `
+                <div class="empty-card">
+                  <strong>Nenhum centro de custo encontrado.</strong>
+                  <p>${searchTerm ? "Ajuste a pesquisa para localizar registros existentes." : "Cadastre o primeiro centro de custo para iniciar a parametrização do sistema."}</p>
+                </div>
+              `}
+            </article>
+          </section>
+        `;
+      }
+
+      function renderSuppliersView() {
+        const editing = getActiveEditRecord("suppliers", state.ui.editing.supplierId);
+        const searchTerm = state.ui.search.suppliers;
+        const records = filterRecords(
+          state.data.suppliers,
+          searchTerm,
+          (record) => `${record.code} ${record.legalName} ${record.document} ${record.email} ${record.phone}`
+        );
+
+        return `
+          <section class="layout-grid">
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h3>${editing ? "Editar fornecedor" : "Novo fornecedor"}</h3>
+                  <p>Os fornecedores cadastrados aqui serão usados depois no lançamento das notas fiscais.</p>
+                </div>
+              </div>
+              <form data-form="supplier" autocomplete="off">
+                <input type="hidden" name="id" value="${escapeHtml(editing?.id || "")}">
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="supplier-legal-name">Nome / Razão social</label>
+                    <input id="supplier-legal-name" name="legalName" maxlength="160" value="${escapeHtml(editing?.legalName || "")}" required>
+                  </div>
+                  <div class="field">
+                    <label for="supplier-document">CPF ou CNPJ</label>
+                    <input id="supplier-document" name="document" maxlength="24" value="${escapeHtml(editing?.document || "")}" placeholder="Somente números ou formato livre">
+                  </div>
+                  <div class="field">
+                    <label for="supplier-email">E-mail</label>
+                    <input id="supplier-email" name="email" type="email" maxlength="120" value="${escapeHtml(editing?.email || "")}" placeholder="financeiro@empresa.com">
+                  </div>
+                  <div class="field">
+                    <label for="supplier-phone">Telefone</label>
+                    <input id="supplier-phone" name="phone" maxlength="30" value="${escapeHtml(editing?.phone || "")}" placeholder="(00) 00000-0000">
+                  </div>
+                  <div class="field full">
+                    <label for="supplier-address">Endereço</label>
+                    <textarea id="supplier-address" name="address" maxlength="260" placeholder="Rua, número, complemento, bairro, cidade, UF">${escapeHtml(editing?.address || "")}</textarea>
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button class="primary-button" type="submit">${editing ? "Salvar alterações" : "Cadastrar fornecedor"}</button>
+                  ${editing ? `<button class="ghost-button" type="button" data-action="reset-supplier">Cancelar edição</button>` : ""}
+                </div>
+              </form>
+            </article>
+            <article class="table-card">
+              <div class="table-toolbar">
+                <div>
+                  <h4>Lista de fornecedores</h4>
+                  <p class="page-subtitle">Pesquisa por código, nome, documento, e-mail ou telefone.</p>
+                </div>
+                <input class="search-input" data-search="suppliers" placeholder="Pesquisar fornecedores" value="${escapeHtml(searchTerm)}">
+              </div>
+              ${records.length ? `
+                <div class="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Código</th>
+                        <th>Fornecedor</th>
+                        <th>Contato</th>
+                        <th>Endereço</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${records.map((record) => `
+                        <tr>
+                          <td class="mono">${escapeHtml(record.code)}</td>
+                          <td>
+                            <strong>${escapeHtml(record.legalName)}</strong>
+                            <div class="table-muted">${escapeHtml(record.document || "Documento não informado")}</div>
+                          </td>
+                          <td>
+                            <div>${escapeHtml(record.email || "E-mail não informado")}</div>
+                            <div class="table-muted">${escapeHtml(record.phone || "Telefone não informado")}</div>
+                          </td>
+                          <td class="table-muted">${escapeHtml(record.address || "Endereço não informado")}</td>
+                          <td>
+                            <div class="table-actions">
+                              <button class="action-chip" type="button" data-action="edit-supplier" data-id="${escapeHtml(record.id)}">Editar</button>
+                              <button class="action-chip danger" type="button" data-action="delete-supplier" data-id="${escapeHtml(record.id)}">Excluir</button>
+                            </div>
+                          </td>
+                        </tr>
+                      `).join("")}
+                    </tbody>
+                  </table>
+                </div>
+              ` : `
+                <div class="empty-card">
+                  <strong>Nenhum fornecedor encontrado.</strong>
+                  <p>${searchTerm ? "Nenhum fornecedor corresponde ao termo pesquisado." : "Cadastre o primeiro fornecedor para habilitar lançamentos no módulo fiscal."}</p>
+                </div>
+              `}
+            </article>
+          </section>
+        `;
+      }
+
+      function renderChartAccountsView() {
+        const editing = getActiveEditRecord("chartAccounts", state.ui.editing.chartAccountId);
+        const chartDraft = state.ui.chartAccountFormDraft;
+        const searchTerm = state.ui.search.chartAccounts;
+        const pendingAdjustments = state.data.chartAccounts.filter((record) => record.requiresCodeAdjustment).length;
+        const records = filterRecords(
+          sortAccountsByCode(state.data.chartAccounts),
+          searchTerm,
+          (record) => `${record.code} ${record.normalizedCode || ""} ${record.name} ${record.type} ${record.group} ${record.balanceNature} ${record.isActive ? "ativa" : "inativa"}`
+        );
+
+        return `
+          <section class="split-grid">
+            <article class="notice-card">
+              <div class="notice-icon">PL</div>
+              <div>
+                <strong>Base do plano de contas</strong>
+                <p>O cadastro agora respeita hierarquia, máscara e diferença entre contas sintéticas e analíticas para apoiar análises futuras de balancete.</p>
+              </div>
+            </article>
+            <article class="notice-card">
+              <div class="notice-icon">VL</div>
+              <div>
+                <strong>Validação de dependências</strong>
+                <p>Contas analíticas são as únicas liberadas para vínculo. Contas com filhos, vínculos ou códigos pendentes exigem tratamento controlado.</p>
+              </div>
+            </article>
+          </section>
+          ${pendingAdjustments ? `
+            <section class="notice-card">
+              <div class="notice-icon">AJ</div>
+              <div>
+                <strong>Contas pendentes de ajuste</strong>
+                <p>${escapeHtml(String(pendingAdjustments))} conta(s) antiga(s) foram preservadas, mas possuem código fora da nova máscara e aparecem sinalizadas na listagem.</p>
+              </div>
+            </section>
+          ` : ""}
+          <section class="layout-grid">
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h3>${editing ? "Editar conta contábil" : "Nova conta contábil"}</h3>
+                  <p>Cadastre o plano de contas usando a máscara 9.9.99.99.999. O sistema calcula automaticamente grupo, nível, conta pai e código normalizado.</p>
+                </div>
+                <button class="secondary-button" type="button" data-action="load-default-chart-accounts">Carregar plano base</button>
+              </div>
+              <form data-form="chart-account" autocomplete="off">
+                <input type="hidden" name="id" value="${escapeHtml(chartDraft.id || editing?.id || "")}">
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="chart-account-code">Código da conta</label>
+                    <input id="chart-account-code" name="code" maxlength="40" value="${escapeHtml(chartDraft.code || "")}" placeholder="Ex.: 1.1.01.01.001" required>
+                    <span class="field-hint">Máscara contábil: 9.9.99.99.999</span>
+                  </div>
+                  <div class="field">
+                    <label for="chart-account-name">Nome da conta contábil</label>
+                    <input id="chart-account-name" name="name" maxlength="160" value="${escapeHtml(chartDraft.name || "")}" placeholder="Ex.: Caixa Geral" required>
+                  </div>
+                  <div class="field">
+                    <label for="chart-account-type">Tipo da conta</label>
+                    <select id="chart-account-type" name="type" required>
+                      <option value="Sintética" ${chartDraft.type === "Sintética" ? "selected" : ""}>Sintética</option>
+                      <option value="Analítica" ${chartDraft.type === "Analítica" ? "selected" : ""}>Analítica</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="chart-account-balance-nature">Natureza do saldo</label>
+                    <select id="chart-account-balance-nature" name="balanceNature" required>
+                      <option value="Devedora" ${chartDraft.balanceNature === "Devedora" ? "selected" : ""}>Devedora</option>
+                      <option value="Credora" ${chartDraft.balanceNature === "Credora" ? "selected" : ""}>Credora</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="chart-account-status">Status</label>
+                    <select id="chart-account-status" name="status">
+                      <option value="Ativa" ${chartDraft.status !== "Inativa" ? "selected" : ""}>Ativa</option>
+                      <option value="Inativa" ${chartDraft.status === "Inativa" ? "selected" : ""}>Inativa</option>
+                    </select>
+                  </div>
+                  <div class="field full" id="chart-account-preview">
+                    ${renderChartAccountPreviewPanel(chartDraft)}
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button class="primary-button" type="submit">${editing ? "Salvar alterações" : "Cadastrar conta contábil"}</button>
+                  ${editing ? `<button class="ghost-button" type="button" data-action="reset-chart-account">Cancelar edição</button>` : ""}
+                </div>
+              </form>
+            </article>
+            <article class="table-card">
+              <div class="table-toolbar">
+                <div>
+                  <h4>Lista de contas contábeis</h4>
+                  <p class="page-subtitle">Pesquisa por código ou descrição da conta.</p>
+                </div>
+                <input class="search-input" data-search="chartAccounts" placeholder="Pesquisar contas contábeis" value="${escapeHtml(searchTerm)}">
+              </div>
+              ${records.length ? `
+                <div class="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Código</th>
+                        <th>Conta contábil</th>
+                        <th>Tipo</th>
+                        <th>Grupo</th>
+                        <th>Natureza</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${records.map((record) => `
+                        <tr class="chart-account-row ${isSyntheticAccount(record) ? "synthetic" : ""}">
+                          <td class="mono">${escapeHtml(record.code)}</td>
+                          <td>
+                            <div class="chart-account-name">
+                              ${Array.from({ length: Math.max((record.level || 1) - 1, 0) }).map(() => `<span class="account-indent-guide" aria-hidden="true"></span>`).join("")}
+                              <strong>${escapeHtml(record.name)}</strong>
+                            </div>
+                            <div class="account-meta">
+                              ${record.parentCode ? `<span class="badge">Pai: ${escapeHtml(record.parentCode)}</span>` : `<span class="badge">Raiz</span>`}
+                              ${record.requiresCodeAdjustment ? `<span class="badge warning">Pendente de ajuste</span>` : ""}
+                              ${isAnalyticalAccount(record) && !record.requiresCodeAdjustment && record.isActive !== false ? `<span class="badge positive">Permitida para vínculo</span>` : ""}
+                              ${isSyntheticAccount(record) ? `<span class="badge">Conta sintética</span>` : ""}
+                            </div>
+                            ${record.adjustmentMessage ? `<div class="table-muted">${escapeHtml(record.adjustmentMessage)}</div>` : ""}
+                          </td>
+                          <td><span class="badge ${isAnalyticalAccount(record) ? "positive" : ""}">${escapeHtml(record.type)}</span></td>
+                          <td>${escapeHtml(record.group || "-")}</td>
+                          <td>${escapeHtml(record.balanceNature || "-")}</td>
+                          <td>
+                            <span class="badge ${record.isActive !== false ? "positive" : "danger"}">${record.isActive !== false ? "Ativa" : "Inativa"}</span>
+                          </td>
+                          <td>
+                            <div class="table-actions">
+                              <button class="action-chip" type="button" data-action="edit-chart-account" data-id="${escapeHtml(record.id)}">Editar</button>
+                              <button class="action-chip danger" type="button" data-action="delete-chart-account" data-id="${escapeHtml(record.id)}">Excluir</button>
+                            </div>
+                          </td>
+                        </tr>
+                      `).join("")}
+                    </tbody>
+                  </table>
+                </div>
+              ` : `
+                <div class="empty-card">
+                  <strong>Nenhuma conta contábil encontrada.</strong>
+                  <p>${searchTerm ? "Refine o termo pesquisado ou limpe o campo de busca." : "Cadastre pelo menos uma conta contábil para liberar o cadastro de naturezas financeiras."}</p>
+                </div>
+              `}
+            </article>
+          </section>
+        `;
+      }
+
+      function renderFinancialNaturesView() {
+        const editing = getActiveEditRecord("financialNatures", state.ui.editing.financialNatureId);
+        const natureDraft = state.ui.financialNatureFormDraft;
+        const searchTerm = state.ui.search.financialNatures;
+        const selectableAccounts = getSelectableChartAccounts();
+        const records = filterRecords(
+          state.data.financialNatures,
+          searchTerm,
+          (record) => {
+            const account = getChartAccountById(record.chartAccountId);
+            return `${record.code} ${record.name} ${account?.code || ""} ${account?.name || ""} ${account?.group || ""} ${account?.balanceNature || ""}`;
+          }
+        );
+        const canCreate = selectableAccounts.length > 0;
+        const selectedAccount = getChartAccountById(natureDraft.chartAccountId);
+        const currentLinkedAccount = editing ? getChartAccountById(editing.chartAccountId) : null;
+        const hasInactiveLinkedAccount = Boolean(currentLinkedAccount && !isChartAccountAvailableForLinks(currentLinkedAccount));
+
+        return `
+          ${!canCreate ? `
+            <section class="notice-card">
+              <div class="notice-icon">AT</div>
+              <div>
+                <strong>Cadastre primeiro as contas contábeis</strong>
+                <p>Naturezas financeiras dependem de contas analíticas ativas. Crie ou ajuste ao menos uma conta válida antes de salvar uma natureza financeira.</p>
+              </div>
+            </section>
+          ` : ""}
+          ${hasInactiveLinkedAccount ? `
+            <section class="notice-card">
+              <div class="notice-icon">AV</div>
+              <div>
+                <strong>Vínculo atual exige revisão</strong>
+                <p>Esta natureza está ligada à conta ${escapeHtml(currentLinkedAccount.code)} - ${escapeHtml(currentLinkedAccount.name)}, mas ela não está mais ativa ou válida para novos vínculos.</p>
+              </div>
+            </section>
+          ` : ""}
+          <section class="layout-grid">
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h3>${editing ? "Editar natureza financeira" : "Nova natureza financeira"}</h3>
+                  <p>Cada natureza deve estar vinculada apenas a contas contábeis analíticas e ativas.</p>
+                </div>
+              </div>
+              <form data-form="financial-nature" autocomplete="off">
+                <input type="hidden" name="id" value="${escapeHtml(natureDraft.id || editing?.id || "")}">
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="financial-nature-name">Nome da natureza financeira</label>
+                    <input id="financial-nature-name" name="name" maxlength="160" value="${escapeHtml(natureDraft.name || "")}" placeholder="Ex.: Serviços terceirizados" ${canCreate ? "required" : "disabled"}>
+                  </div>
+                  <div class="field">
+                    <label for="financial-nature-account">Conta contábil vinculada</label>
+                    <select id="financial-nature-account" name="chartAccountId" ${canCreate ? "required" : "disabled"}>
+                      <option value="">Selecione uma conta contábil</option>
+                      ${selectableAccounts.map((account) => `
+                        <option value="${escapeHtml(account.id)}" ${natureDraft.chartAccountId === account.id ? "selected" : ""}>
+                          ${escapeHtml(account.code)} - ${escapeHtml(account.name)} | ${escapeHtml(account.group)}
+                        </option>
+                      `).join("")}
+                    </select>
+                  </div>
+                  <div class="field full">
+                    <label>Conta selecionada</label>
+                    <div class="field-readonly">
+                      ${selectedAccount
+                        ? `${escapeHtml(selectedAccount.code)} - ${escapeHtml(selectedAccount.name)} | ${escapeHtml(selectedAccount.group)} | ${escapeHtml(selectedAccount.balanceNature)}`
+                        : "Selecione uma conta analítica ativa para visualizar seus dados."}
+                    </div>
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button class="primary-button" type="submit" ${canCreate ? "" : "disabled"}>${editing ? "Salvar alterações" : "Cadastrar natureza financeira"}</button>
+                  ${editing ? `<button class="ghost-button" type="button" data-action="reset-financial-nature">Cancelar edição</button>` : ""}
+                </div>
+              </form>
+            </article>
+            <article class="table-card">
+              <div class="table-toolbar">
+                <div>
+                  <h4>Lista de naturezas financeiras</h4>
+                  <p class="page-subtitle">Pesquisa por código, nome ou conta contábil vinculada.</p>
+                </div>
+                <input class="search-input" data-search="financialNatures" placeholder="Pesquisar naturezas financeiras" value="${escapeHtml(searchTerm)}">
+              </div>
+              ${records.length ? `
+                <div class="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Código</th>
+                        <th>Natureza financeira</th>
+                        <th>Conta vinculada</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${records.map((record) => {
+                        const account = getChartAccountById(record.chartAccountId);
+                        return `
+                          <tr>
+                            <td class="mono">${escapeHtml(record.code)}</td>
+                            <td>${escapeHtml(record.name)}</td>
+                            <td>
+                              <div class="badge-row">
+                                <span class="badge">${escapeHtml(account?.code || "Conta indisponível")}</span>
+                                ${account?.isActive === false ? `<span class="badge danger">Conta inativa</span>` : ""}
+                                ${account && !isAnalyticalAccount(account) ? `<span class="badge warning">Conta não analítica</span>` : ""}
+                              </div>
+                              <div class="table-muted">${escapeHtml(account?.name || "Conta contábil removida")}</div>
+                              <div class="table-muted">${escapeHtml(account ? `${account.group} | ${account.balanceNature}` : "Sem dados complementares")}</div>
+                            </td>
+                            <td>
+                              <div class="table-actions">
+                                <button class="action-chip" type="button" data-action="edit-financial-nature" data-id="${escapeHtml(record.id)}">Editar</button>
+                                <button class="action-chip danger" type="button" data-action="delete-financial-nature" data-id="${escapeHtml(record.id)}">Excluir</button>
+                              </div>
+                            </td>
+                          </tr>
+                        `;
+                      }).join("")}
+                    </tbody>
+                  </table>
+                </div>
+              ` : `
+                <div class="empty-card">
+                  <strong>Nenhuma natureza financeira encontrada.</strong>
+                  <p>${searchTerm ? "Nenhum registro combina com a pesquisa atual." : "Cadastre a primeira natureza financeira para liberar o cadastro de itens."}</p>
+                </div>
+              `}
+            </article>
+          </section>
+        `;
+      }
+
+      function renderItemsView() {
+        const editing = getActiveEditRecord("items", state.ui.editing.itemId);
+        const itemDraft = state.ui.itemFormDraft;
+        const searchTerm = state.ui.search.items;
+        const selectableNatures = getSelectableFinancialNatures();
+        const records = filterRecords(
+          state.data.items,
+          searchTerm,
+          (record) => {
+            const nature = getFinancialNatureById(record.financialNatureId);
+            const account = nature ? getChartAccountById(nature.chartAccountId) : null;
+            return `${record.code} ${record.name} ${record.description} ${nature?.name || ""} ${account?.code || ""} ${account?.name || ""} ${account?.group || ""}`;
+          }
+        );
+        const canCreate = selectableNatures.length > 0;
+        const selectedNatureId = state.ui.itemNaturePreviewId || itemDraft.financialNatureId || editing?.financialNatureId || "";
+        const selectedNature = getFinancialNatureById(selectedNatureId);
+        const selectedAccount = selectedNature ? getChartAccountById(selectedNature.chartAccountId) : null;
+        const linkedAccountIsValid = Boolean(selectedAccount && isChartAccountAvailableForLinks(selectedAccount));
+
+        return `
+          ${!canCreate ? `
+            <section class="notice-card">
+              <div class="notice-icon">AT</div>
+              <div>
+                <strong>Cadastre primeiro a natureza financeira</strong>
+                <p>Itens só podem ser criados quando houver pelo menos uma natureza financeira vinculada a conta analítica ativa.</p>
+              </div>
+            </section>
+          ` : ""}
+          <section class="layout-grid">
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h3>${editing ? "Editar item" : "Novo item"}</h3>
+                  <p>Cada item deve estar obrigatoriamente associado a uma natureza financeira, que por sua vez define a conta contábil vinculada.</p>
+                </div>
+              </div>
+              <form data-form="item" autocomplete="off">
+                <input type="hidden" name="id" value="${escapeHtml(itemDraft.id || editing?.id || "")}">
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="item-name">Nome do item</label>
+                    <input id="item-name" name="name" maxlength="160" value="${escapeHtml(itemDraft.name || "")}" ${canCreate ? "required" : "disabled"}>
+                  </div>
+                  <div class="field">
+                    <label for="item-nature">Natureza financeira vinculada</label>
+                    <select id="item-nature" name="financialNatureId" ${canCreate ? "required" : "disabled"}>
+                      <option value="">Selecione uma natureza financeira</option>
+                      ${selectableNatures.map((nature) => {
+                        const account = getChartAccountById(nature.chartAccountId);
+                        return `
+                          <option value="${escapeHtml(nature.id)}" ${selectedNatureId === nature.id ? "selected" : ""}>
+                            ${escapeHtml(nature.code)} - ${escapeHtml(nature.name)}${account ? ` | ${escapeHtml(account.code)}` : ""}
+                          </option>
+                        `;
+                      }).join("")}
+                    </select>
+                  </div>
+                  <div class="field full">
+                    <label for="item-description">Descrição</label>
+                    <textarea id="item-description" name="description" maxlength="260" ${canCreate ? "" : "disabled"} placeholder="Detalhes adicionais do item">${escapeHtml(itemDraft.description || "")}</textarea>
+                  </div>
+                  <div class="field full">
+                    <label>Conta contábil derivada</label>
+                    <div class="field-readonly">${selectedAccount ? `${escapeHtml(selectedAccount.code)} - ${escapeHtml(selectedAccount.name)} | ${escapeHtml(selectedAccount.group)} | ${escapeHtml(selectedAccount.balanceNature)}` : "A conta contábil será exibida conforme a natureza selecionada."}</div>
+                    ${selectedNature && !linkedAccountIsValid ? `<div class="inline-note warning">A natureza selecionada não está mais vinculada a uma conta analítica ativa.</div>` : ""}
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button class="primary-button" type="submit" ${canCreate ? "" : "disabled"}>${editing ? "Salvar alterações" : "Cadastrar item"}</button>
+                  ${editing ? `<button class="ghost-button" type="button" data-action="reset-item">Cancelar edição</button>` : ""}
+                </div>
+              </form>
+            </article>
+            <article class="table-card">
+              <div class="table-toolbar">
+                <div>
+                  <h4>Lista de itens</h4>
+                  <p class="page-subtitle">Pesquisa por código, nome, descrição, natureza financeira ou conta contábil.</p>
+                </div>
+                <input class="search-input" data-search="items" placeholder="Pesquisar itens" value="${escapeHtml(searchTerm)}">
+              </div>
+              ${records.length ? `
+                <div class="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Código</th>
+                        <th>Item</th>
+                        <th>Natureza financeira</th>
+                        <th>Conta contábil</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${records.map((record) => {
+                        const nature = getFinancialNatureById(record.financialNatureId);
+                        const account = nature ? getChartAccountById(nature.chartAccountId) : null;
+                        return `
+                          <tr>
+                            <td class="mono">${escapeHtml(record.code)}</td>
+                            <td>
+                              <strong>${escapeHtml(record.name)}</strong>
+                              <div class="table-muted">${escapeHtml(record.description || "Sem descrição")}</div>
+                            </td>
+                            <td>${escapeHtml(nature?.name || "Natureza indisponível")}</td>
+                            <td>
+                              <div class="badge-row">
+                                <span class="badge">${escapeHtml(account?.code || "Conta indisponível")}</span>
+                                ${account && isChartAccountAvailableForLinks(account) ? `<span class="badge positive">Vínculo liberado</span>` : `<span class="badge warning">Revisar vínculo</span>`}
+                              </div>
+                              <div class="table-muted">${escapeHtml(account?.name || "Conta contábil removida")}</div>
+                              <div class="table-muted">${escapeHtml(account ? `${account.group} | ${account.balanceNature}` : "Conta contábil indisponível")}</div>
+                            </td>
+                            <td>
+                              <div class="table-actions">
+                                <button class="action-chip" type="button" data-action="edit-item" data-id="${escapeHtml(record.id)}">Editar</button>
+                                <button class="action-chip danger" type="button" data-action="delete-item" data-id="${escapeHtml(record.id)}">Excluir</button>
+                              </div>
+                            </td>
+                          </tr>
+                        `;
+                      }).join("")}
+                    </tbody>
+                  </table>
+                </div>
+              ` : `
+                <div class="empty-card">
+                  <strong>Nenhum item encontrado.</strong>
+                  <p>${searchTerm ? "Nenhum item foi localizado com os filtros atuais." : "Cadastre o primeiro item para utilizá-lo nas notas fiscais."}</p>
+                </div>
+              `}
+            </article>
+          </section>
+        `;
+      }
+
+      function renderFiscalView() {
+        const draft = state.ui.invoiceDraft;
+        const totals = getInvoiceTotals(draft);
+        const supplier = getSupplierById(draft.supplierId);
+        const searchTerm = state.ui.search.invoices;
+        const selectableItems = getSelectableItems();
+        const records = filterRecords(
+          state.data.invoices,
+          searchTerm,
+          (record) => {
+            const recordSupplier = getSupplierById(record.supplierId);
+            return `${record.code} ${record.type} ${record.description} ${recordSupplier?.legalName || ""} ${record.issueDate}`;
+          }
+        );
+        const canLaunch = state.data.suppliers.length > 0 && selectableItems.length > 0;
+        const lineItem = getItemById(draft.lineForm.itemId);
+        const lineNature = lineItem ? getFinancialNatureById(lineItem.financialNatureId) : null;
+        const lineAccount = lineNature ? getChartAccountById(lineNature.chartAccountId) : null;
+
+        return `
+          ${!state.data.suppliers.length || !selectableItems.length ? `
+            <section class="notice-card">
+              <div class="notice-icon">PR</div>
+              <div>
+                <strong>Pré-requisitos para lançar notas fiscais</strong>
+                <p>Você precisa ter pelo menos um fornecedor e um item vinculado a natureza financeira com conta contábil analítica ativa.</p>
+              </div>
+            </section>
+          ` : ""}
+          <section class="card">
+            <div class="section-head">
+              <div>
+                <h3>${draft.id ? `Editar nota fiscal ${escapeHtml(draft.code)}` : "Nova nota fiscal"}</h3>
+                <p>Registre notas de serviço ou produto com itens vinculados à estrutura contábil e parcelas da parte financeira.</p>
+              </div>
+              ${draft.id ? `<button class="ghost-button" type="button" data-action="new-invoice">Limpar rascunho</button>` : ""}
+            </div>
+            <form data-form="invoice" autocomplete="off">
+              <div class="form-grid">
+                <div class="field">
+                  <label for="invoice-type">Tipo da nota</label>
+                  <select id="invoice-type" name="type" ${canLaunch ? "" : "disabled"}>
+                    <option value="Nota de serviço" ${draft.type === "Nota de serviço" ? "selected" : ""}>Nota de serviço</option>
+                    <option value="Nota de produto" ${draft.type === "Nota de produto" ? "selected" : ""}>Nota de produto</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="invoice-supplier">Fornecedor</label>
+                  <select id="invoice-supplier" name="supplierId" ${canLaunch ? "required" : "disabled"}>
+                    <option value="">Selecione um fornecedor</option>
+                    ${state.data.suppliers.map((record) => `
+                      <option value="${escapeHtml(record.id)}" ${draft.supplierId === record.id ? "selected" : ""}>
+                        ${escapeHtml(record.code)} - ${escapeHtml(record.legalName)}
+                      </option>
+                    `).join("")}
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="invoice-date">Data de emissão</label>
+                  <input id="invoice-date" type="date" name="issueDate" value="${escapeHtml(draft.issueDate || "")}" ${canLaunch ? "required" : "disabled"}>
+                </div>
+                <div class="field">
+                  <label>Fornecedor selecionado</label>
+                  <div class="field-readonly">${supplier ? `${escapeHtml(supplier.code)} - ${escapeHtml(supplier.legalName)}` : "Selecione um fornecedor cadastrado."}</div>
+                </div>
+                <div class="field full">
+                  <label for="invoice-description">Descrição da nota</label>
+                  <textarea id="invoice-description" name="description" maxlength="300" ${canLaunch ? "" : "disabled"} placeholder="Descreva o conteúdo ou finalidade da nota">${escapeHtml(draft.description || "")}</textarea>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button class="primary-button" type="submit" ${canLaunch ? "" : "disabled"}>${draft.id ? "Salvar alterações da nota" : "Salvar nota fiscal"}</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="split-grid">
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h3>Itens da nota</h3>
+                  <p>Selecione um item cadastrado para carregar automaticamente sua natureza financeira e conta contábil vinculadas.</p>
+                </div>
+              </div>
+              <form data-form="invoice-line" autocomplete="off">
+                <div class="form-grid">
+                  <div class="field full">
+                    <label for="invoice-line-item">Item</label>
+                    <select id="invoice-line-item" name="itemId" ${canLaunch ? "required" : "disabled"}>
+                      <option value="">Selecione um item</option>
+                      ${selectableItems.map((item) => {
+                        const nature = getFinancialNatureById(item.financialNatureId);
+                        const account = nature ? getChartAccountById(nature.chartAccountId) : null;
+                        return `
+                          <option value="${escapeHtml(item.id)}" ${draft.lineForm.itemId === item.id ? "selected" : ""}>
+                            ${escapeHtml(item.code)} - ${escapeHtml(item.name)}${nature ? ` | ${escapeHtml(nature.name)}` : ""}${account ? ` | ${escapeHtml(account.code)}` : ""}
+                          </option>
+                        `;
+                      }).join("")}
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="invoice-line-quantity">Quantidade</label>
+                    <input id="invoice-line-quantity" type="number" name="quantity" min="0.01" step="0.01" value="${escapeHtml(String(draft.lineForm.quantity || 1))}" ${canLaunch ? "required" : "disabled"}>
+                  </div>
+                  <div class="field">
+                    <label for="invoice-line-unit-price">Valor unitário</label>
+                    <input id="invoice-line-unit-price" type="number" name="unitPrice" min="0.01" step="0.01" value="${escapeHtml(String(draft.lineForm.unitPrice || ""))}" ${canLaunch ? "required" : "disabled"}>
+                  </div>
+                  <div class="field full">
+                    <label>Natureza financeira e conta contábil</label>
+                    <div class="field-readonly">
+                      ${lineItem && lineNature && lineAccount
+                        ? `${escapeHtml(lineNature.code)} - ${escapeHtml(lineNature.name)} | ${escapeHtml(lineAccount.code)} - ${escapeHtml(lineAccount.name)} | ${escapeHtml(lineAccount.group)} | ${escapeHtml(lineAccount.balanceNature)}`
+                        : "Selecione um item para visualizar os vínculos automáticos."}
+                    </div>
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button class="secondary-button" type="submit" ${canLaunch ? "" : "disabled"}>Adicionar item</button>
+                </div>
+              </form>
+              ${draft.items.length ? `
+                <div class="table-card" style="margin-top:20px;">
+                  <div class="table-scroll">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Item</th>
+                          <th>Natureza</th>
+                          <th>Conta</th>
+                          <th>Qtd.</th>
+                          <th>Vlr. unitário</th>
+                          <th>Vlr. total</th>
+                          <th>Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${draft.items.map((item) => `
+                          <tr>
+                            <td>
+                              <strong>${escapeHtml(item.itemName)}</strong>
+                              <div class="table-muted">${escapeHtml(item.itemCode || item.itemId)}</div>
+                            </td>
+                            <td>${escapeHtml(item.financialNatureName)}</td>
+                            <td>
+                              <div class="badge-row">
+                                <span class="badge">${escapeHtml(item.chartAccountCode)}</span>
+                                ${item.chartAccountType ? `<span class="badge positive">${escapeHtml(item.chartAccountType)}</span>` : ""}
+                              </div>
+                              <div class="table-muted">${escapeHtml(item.chartAccountName)}</div>
+                              <div class="table-muted">${escapeHtml([item.chartAccountGroup, item.chartAccountBalanceNature].filter(Boolean).join(" | ") || "Metadados não informados")}</div>
+                            </td>
+                            <td class="mono">${escapeHtml(String(item.quantity))}</td>
+                            <td class="mono">${escapeHtml(formatCurrency(item.unitPrice))}</td>
+                            <td class="mono">${escapeHtml(formatCurrency(item.totalPrice))}</td>
+                            <td>
+                              <button class="action-chip danger" type="button" data-action="remove-invoice-line" data-id="${escapeHtml(item.id)}">Remover</button>
+                            </td>
+                          </tr>
+                        `).join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ` : `
+                <div class="empty-card" style="margin-top:20px;">
+                  <strong>Nenhum item adicionado à nota.</strong>
+                  <p>Inclua os itens do lançamento para compor o valor total e carregar automaticamente a classificação financeira e contábil.</p>
+                </div>
+              `}
+            </article>
+
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h3>Financeiro da nota</h3>
+                  <p>Adicione uma ou mais parcelas com status, forma de pagamento, vencimento e valor.</p>
+                </div>
+              </div>
+              <form data-form="invoice-installment" autocomplete="off">
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="installment-number">Número da parcela</label>
+                    <input id="installment-number" type="number" name="installmentNumber" min="1" step="1" value="${escapeHtml(String(draft.installmentForm.installmentNumber || 1))}" ${canLaunch ? "required" : "disabled"}>
+                  </div>
+                  <div class="field">
+                    <label for="installment-due-date">Data de vencimento</label>
+                    <input id="installment-due-date" type="date" name="dueDate" value="${escapeHtml(draft.installmentForm.dueDate || "")}" ${canLaunch ? "required" : "disabled"}>
+                  </div>
+                  <div class="field">
+                    <label for="installment-amount">Valor da parcela</label>
+                    <input id="installment-amount" type="number" name="amount" min="0.01" step="0.01" value="${escapeHtml(String(draft.installmentForm.amount || ""))}" ${canLaunch ? "required" : "disabled"}>
+                  </div>
+                  <div class="field">
+                    <label for="installment-method">Forma de pagamento</label>
+                    <input id="installment-method" name="paymentMethod" maxlength="60" value="${escapeHtml(draft.installmentForm.paymentMethod || "")}" placeholder="Boleto, PIX, TED..." ${canLaunch ? "required" : "disabled"}>
+                  </div>
+                  <div class="field full">
+                    <label for="installment-status">Status da parcela</label>
+                    <select id="installment-status" name="status" ${canLaunch ? "" : "disabled"}>
+                      <option value="Em aberto" ${draft.installmentForm.status === "Em aberto" ? "selected" : ""}>Em aberto</option>
+                      <option value="Pago" ${draft.installmentForm.status === "Pago" ? "selected" : ""}>Pago</option>
+                      <option value="Cancelado" ${draft.installmentForm.status === "Cancelado" ? "selected" : ""}>Cancelado</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button class="secondary-button" type="submit" ${canLaunch ? "" : "disabled"}>Adicionar parcela</button>
+                </div>
+              </form>
+              ${draft.installments.length ? `
+                <div class="table-card" style="margin-top:20px;">
+                  <div class="table-scroll">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Parcela</th>
+                          <th>Vencimento</th>
+                          <th>Valor</th>
+                          <th>Forma de pagamento</th>
+                          <th>Status</th>
+                          <th>Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${draft.installments.map((installment) => `
+                          <tr>
+                            <td class="mono">${escapeHtml(String(installment.installmentNumber))}</td>
+                            <td>${escapeHtml(formatDate(installment.dueDate))}</td>
+                            <td class="mono">${escapeHtml(formatCurrency(installment.amount))}</td>
+                            <td>${escapeHtml(installment.paymentMethod)}</td>
+                            <td>
+                              <span class="badge ${installment.status === "Pago" ? "positive" : installment.status === "Cancelado" ? "danger" : "warning"}">${escapeHtml(installment.status)}</span>
+                            </td>
+                            <td>
+                              <button class="action-chip danger" type="button" data-action="remove-installment" data-id="${escapeHtml(installment.id)}">Remover</button>
+                            </td>
+                          </tr>
+                        `).join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ` : `
+                <div class="empty-card" style="margin-top:20px;">
+                  <strong>Nenhuma parcela adicionada.</strong>
+                  <p>Inclua uma ou mais parcelas para registrar a parte financeira da nota fiscal.</p>
+                </div>
+              `}
+            </article>
+          </section>
+
+          <section class="card">
+            <div class="section-head">
+              <div>
+                <h3>Resumo financeiro e consistência</h3>
+                <p>O sistema compara automaticamente o total dos itens com o total das parcelas antes do salvamento da nota.</p>
+              </div>
+              <div class="status-highlight ${getInvoiceStatusClass(totals.difference)}">
+                ${Math.abs(totals.difference) <= 0.009 ? "Totais conciliados" : "Diferença entre itens e parcelas"}
+              </div>
+            </div>
+            <div class="totals-grid">
+              <article class="total-card">
+                <span>Total dos itens</span>
+                <strong class="mono">${escapeHtml(formatCurrency(totals.totalItemsAmount))}</strong>
+                <small>Soma de quantidade x valor unitário de todos os itens adicionados à nota.</small>
+              </article>
+              <article class="total-card">
+                <span>Total das parcelas</span>
+                <strong class="mono">${escapeHtml(formatCurrency(totals.totalInstallmentsAmount))}</strong>
+                <small>Soma de todas as parcelas registradas na seção financeira da nota.</small>
+              </article>
+              <article class="total-card">
+                <span>Diferença</span>
+                <strong class="mono">${escapeHtml(formatCurrency(totals.difference))}</strong>
+                <small>${Math.abs(totals.difference) <= 0.009 ? "A nota pode ser salva normalmente." : "Ajuste itens ou parcelas para permitir o salvamento da nota."}</small>
+              </article>
+            </div>
+          </section>
+
+          <section class="table-card">
+            <div class="table-toolbar">
+              <div>
+                <h4>Notas fiscais lançadas</h4>
+                <p class="page-subtitle">Pesquise, edite ou exclua notas fiscais já registradas localmente.</p>
+              </div>
+              <input class="search-input" data-search="invoices" placeholder="Pesquisar notas fiscais" value="${escapeHtml(searchTerm)}">
+            </div>
+            ${records.length ? `
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Código</th>
+                      <th>Tipo / fornecedor</th>
+                      <th>Emissão</th>
+                      <th>Descrição</th>
+                      <th>Itens</th>
+                      <th>Parcelas</th>
+                      <th>Total</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${records.map((record) => {
+                      const supplierRecord = getSupplierById(record.supplierId);
+                      const difference = roundCurrency(record.totalItemsAmount - record.totalInstallmentsAmount);
+                      return `
+                        <tr>
+                          <td class="mono">${escapeHtml(record.code)}</td>
+                          <td>
+                            <strong>${escapeHtml(record.type)}</strong>
+                            <div class="table-muted">${escapeHtml(supplierRecord?.legalName || "Fornecedor indisponível")}</div>
+                          </td>
+                          <td>${escapeHtml(formatDate(record.issueDate))}</td>
+                          <td class="table-muted">${escapeHtml(record.description || "Sem descrição")}</td>
+                          <td class="mono">${escapeHtml(String(record.items.length))}</td>
+                          <td>
+                            <div class="mono">${escapeHtml(String(record.installments.length))}</div>
+                            <div class="badge-row" style="margin-top:8px;">
+                              <span class="badge ${Math.abs(difference) <= 0.009 ? "positive" : "warning"}">${Math.abs(difference) <= 0.009 ? "Conciliada" : "Divergente"}</span>
+                            </div>
+                          </td>
+                          <td class="mono">${escapeHtml(formatCurrency(record.totalItemsAmount))}</td>
+                          <td>
+                            <div class="table-actions">
+                              <button class="action-chip" type="button" data-action="edit-invoice" data-id="${escapeHtml(record.id)}">Editar</button>
+                              <button class="action-chip danger" type="button" data-action="delete-invoice" data-id="${escapeHtml(record.id)}">Excluir</button>
+                            </div>
+                          </td>
+                        </tr>
+                      `;
+                    }).join("")}
+                  </tbody>
+                </table>
+              </div>
+            ` : `
+              <div class="empty-card">
+                <strong>Nenhuma nota fiscal encontrada.</strong>
+                <p>${searchTerm ? "Nenhuma nota fiscal corresponde ao termo pesquisado." : "Depois de cadastrar fornecedores e itens, use esta área para registrar as notas fiscais."}</p>
+              </div>
+            `}
+          </section>
+        `;
+      }
+
+      initialize();
+    })();
+  </script>
+</body>
+</html>
