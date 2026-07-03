@@ -968,140 +968,6 @@
       gap: 16px;
     }
 
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(20, 23, 28, 0.45);
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      padding: 40px 20px;
-      z-index: 100;
-      overflow-y: auto;
-    }
-
-    .modal-box {
-      background: var(--surface);
-      border-radius: var(--radius-xl);
-      box-shadow: var(--shadow-md);
-      border: 1px solid var(--border);
-      width: 100%;
-      max-width: 960px;
-      max-height: calc(100vh - 80px);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .modal-header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 14px;
-      padding: 18px 22px;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-
-    .modal-header h3 {
-      margin: 0;
-      font-size: 1.02rem;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-      color: var(--ink);
-    }
-
-    .modal-header p {
-      margin: 4px 0 0;
-      color: var(--ink-2);
-      font-size: 0.83rem;
-    }
-
-    .modal-close {
-      border: 1px solid var(--border-2);
-      background: var(--surface);
-      border-radius: var(--radius-sm);
-      width: 30px;
-      height: 30px;
-      display: grid;
-      place-items: center;
-      color: var(--ink-2);
-      flex-shrink: 0;
-      font-size: 0.9rem;
-      line-height: 1;
-    }
-
-    .modal-close:hover {
-      background: var(--surface-3);
-      color: var(--ink);
-    }
-
-    .modal-tabs {
-      display: flex;
-      gap: 4px;
-      padding: 8px 22px 0;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-      overflow-x: auto;
-    }
-
-    .modal-tab {
-      border: none;
-      background: transparent;
-      padding: 9px 12px 11px;
-      font-size: 0.83rem;
-      font-weight: 500;
-      color: var(--ink-3);
-      border-bottom: 2px solid transparent;
-      white-space: nowrap;
-    }
-
-    .modal-tab:hover {
-      color: var(--ink);
-    }
-
-    .modal-tab.active {
-      color: var(--accent-ink);
-      border-bottom-color: var(--accent);
-      font-weight: 600;
-    }
-
-    .modal-tab .tab-count {
-      margin-left: 6px;
-      background: var(--surface-3);
-      color: var(--ink-2);
-      border-radius: 999px;
-      padding: 1px 7px;
-      font-size: 0.7rem;
-      font-family: var(--mono);
-    }
-
-    .modal-tab.active .tab-count {
-      background: var(--accent-soft);
-      color: var(--accent-ink);
-    }
-
-    .modal-body {
-      padding: 20px 22px 22px;
-      overflow-y: auto;
-    }
-
-    .modal-footer {
-      padding: 14px 22px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      flex-shrink: 0;
-      flex-wrap: wrap;
-    }
-
-    .modal-footer .modal-footer-info {
-      font-size: 0.78rem;
-      color: var(--ink-2);
-    }
-
     .subtle-panel {
       padding: 16px;
       border-radius: var(--radius-md);
@@ -1307,6 +1173,138 @@
       z-index: 18;
     }
 
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 70;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      border: none;
+      padding: 0;
+      background: rgba(20, 23, 28, 0.42);
+      backdrop-filter: blur(3px);
+    }
+
+    .modal-shell {
+      position: relative;
+      z-index: 1;
+      width: min(1120px, 100%);
+      max-height: min(92vh, 940px);
+      display: flex;
+      flex-direction: column;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+    }
+
+    .modal-header {
+      padding: 18px 20px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-wrap: wrap;
+    }
+
+    .modal-title {
+      margin: 0;
+      font-size: 1.02rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+    }
+
+    .modal-subtitle {
+      margin: 4px 0 0;
+      color: var(--ink-2);
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow: auto;
+      background: var(--canvas);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .modal-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .modal-tab {
+      border: 1px solid var(--border-2);
+      background: var(--surface);
+      color: var(--ink-2);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+    }
+
+    .modal-tab:hover {
+      background: var(--surface-3);
+      color: var(--ink);
+    }
+
+    .modal-tab.active {
+      background: var(--accent-soft);
+      color: var(--accent-ink);
+      border-color: transparent;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .summary-card {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+    }
+
+    .summary-card span {
+      display: block;
+      color: var(--ink-3);
+      font-size: 0.76rem;
+      font-weight: 500;
+    }
+
+    .summary-card strong {
+      display: block;
+      margin-top: 7px;
+      color: var(--ink);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .summary-card p {
+      margin: 8px 0 0;
+      color: var(--ink-2);
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+
     .text-right {
       text-align: right;
     }
@@ -1354,6 +1352,14 @@
         padding: 12px;
       }
 
+      .modal-overlay {
+        padding: 14px;
+      }
+
+      .modal-shell {
+        max-height: calc(100vh - 28px);
+      }
+
       .icon-button {
         display: inline-flex;
       }
@@ -1386,6 +1392,10 @@
 
       .page-title {
         font-size: 1.05rem;
+      }
+
+      .summary-grid {
+        grid-template-columns: 1fr;
       }
 
       .hero-panel h2 {
@@ -1527,10 +1537,8 @@
             itemId: null
           },
           invoiceDraft: createEmptyInvoiceDraft(),
-          invoiceModal: {
-            open: false,
-            activeTab: "dados"
-          },
+          invoiceModalOpen: false,
+          activeInvoiceTab: "dados",
           toasts: []
         }
       };
@@ -1868,14 +1876,7 @@
       }
 
       function handleClick(event) {
-        if (event.target.classList && event.target.classList.contains("modal-overlay")) {
-          state.ui.invoiceModal.open = false;
-          state.ui.invoiceDraft = createEmptyInvoiceDraft();
-          renderApp();
-          return;
-        }
-
-        const target = event.target.closest("[data-action], [data-nav]");
+        const target = event.target.closest("[data-action], [data-nav], [data-invoice-tab]");
         if (!target) {
           return;
         }
@@ -1883,6 +1884,13 @@
         if (target.dataset.nav) {
           event.preventDefault();
           navigate(target.dataset.nav);
+          return;
+        }
+
+        if (target.dataset.invoiceTab) {
+          event.preventDefault();
+          state.ui.activeInvoiceTab = target.dataset.invoiceTab;
+          renderApp();
           return;
         }
 
@@ -1923,16 +1931,13 @@
             break;
           case "new-invoice":
             state.ui.invoiceDraft = createEmptyInvoiceDraft();
-            state.ui.invoiceModal = { open: true, activeTab: "dados" };
-            renderApp();
+            state.ui.invoiceModalOpen = true;
+            state.ui.activeInvoiceTab = "dados";
+            navigate("fiscal");
             break;
           case "close-invoice-modal":
-            state.ui.invoiceModal.open = false;
-            state.ui.invoiceDraft = createEmptyInvoiceDraft();
-            renderApp();
-            break;
-          case "switch-invoice-tab":
-            state.ui.invoiceModal.activeTab = target.dataset.tab;
+            state.ui.invoiceModalOpen = false;
+            state.ui.activeInvoiceTab = "dados";
             renderApp();
             break;
           case "edit-cost-center":
@@ -2404,7 +2409,8 @@
 
         upsertRecord("invoices", record);
         state.ui.invoiceDraft = createEmptyInvoiceDraft();
-        state.ui.invoiceModal = { open: false, activeTab: "dados" };
+        state.ui.invoiceModalOpen = false;
+        state.ui.activeInvoiceTab = "dados";
         notify("success", "Nota fiscal", existing ? "Nota fiscal atualizada com sucesso." : "Nota fiscal lançada com sucesso.");
         renderApp();
       }
@@ -2508,8 +2514,9 @@
         }
 
         state.ui.invoiceDraft = createEmptyInvoiceDraft(invoice);
-        state.ui.invoiceModal = { open: true, activeTab: "dados" };
-        renderApp();
+        state.ui.invoiceModalOpen = true;
+        state.ui.activeInvoiceTab = "dados";
+        navigate("fiscal");
       }
 
       function deleteCostCenter(id) {
@@ -2611,6 +2618,8 @@
 
         if (state.ui.invoiceDraft.id === id) {
           state.ui.invoiceDraft = createEmptyInvoiceDraft();
+          state.ui.invoiceModalOpen = false;
+          state.ui.activeInvoiceTab = "dados";
         }
 
         notify("success", title, successMessage);
@@ -3176,6 +3185,7 @@
           <div class="toast-stack">
             ${state.ui.toasts.map(renderToast).join("")}
           </div>
+          ${state.ui.invoiceModalOpen ? renderInvoiceModal() : ""}
         `;
       }
 
@@ -3802,16 +3812,54 @@
               </div>
             </section>
           ` : ""}
-          <section class="table-card">
+          <section class="layout-grid">
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h3>${editing ? "Editar natureza financeira" : "Nova natureza financeira"}</h3>
+                  <p>Cada natureza deve estar vinculada apenas a contas contábeis analíticas e ativas.</p>
+                </div>
+              </div>
+              <form data-form="financial-nature" autocomplete="off">
+                <input type="hidden" name="id" value="${escapeHtml(natureDraft.id || editing?.id || "")}">
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="financial-nature-name">Nome da natureza financeira</label>
+                    <input id="financial-nature-name" name="name" maxlength="160" value="${escapeHtml(natureDraft.name || "")}" placeholder="Ex.: Serviços terceirizados" ${canCreate ? "required" : "disabled"}>
+                  </div>
+                  <div class="field">
+                    <label for="financial-nature-account">Conta contábil vinculada</label>
+                    <select id="financial-nature-account" name="chartAccountId" ${canCreate ? "required" : "disabled"}>
+                      <option value="">Selecione uma conta contábil</option>
+                      ${selectableAccounts.map((account) => `
+                        <option value="${escapeHtml(account.id)}" ${natureDraft.chartAccountId === account.id ? "selected" : ""}>
+                          ${escapeHtml(account.code)} - ${escapeHtml(account.name)} | ${escapeHtml(account.group)}
+                        </option>
+                      `).join("")}
+                    </select>
+                  </div>
+                  <div class="field full">
+                    <label>Conta selecionada</label>
+                    <div class="field-readonly">
+                      ${selectedAccount
+                        ? `${escapeHtml(selectedAccount.code)} - ${escapeHtml(selectedAccount.name)} | ${escapeHtml(selectedAccount.group)} | ${escapeHtml(selectedAccount.balanceNature)}`
+                        : "Selecione uma conta analítica ativa para visualizar seus dados."}
+                    </div>
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button class="primary-button" type="submit" ${canCreate ? "" : "disabled"}>${editing ? "Salvar alterações" : "Cadastrar natureza financeira"}</button>
+                  ${editing ? `<button class="ghost-button" type="button" data-action="reset-financial-nature">Cancelar edição</button>` : ""}
+                </div>
+              </form>
+            </article>
+            <article class="table-card">
               <div class="table-toolbar">
                 <div>
                   <h4>Lista de naturezas financeiras</h4>
                   <p class="page-subtitle">Pesquisa por código, nome ou conta contábil vinculada.</p>
                 </div>
-                <div class="toolbar-actions">
-                  <input class="search-input" data-search="financialNatures" placeholder="Pesquisar naturezas financeiras" value="${escapeHtml(searchTerm)}">
-                  <button class="primary-button" type="button" data-action="new-financial-nature" ${canCreate ? "" : "disabled"}>Nova natureza financeira</button>
-                </div>
+                <input class="search-input" data-search="financialNatures" placeholder="Pesquisar naturezas financeiras" value="${escapeHtml(searchTerm)}">
               </div>
               ${records.length ? `
                 <div class="table-scroll">
@@ -3858,6 +3906,7 @@
                   <p>${searchTerm ? "Nenhum registro combina com a pesquisa atual." : "Cadastre a primeira natureza financeira para liberar o cadastro de itens."}</p>
                 </div>
               `}
+            </article>
           </section>
         `;
       }
@@ -3892,16 +3941,58 @@
               </div>
             </section>
           ` : ""}
-          <section class="table-card">
+          <section class="layout-grid">
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h3>${editing ? "Editar item" : "Novo item"}</h3>
+                  <p>Cada item deve estar obrigatoriamente associado a uma natureza financeira, que por sua vez define a conta contábil vinculada.</p>
+                </div>
+              </div>
+              <form data-form="item" autocomplete="off">
+                <input type="hidden" name="id" value="${escapeHtml(itemDraft.id || editing?.id || "")}">
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="item-name">Nome do item</label>
+                    <input id="item-name" name="name" maxlength="160" value="${escapeHtml(itemDraft.name || "")}" ${canCreate ? "required" : "disabled"}>
+                  </div>
+                  <div class="field">
+                    <label for="item-nature">Natureza financeira vinculada</label>
+                    <select id="item-nature" name="financialNatureId" ${canCreate ? "required" : "disabled"}>
+                      <option value="">Selecione uma natureza financeira</option>
+                      ${selectableNatures.map((nature) => {
+                        const account = getChartAccountById(nature.chartAccountId);
+                        return `
+                          <option value="${escapeHtml(nature.id)}" ${selectedNatureId === nature.id ? "selected" : ""}>
+                            ${escapeHtml(nature.code)} - ${escapeHtml(nature.name)}${account ? ` | ${escapeHtml(account.code)}` : ""}
+                          </option>
+                        `;
+                      }).join("")}
+                    </select>
+                  </div>
+                  <div class="field full">
+                    <label for="item-description">Descrição</label>
+                    <textarea id="item-description" name="description" maxlength="260" ${canCreate ? "" : "disabled"} placeholder="Detalhes adicionais do item">${escapeHtml(itemDraft.description || "")}</textarea>
+                  </div>
+                  <div class="field full">
+                    <label>Conta contábil derivada</label>
+                    <div class="field-readonly">${selectedAccount ? `${escapeHtml(selectedAccount.code)} - ${escapeHtml(selectedAccount.name)} | ${escapeHtml(selectedAccount.group)} | ${escapeHtml(selectedAccount.balanceNature)}` : "A conta contábil será exibida conforme a natureza selecionada."}</div>
+                    ${selectedNature && !linkedAccountIsValid ? `<div class="inline-note warning">A natureza selecionada não está mais vinculada a uma conta analítica ativa.</div>` : ""}
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button class="primary-button" type="submit" ${canCreate ? "" : "disabled"}>${editing ? "Salvar alterações" : "Cadastrar item"}</button>
+                  ${editing ? `<button class="ghost-button" type="button" data-action="reset-item">Cancelar edição</button>` : ""}
+                </div>
+              </form>
+            </article>
+            <article class="table-card">
               <div class="table-toolbar">
                 <div>
                   <h4>Lista de itens</h4>
                   <p class="page-subtitle">Pesquisa por código, nome, descrição, natureza financeira ou conta contábil.</p>
                 </div>
-                <div class="toolbar-actions">
-                  <input class="search-input" data-search="items" placeholder="Pesquisar itens" value="${escapeHtml(searchTerm)}">
-                  <button class="primary-button" type="button" data-action="new-item" ${canCreate ? "" : "disabled"}>Novo item</button>
-                </div>
+                <input class="search-input" data-search="items" placeholder="Pesquisar itens" value="${escapeHtml(searchTerm)}">
               </div>
               ${records.length ? `
                 <div class="table-scroll">
@@ -3953,7 +4044,381 @@
                   <p>${searchTerm ? "Nenhum item foi localizado com os filtros atuais." : "Cadastre o primeiro item para utilizá-lo nas notas fiscais."}</p>
                 </div>
               `}
+            </article>
           </section>
+        `;
+      }
+
+
+      function renderInvoiceBaseTab(draft, supplier, canLaunch) {
+        return `
+          <section class="card">
+            <div class="section-head">
+              <div>
+                <h3>${draft.id ? `Editar nota fiscal ${escapeHtml(draft.code)}` : "Dados da nova nota fiscal"}</h3>
+                <p>Preencha os dados principais primeiro. Depois siga para as abas de itens e financeiro.</p>
+              </div>
+              ${draft.id ? `<button class="ghost-button" type="button" data-action="new-invoice">Novo rascunho</button>` : ""}
+            </div>
+            <form data-form="invoice" autocomplete="off">
+              <div class="form-grid">
+                <div class="field">
+                  <label for="invoice-type">Tipo da nota</label>
+                  <select id="invoice-type" name="type" ${canLaunch ? "" : "disabled"}>
+                    <option value="Nota de serviço" ${draft.type === "Nota de serviço" ? "selected" : ""}>Nota de serviço</option>
+                    <option value="Nota de produto" ${draft.type === "Nota de produto" ? "selected" : ""}>Nota de produto</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="invoice-supplier">Fornecedor</label>
+                  <select id="invoice-supplier" name="supplierId" ${canLaunch ? "required" : "disabled"}>
+                    <option value="">Selecione um fornecedor</option>
+                    ${state.data.suppliers.map((record) => `
+                      <option value="${escapeHtml(record.id)}" ${draft.supplierId === record.id ? "selected" : ""}>
+                        ${escapeHtml(record.code)} - ${escapeHtml(record.legalName)}
+                      </option>
+                    `).join("")}
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="invoice-date">Data de emissão</label>
+                  <input id="invoice-date" type="date" name="issueDate" value="${escapeHtml(draft.issueDate || "")}" ${canLaunch ? "required" : "disabled"}>
+                </div>
+                <div class="field">
+                  <label>Fornecedor selecionado</label>
+                  <div class="field-readonly">${supplier ? `${escapeHtml(supplier.code)} - ${escapeHtml(supplier.legalName)}` : "Selecione um fornecedor cadastrado."}</div>
+                </div>
+                <div class="field full">
+                  <label for="invoice-description">Descrição da nota</label>
+                  <textarea id="invoice-description" name="description" maxlength="300" ${canLaunch ? "" : "disabled"} placeholder="Descreva o conteúdo ou finalidade da nota">${escapeHtml(draft.description || "")}</textarea>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button class="primary-button" type="submit" ${canLaunch ? "" : "disabled"}>${draft.id ? "Salvar alterações da nota" : "Salvar nota fiscal"}</button>
+                <button class="secondary-button" type="button" data-invoice-tab="itens" ${canLaunch ? "" : "disabled"}>Ir para itens</button>
+              </div>
+            </form>
+          </section>
+        `;
+      }
+
+      function renderInvoiceItemsTab(draft, selectableItems, canLaunch, lineItem, lineNature, lineAccount) {
+        return `
+          <section class="card">
+            <div class="section-head">
+              <div>
+                <h3>Itens da nota</h3>
+                <p>Selecione um item cadastrado para carregar automaticamente sua natureza financeira e a conta contábil vinculada.</p>
+              </div>
+              <div class="inline-actions">
+                <button class="ghost-button" type="button" data-invoice-tab="dados">Voltar aos dados</button>
+                <button class="secondary-button" type="button" data-invoice-tab="financeiro">Ir para financeiro</button>
+              </div>
+            </div>
+            <form data-form="invoice-line" autocomplete="off">
+              <div class="form-grid">
+                <div class="field full">
+                  <label for="invoice-line-item">Item</label>
+                  <select id="invoice-line-item" name="itemId" ${canLaunch ? "required" : "disabled"}>
+                    <option value="">Selecione um item</option>
+                    ${selectableItems.map((item) => {
+                      const nature = getFinancialNatureById(item.financialNatureId);
+                      const account = nature ? getChartAccountById(nature.chartAccountId) : null;
+                      return `
+                        <option value="${escapeHtml(item.id)}" ${draft.lineForm.itemId === item.id ? "selected" : ""}>
+                          ${escapeHtml(item.code)} - ${escapeHtml(item.name)}${nature ? ` | ${escapeHtml(nature.name)}` : ""}${account ? ` | ${escapeHtml(account.code)}` : ""}
+                        </option>
+                      `;
+                    }).join("")}
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="invoice-line-quantity">Quantidade</label>
+                  <input id="invoice-line-quantity" type="number" name="quantity" min="0.01" step="0.01" value="${escapeHtml(String(draft.lineForm.quantity || 1))}" ${canLaunch ? "required" : "disabled"}>
+                </div>
+                <div class="field">
+                  <label for="invoice-line-unit-price">Valor unitário</label>
+                  <input id="invoice-line-unit-price" type="number" name="unitPrice" min="0.01" step="0.01" value="${escapeHtml(String(draft.lineForm.unitPrice || ""))}" ${canLaunch ? "required" : "disabled"}>
+                </div>
+                <div class="field full">
+                  <label>Natureza financeira e conta contábil</label>
+                  <div class="field-readonly">
+                    ${lineItem && lineNature && lineAccount
+                      ? `${escapeHtml(lineNature.code)} - ${escapeHtml(lineNature.name)} | ${escapeHtml(lineAccount.code)} - ${escapeHtml(lineAccount.name)} | ${escapeHtml(lineAccount.group)} | ${escapeHtml(lineAccount.balanceNature)}`
+                      : "Selecione um item para visualizar os vínculos automáticos."}
+                  </div>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button class="secondary-button" type="submit" ${canLaunch ? "" : "disabled"}>Adicionar item</button>
+              </div>
+            </form>
+            ${draft.items.length ? `
+              <div class="table-card" style="margin-top:20px;">
+                <div class="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Item</th>
+                        <th>Natureza</th>
+                        <th>Conta</th>
+                        <th>Qtd.</th>
+                        <th>Vlr. unitário</th>
+                        <th>Vlr. total</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${draft.items.map((item) => `
+                        <tr>
+                          <td>
+                            <strong>${escapeHtml(item.itemName)}</strong>
+                            <div class="table-muted">${escapeHtml(item.itemCode || item.itemId)}</div>
+                          </td>
+                          <td>${escapeHtml(item.financialNatureName)}</td>
+                          <td>
+                            <div class="badge-row">
+                              <span class="badge">${escapeHtml(item.chartAccountCode)}</span>
+                              ${item.chartAccountType ? `<span class="badge positive">${escapeHtml(item.chartAccountType)}</span>` : ""}
+                            </div>
+                            <div class="table-muted">${escapeHtml(item.chartAccountName)}</div>
+                            <div class="table-muted">${escapeHtml([item.chartAccountGroup, item.chartAccountBalanceNature].filter(Boolean).join(" | ") || "Metadados não informados")}</div>
+                          </td>
+                          <td class="mono">${escapeHtml(String(item.quantity))}</td>
+                          <td class="mono">${escapeHtml(formatCurrency(item.unitPrice))}</td>
+                          <td class="mono">${escapeHtml(formatCurrency(item.totalPrice))}</td>
+                          <td>
+                            <button class="action-chip danger" type="button" data-action="remove-invoice-line" data-id="${escapeHtml(item.id)}">Remover</button>
+                          </td>
+                        </tr>
+                      `).join("")}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ` : `
+              <div class="empty-card" style="margin-top:20px;">
+                <strong>Nenhum item adicionado à nota.</strong>
+                <p>Inclua os itens do lançamento para compor o valor total e carregar automaticamente a classificação financeira e contábil.</p>
+              </div>
+            `}
+          </section>
+        `;
+      }
+
+      function renderInvoiceFinancialTab(draft, canLaunch) {
+        return `
+          <section class="card">
+            <div class="section-head">
+              <div>
+                <h3>Financeiro da nota</h3>
+                <p>Adicione uma ou mais parcelas com status, forma de pagamento, vencimento e valor.</p>
+              </div>
+              <div class="inline-actions">
+                <button class="ghost-button" type="button" data-invoice-tab="itens">Voltar aos itens</button>
+                <button class="secondary-button" type="button" data-invoice-tab="resumo">Ir para resumo</button>
+              </div>
+            </div>
+            <form data-form="invoice-installment" autocomplete="off">
+              <div class="form-grid">
+                <div class="field">
+                  <label for="installment-number">Número da parcela</label>
+                  <input id="installment-number" type="number" name="installmentNumber" min="1" step="1" value="${escapeHtml(String(draft.installmentForm.installmentNumber || 1))}" ${canLaunch ? "required" : "disabled"}>
+                </div>
+                <div class="field">
+                  <label for="installment-due-date">Data de vencimento</label>
+                  <input id="installment-due-date" type="date" name="dueDate" value="${escapeHtml(draft.installmentForm.dueDate || "")}" ${canLaunch ? "required" : "disabled"}>
+                </div>
+                <div class="field">
+                  <label for="installment-amount">Valor da parcela</label>
+                  <input id="installment-amount" type="number" name="amount" min="0.01" step="0.01" value="${escapeHtml(String(draft.installmentForm.amount || ""))}" ${canLaunch ? "required" : "disabled"}>
+                </div>
+                <div class="field">
+                  <label for="installment-method">Forma de pagamento</label>
+                  <input id="installment-method" name="paymentMethod" maxlength="60" value="${escapeHtml(draft.installmentForm.paymentMethod || "")}" placeholder="Boleto, PIX, TED..." ${canLaunch ? "required" : "disabled"}>
+                </div>
+                <div class="field full">
+                  <label for="installment-status">Status da parcela</label>
+                  <select id="installment-status" name="status" ${canLaunch ? "" : "disabled"}>
+                    <option value="Em aberto" ${draft.installmentForm.status === "Em aberto" ? "selected" : ""}>Em aberto</option>
+                    <option value="Pago" ${draft.installmentForm.status === "Pago" ? "selected" : ""}>Pago</option>
+                    <option value="Cancelado" ${draft.installmentForm.status === "Cancelado" ? "selected" : ""}>Cancelado</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button class="secondary-button" type="submit" ${canLaunch ? "" : "disabled"}>Adicionar parcela</button>
+              </div>
+            </form>
+            ${draft.installments.length ? `
+              <div class="table-card" style="margin-top:20px;">
+                <div class="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Parcela</th>
+                        <th>Vencimento</th>
+                        <th>Valor</th>
+                        <th>Forma de pagamento</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${draft.installments.map((installment) => `
+                        <tr>
+                          <td class="mono">${escapeHtml(String(installment.installmentNumber))}</td>
+                          <td>${escapeHtml(formatDate(installment.dueDate))}</td>
+                          <td class="mono">${escapeHtml(formatCurrency(installment.amount))}</td>
+                          <td>${escapeHtml(installment.paymentMethod)}</td>
+                          <td>
+                            <span class="badge ${installment.status === "Pago" ? "positive" : installment.status === "Cancelado" ? "danger" : "warning"}">${escapeHtml(installment.status)}</span>
+                          </td>
+                          <td>
+                            <button class="action-chip danger" type="button" data-action="remove-installment" data-id="${escapeHtml(installment.id)}">Remover</button>
+                          </td>
+                        </tr>
+                      `).join("")}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ` : `
+              <div class="empty-card" style="margin-top:20px;">
+                <strong>Nenhuma parcela adicionada.</strong>
+                <p>Inclua uma ou mais parcelas para registrar a parte financeira da nota fiscal.</p>
+              </div>
+            `}
+          </section>
+        `;
+      }
+
+      function renderInvoiceSummaryTab(draft, supplier, totals, canLaunch) {
+        return `
+          <section class="card">
+            <div class="section-head">
+              <div>
+                <h3>Resumo financeiro e consistência</h3>
+                <p>Confira os totais antes de concluir o lançamento da nota fiscal.</p>
+              </div>
+              <div class="status-highlight ${getInvoiceStatusClass(totals.difference)}">
+                ${Math.abs(totals.difference) <= 0.009 ? "Totais conciliados" : "Diferença entre itens e parcelas"}
+              </div>
+            </div>
+            <div class="totals-grid">
+              <article class="total-card">
+                <span>Total dos itens</span>
+                <strong class="mono">${escapeHtml(formatCurrency(totals.totalItemsAmount))}</strong>
+                <small>Soma de quantidade x valor unitário de todos os itens adicionados à nota.</small>
+              </article>
+              <article class="total-card">
+                <span>Total das parcelas</span>
+                <strong class="mono">${escapeHtml(formatCurrency(totals.totalInstallmentsAmount))}</strong>
+                <small>Soma de todas as parcelas registradas na seção financeira da nota.</small>
+              </article>
+              <article class="total-card">
+                <span>Diferença</span>
+                <strong class="mono">${escapeHtml(formatCurrency(totals.difference))}</strong>
+                <small>${Math.abs(totals.difference) <= 0.009 ? "A nota pode ser salva normalmente." : "Ajuste itens ou parcelas para permitir o salvamento da nota."}</small>
+              </article>
+            </div>
+          </section>
+          <section class="summary-grid">
+            <article class="summary-card">
+              <span>Tipo</span>
+              <strong>${escapeHtml(draft.type || "Nota de serviço")}</strong>
+              <p>Fornecedor: ${escapeHtml(supplier ? `${supplier.code} - ${supplier.legalName}` : "Não selecionado")}</p>
+            </article>
+            <article class="summary-card">
+              <span>Emissão</span>
+              <strong>${escapeHtml(draft.issueDate ? formatDate(draft.issueDate) : "Não informada")}</strong>
+              <p>${escapeHtml(draft.description || "Sem descrição informada.")}</p>
+            </article>
+          </section>
+          <section class="card">
+            <div class="section-head">
+              <div>
+                <h3>Finalizar lançamento</h3>
+                <p>Se estiver tudo certo, salve a nota por aqui. Se precisar ajustar algo, volte para as abas anteriores.</p>
+              </div>
+            </div>
+            <form data-form="invoice" autocomplete="off">
+              <input type="hidden" name="type" value="${escapeHtml(draft.type || "Nota de serviço")}">
+              <input type="hidden" name="supplierId" value="${escapeHtml(draft.supplierId || "")}">
+              <input type="hidden" name="issueDate" value="${escapeHtml(draft.issueDate || "")}">
+              <input type="hidden" name="description" value="${escapeHtml(draft.description || "")}">
+              <div class="form-actions">
+                <button class="primary-button" type="submit" ${canLaunch ? "" : "disabled"}>${draft.id ? "Salvar alterações da nota" : "Salvar nota fiscal"}</button>
+                <button class="ghost-button" type="button" data-invoice-tab="dados">Voltar aos dados</button>
+              </div>
+            </form>
+          </section>
+        `;
+      }
+
+      function renderInvoiceModal() {
+        const draft = state.ui.invoiceDraft;
+        const totals = getInvoiceTotals(draft);
+        const supplier = getSupplierById(draft.supplierId);
+        const selectableItems = getSelectableItems();
+        const canLaunch = state.data.suppliers.length > 0 && selectableItems.length > 0;
+        const lineItem = getItemById(draft.lineForm.itemId);
+        const lineNature = lineItem ? getFinancialNatureById(lineItem.financialNatureId) : null;
+        const lineAccount = lineNature ? getChartAccountById(lineNature.chartAccountId) : null;
+        const activeTab = state.ui.activeInvoiceTab || "dados";
+        const tabItems = [
+          { key: "dados", label: "Dados" },
+          { key: "itens", label: `Itens (${draft.items.length})` },
+          { key: "financeiro", label: `Financeiro (${draft.installments.length})` },
+          { key: "resumo", label: "Resumo" }
+        ];
+
+        let tabContent = "";
+        if (activeTab === "itens") {
+          tabContent = renderInvoiceItemsTab(draft, selectableItems, canLaunch, lineItem, lineNature, lineAccount);
+        } else if (activeTab === "financeiro") {
+          tabContent = renderInvoiceFinancialTab(draft, canLaunch);
+        } else if (activeTab === "resumo") {
+          tabContent = renderInvoiceSummaryTab(draft, supplier, totals, canLaunch);
+        } else {
+          tabContent = renderInvoiceBaseTab(draft, supplier, canLaunch);
+        }
+
+        return `
+          <div class="modal-overlay">
+            <button class="modal-backdrop" type="button" data-action="close-invoice-modal" aria-label="Fechar modal"></button>
+            <div class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="invoice-modal-title">
+              <div class="modal-header">
+                <div>
+                  <h3 class="modal-title" id="invoice-modal-title">${draft.id ? `Edição da nota ${escapeHtml(draft.code)}` : "Nova nota fiscal"}</h3>
+                  <p class="modal-subtitle">A listagem continua visível no módulo fiscal e o cadastro acontece em etapas dentro deste modal.</p>
+                </div>
+                <div class="inline-actions">
+                  ${draft.id ? `<button class="ghost-button" type="button" data-action="new-invoice">Novo rascunho</button>` : ""}
+                  <button class="ghost-button" type="button" data-action="close-invoice-modal">Fechar</button>
+                </div>
+              </div>
+              <div class="modal-body">
+                ${!canLaunch ? `
+                  <section class="notice-card">
+                    <div class="notice-icon">PR</div>
+                    <div>
+                      <strong>Pré-requisitos para lançar notas fiscais</strong>
+                      <p>Você precisa ter pelo menos um fornecedor e um item vinculado a natureza financeira com conta contábil analítica ativa.</p>
+                    </div>
+                  </section>
+                ` : ""}
+                <div class="modal-tabs" aria-label="Etapas da nota fiscal">
+                  ${tabItems.map((tab) => `
+                    <button class="modal-tab ${activeTab === tab.key ? "active" : ""}" type="button" data-invoice-tab="${tab.key}">
+                      ${escapeHtml(tab.label)}
+                    </button>
+                  `).join("")}
+                </div>
+                ${tabContent}
+              </div>
+            </div>
+          </div>
         `;
       }
 
@@ -3971,7 +4436,7 @@
         const canLaunch = state.data.suppliers.length > 0 && selectableItems.length > 0;
 
         return `
-          ${!state.data.suppliers.length || !selectableItems.length ? `
+          ${!canLaunch ? `
             <section class="notice-card">
               <div class="notice-icon">PR</div>
               <div>
@@ -3980,7 +4445,22 @@
               </div>
             </section>
           ` : ""}
-
+          <section class="card">
+            <div class="section-head">
+              <div>
+                <h3>Notas fiscais lançadas</h3>
+                <p>Ao entrar no módulo fiscal, a tela mostra primeiro a listagem. O cadastro ou a edição abrem em modal, separados por abas.</p>
+              </div>
+              <button class="primary-button" type="button" data-action="new-invoice" ${canLaunch ? "" : "disabled"}>Nova nota fiscal</button>
+            </div>
+            <div class="subtle-panel">
+              <ul class="subtle-list">
+                <li>Use a listagem para pesquisar, editar e excluir notas já lançadas.</li>
+                <li>Abra o modal para preencher dados, itens, financeiro e resumo sem poluir a tela principal.</li>
+                <li>O salvamento da nota continua validando a conciliação entre itens e parcelas.</li>
+              </ul>
+            </div>
+          </section>
           <section class="table-card">
             <div class="table-toolbar">
               <div>
@@ -3988,7 +4468,6 @@
                 <p class="page-subtitle">Pesquise, edite ou exclua notas fiscais já registradas localmente.</p>
               </div>
               <input class="search-input" data-search="invoices" placeholder="Pesquisar notas fiscais" value="${escapeHtml(searchTerm)}">
-              <button class="primary-button" type="button" data-action="new-invoice" ${canLaunch ? "" : "disabled"}>Nova nota fiscal</button>
             </div>
             ${records.length ? `
               <div class="table-scroll">
@@ -4041,317 +4520,18 @@
             ` : `
               <div class="empty-card">
                 <strong>Nenhuma nota fiscal encontrada.</strong>
-                <p>${searchTerm ? "Nenhuma nota fiscal corresponde ao termo pesquisado." : "Depois de cadastrar fornecedores e itens, clique em \"Nova nota fiscal\" para registrar o primeiro lançamento."}</p>
+                <p>${searchTerm ? "Nenhuma nota fiscal corresponde ao termo pesquisado." : "Depois de cadastrar fornecedores e itens, use o botão de nova nota para abrir o modal de lançamento."}</p>
+                <div class="inline-actions">
+                  <button class="primary-button" type="button" data-action="new-invoice" ${canLaunch ? "" : "disabled"}>Nova nota fiscal</button>
+                </div>
               </div>
             `}
           </section>
-
-          ${state.ui.invoiceModal.open ? renderInvoiceModal() : ""}
-        `;
-      }
-
-      function renderInvoiceModal() {
-        const draft = state.ui.invoiceDraft;
-        const totals = getInvoiceTotals(draft);
-        const activeTab = state.ui.invoiceModal.activeTab;
-        const isReconciled = Math.abs(totals.difference) <= 0.009;
-
-        const tabs = [
-          { key: "dados", label: "Dados da nota" },
-          { key: "itens", label: "Itens da nota", count: draft.items.length },
-          { key: "financeiro", label: "Financeiro", count: draft.installments.length },
-          { key: "resumo", label: "Resumo", badge: isReconciled ? "ok" : "warn" }
-        ];
-
-        const tabContent = {
-          dados: renderInvoiceTabDados(draft),
-          itens: renderInvoiceTabItens(draft),
-          financeiro: renderInvoiceTabFinanceiro(draft),
-          resumo: renderInvoiceTabResumo(draft, totals)
-        };
-
-        return `
-          <div class="modal-overlay">
-            <div class="modal-box">
-              <div class="modal-header">
-                <div>
-                  <h3>${draft.id ? `Editar nota fiscal ${escapeHtml(draft.code)}` : "Nova nota fiscal"}</h3>
-                  <p>Registre notas de serviço ou produto com itens vinculados à estrutura contábil e parcelas da parte financeira.</p>
-                </div>
-                <button class="modal-close" type="button" data-action="close-invoice-modal" aria-label="Fechar">&times;</button>
-              </div>
-              <div class="modal-tabs">
-                ${tabs.map((tab) => `
-                  <button class="modal-tab ${activeTab === tab.key ? "active" : ""}" type="button" data-action="switch-invoice-tab" data-tab="${tab.key}">
-                    ${escapeHtml(tab.label)}
-                    ${typeof tab.count === "number" ? `<span class="tab-count">${tab.count}</span>` : ""}
-                    ${tab.badge ? `<span class="tab-count">${tab.badge === "ok" ? "OK" : "!"}</span>` : ""}
-                  </button>
-                `).join("")}
-              </div>
-              <div class="modal-body">
-                ${tabContent[activeTab] || tabContent.dados}
-              </div>
-            </div>
-          </div>
-        `;
-      }
-
-      function renderInvoiceTabDados(draft) {
-        const supplier = getSupplierById(draft.supplierId);
-        const selectableItems = getSelectableItems();
-        const canLaunch = state.data.suppliers.length > 0 && selectableItems.length > 0;
-
-        return `
-          <form data-form="invoice" autocomplete="off">
-            <div class="form-grid">
-              <div class="field">
-                <label for="invoice-type">Tipo da nota</label>
-                <select id="invoice-type" name="type" ${canLaunch ? "" : "disabled"}>
-                  <option value="Nota de serviço" ${draft.type === "Nota de serviço" ? "selected" : ""}>Nota de serviço</option>
-                  <option value="Nota de produto" ${draft.type === "Nota de produto" ? "selected" : ""}>Nota de produto</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="invoice-supplier">Fornecedor</label>
-                <select id="invoice-supplier" name="supplierId" ${canLaunch ? "required" : "disabled"}>
-                  <option value="">Selecione um fornecedor</option>
-                  ${state.data.suppliers.map((record) => `
-                    <option value="${escapeHtml(record.id)}" ${draft.supplierId === record.id ? "selected" : ""}>
-                      ${escapeHtml(record.code)} - ${escapeHtml(record.legalName)}
-                    </option>
-                  `).join("")}
-                </select>
-              </div>
-              <div class="field">
-                <label for="invoice-date">Data de emissão</label>
-                <input id="invoice-date" type="date" name="issueDate" value="${escapeHtml(draft.issueDate || "")}" ${canLaunch ? "required" : "disabled"}>
-              </div>
-              <div class="field">
-                <label>Fornecedor selecionado</label>
-                <div class="field-readonly">${supplier ? `${escapeHtml(supplier.code)} - ${escapeHtml(supplier.legalName)}` : "Selecione um fornecedor cadastrado."}</div>
-              </div>
-              <div class="field full">
-                <label for="invoice-description">Descrição da nota</label>
-                <textarea id="invoice-description" name="description" maxlength="300" ${canLaunch ? "" : "disabled"} placeholder="Descreva o conteúdo ou finalidade da nota">${escapeHtml(draft.description || "")}</textarea>
-              </div>
-            </div>
-            <div class="form-actions">
-              ${draft.id ? `<button class="ghost-button" type="button" data-action="new-invoice">Limpar rascunho</button>` : ""}
-              <button class="primary-button" type="submit" ${canLaunch ? "" : "disabled"}>${draft.id ? "Salvar alterações da nota" : "Salvar nota fiscal"}</button>
-            </div>
-          </form>
-        `;
-      }
-
-      function renderInvoiceTabItens(draft) {
-        const selectableItems = getSelectableItems();
-        const canLaunch = state.data.suppliers.length > 0 && selectableItems.length > 0;
-        const lineItem = getItemById(draft.lineForm.itemId);
-        const lineNature = lineItem ? getFinancialNatureById(lineItem.financialNatureId) : null;
-        const lineAccount = lineNature ? getChartAccountById(lineNature.chartAccountId) : null;
-
-        return `
-          <form data-form="invoice-line" autocomplete="off">
-            <div class="form-grid">
-              <div class="field full">
-                <label for="invoice-line-item">Item</label>
-                <select id="invoice-line-item" name="itemId" ${canLaunch ? "required" : "disabled"}>
-                  <option value="">Selecione um item</option>
-                  ${selectableItems.map((item) => {
-                    const nature = getFinancialNatureById(item.financialNatureId);
-                    const account = nature ? getChartAccountById(nature.chartAccountId) : null;
-                    return `
-                      <option value="${escapeHtml(item.id)}" ${draft.lineForm.itemId === item.id ? "selected" : ""}>
-                        ${escapeHtml(item.code)} - ${escapeHtml(item.name)}${nature ? ` | ${escapeHtml(nature.name)}` : ""}${account ? ` | ${escapeHtml(account.code)}` : ""}
-                      </option>
-                    `;
-                  }).join("")}
-                </select>
-              </div>
-              <div class="field">
-                <label for="invoice-line-quantity">Quantidade</label>
-                <input id="invoice-line-quantity" type="number" name="quantity" min="0.01" step="0.01" value="${escapeHtml(String(draft.lineForm.quantity || 1))}" ${canLaunch ? "required" : "disabled"}>
-              </div>
-              <div class="field">
-                <label for="invoice-line-unit-price">Valor unitário</label>
-                <input id="invoice-line-unit-price" type="number" name="unitPrice" min="0.01" step="0.01" value="${escapeHtml(String(draft.lineForm.unitPrice || ""))}" ${canLaunch ? "required" : "disabled"}>
-              </div>
-              <div class="field full">
-                <label>Natureza financeira e conta contábil</label>
-                <div class="field-readonly">
-                  ${lineItem && lineNature && lineAccount
-                    ? `${escapeHtml(lineNature.code)} - ${escapeHtml(lineNature.name)} | ${escapeHtml(lineAccount.code)} - ${escapeHtml(lineAccount.name)} | ${escapeHtml(lineAccount.group)} | ${escapeHtml(lineAccount.balanceNature)}`
-                    : "Selecione um item para visualizar os vínculos automáticos."}
-                </div>
-              </div>
-            </div>
-            <div class="form-actions">
-              <button class="secondary-button" type="submit" ${canLaunch ? "" : "disabled"}>Adicionar item</button>
-            </div>
-          </form>
-          ${draft.items.length ? `
-            <div class="table-card" style="margin-top:20px;">
-              <div class="table-scroll">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Item</th>
-                      <th>Natureza</th>
-                      <th>Conta</th>
-                      <th>Qtd.</th>
-                      <th>Vlr. unitário</th>
-                      <th>Vlr. total</th>
-                      <th>Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${draft.items.map((item) => `
-                      <tr>
-                        <td>
-                          <strong>${escapeHtml(item.itemName)}</strong>
-                          <div class="table-muted">${escapeHtml(item.itemCode || item.itemId)}</div>
-                        </td>
-                        <td>${escapeHtml(item.financialNatureName)}</td>
-                        <td>
-                          <div class="badge-row">
-                            <span class="badge">${escapeHtml(item.chartAccountCode)}</span>
-                            ${item.chartAccountType ? `<span class="badge positive">${escapeHtml(item.chartAccountType)}</span>` : ""}
-                          </div>
-                          <div class="table-muted">${escapeHtml(item.chartAccountName)}</div>
-                          <div class="table-muted">${escapeHtml([item.chartAccountGroup, item.chartAccountBalanceNature].filter(Boolean).join(" | ") || "Metadados não informados")}</div>
-                        </td>
-                        <td class="mono">${escapeHtml(String(item.quantity))}</td>
-                        <td class="mono">${escapeHtml(formatCurrency(item.unitPrice))}</td>
-                        <td class="mono">${escapeHtml(formatCurrency(item.totalPrice))}</td>
-                        <td>
-                          <button class="action-chip danger" type="button" data-action="remove-invoice-line" data-id="${escapeHtml(item.id)}">Remover</button>
-                        </td>
-                      </tr>
-                    `).join("")}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ` : `
-            <div class="empty-card" style="margin-top:20px;">
-              <strong>Nenhum item adicionado à nota.</strong>
-              <p>Inclua os itens do lançamento para compor o valor total e carregar automaticamente a classificação financeira e contábil.</p>
-            </div>
-          `}
-        `;
-      }
-
-      function renderInvoiceTabFinanceiro(draft) {
-        const selectableItems = getSelectableItems();
-        const canLaunch = state.data.suppliers.length > 0 && selectableItems.length > 0;
-
-        return `
-          <form data-form="invoice-installment" autocomplete="off">
-            <div class="form-grid">
-              <div class="field">
-                <label for="installment-number">Número da parcela</label>
-                <input id="installment-number" type="number" name="installmentNumber" min="1" step="1" value="${escapeHtml(String(draft.installmentForm.installmentNumber || 1))}" ${canLaunch ? "required" : "disabled"}>
-              </div>
-              <div class="field">
-                <label for="installment-due-date">Data de vencimento</label>
-                <input id="installment-due-date" type="date" name="dueDate" value="${escapeHtml(draft.installmentForm.dueDate || "")}" ${canLaunch ? "required" : "disabled"}>
-              </div>
-              <div class="field">
-                <label for="installment-amount">Valor da parcela</label>
-                <input id="installment-amount" type="number" name="amount" min="0.01" step="0.01" value="${escapeHtml(String(draft.installmentForm.amount || ""))}" ${canLaunch ? "required" : "disabled"}>
-              </div>
-              <div class="field">
-                <label for="installment-method">Forma de pagamento</label>
-                <input id="installment-method" name="paymentMethod" maxlength="60" value="${escapeHtml(draft.installmentForm.paymentMethod || "")}" placeholder="Boleto, PIX, TED..." ${canLaunch ? "required" : "disabled"}>
-              </div>
-              <div class="field full">
-                <label for="installment-status">Status da parcela</label>
-                <select id="installment-status" name="status" ${canLaunch ? "" : "disabled"}>
-                  <option value="Em aberto" ${draft.installmentForm.status === "Em aberto" ? "selected" : ""}>Em aberto</option>
-                  <option value="Pago" ${draft.installmentForm.status === "Pago" ? "selected" : ""}>Pago</option>
-                  <option value="Cancelado" ${draft.installmentForm.status === "Cancelado" ? "selected" : ""}>Cancelado</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-actions">
-              <button class="secondary-button" type="submit" ${canLaunch ? "" : "disabled"}>Adicionar parcela</button>
-            </div>
-          </form>
-          ${draft.installments.length ? `
-            <div class="table-card" style="margin-top:20px;">
-              <div class="table-scroll">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Parcela</th>
-                      <th>Vencimento</th>
-                      <th>Valor</th>
-                      <th>Forma de pagamento</th>
-                      <th>Status</th>
-                      <th>Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${draft.installments.map((installment) => `
-                      <tr>
-                        <td class="mono">${escapeHtml(String(installment.installmentNumber))}</td>
-                        <td>${escapeHtml(formatDate(installment.dueDate))}</td>
-                        <td class="mono">${escapeHtml(formatCurrency(installment.amount))}</td>
-                        <td>${escapeHtml(installment.paymentMethod)}</td>
-                        <td>
-                          <span class="badge ${installment.status === "Pago" ? "positive" : installment.status === "Cancelado" ? "danger" : "warning"}">${escapeHtml(installment.status)}</span>
-                        </td>
-                        <td>
-                          <button class="action-chip danger" type="button" data-action="remove-installment" data-id="${escapeHtml(installment.id)}">Remover</button>
-                        </td>
-                      </tr>
-                    `).join("")}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ` : `
-            <div class="empty-card" style="margin-top:20px;">
-              <strong>Nenhuma parcela adicionada.</strong>
-              <p>Inclua uma ou mais parcelas para registrar a parte financeira da nota fiscal.</p>
-            </div>
-          `}
-        `;
-      }
-
-      function renderInvoiceTabResumo(draft, totals) {
-        return `
-          <div class="section-head">
-            <div>
-              <h3>Resumo financeiro e consistência</h3>
-              <p>O sistema compara automaticamente o total dos itens com o total das parcelas antes do salvamento da nota.</p>
-            </div>
-            <div class="status-highlight ${getInvoiceStatusClass(totals.difference)}">
-              ${Math.abs(totals.difference) <= 0.009 ? "Totais conciliados" : "Diferença entre itens e parcelas"}
-            </div>
-          </div>
-          <div class="totals-grid">
-            <article class="total-card">
-              <span>Total dos itens</span>
-              <strong class="mono">${escapeHtml(formatCurrency(totals.totalItemsAmount))}</strong>
-              <small>Soma de quantidade x valor unitário de todos os itens adicionados à nota.</small>
-            </article>
-            <article class="total-card">
-              <span>Total das parcelas</span>
-              <strong class="mono">${escapeHtml(formatCurrency(totals.totalInstallmentsAmount))}</strong>
-              <small>Soma de todas as parcelas registradas na seção financeira da nota.</small>
-            </article>
-            <article class="total-card">
-              <span>Diferença</span>
-              <strong class="mono">${escapeHtml(formatCurrency(totals.difference))}</strong>
-              <small>${Math.abs(totals.difference) <= 0.009 ? "A nota pode ser salva normalmente." : "Ajuste itens ou parcelas para permitir o salvamento da nota."}</small>
-            </article>
-          </div>
         `;
       }
 
       initialize();
+
     })();
   </script>
 </body>
