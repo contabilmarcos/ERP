@@ -1337,6 +1337,42 @@
       font-weight: 500;
     }
 
+    .tree-toggle {
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 7px;
+      border: 1px solid var(--border-2);
+      background: var(--surface);
+      color: var(--ink-2);
+      padding: 0;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+
+    .tree-toggle:hover {
+      background: var(--surface-3);
+      color: var(--ink);
+    }
+
+    .tree-toggle.placeholder {
+      visibility: hidden;
+    }
+
+    .tree-account-line {
+      display: flex;
+      align-items: center;
+      min-height: 28px;
+    }
+
+    .tree-account-indent {
+      display: inline-block;
+      width: 18px;
+      flex-shrink: 0;
+    }
+
     .summary-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1602,6 +1638,8 @@
           },
           cloudDraft: createEmptyCloudDraft(),
           chartAccountFormDraft: createEmptyChartAccountDraft(),
+          chartAccountsModalOpen: false,
+          chartAccountTreeCollapsed: {},
           financialNatureFormDraft: createEmptyFinancialNatureDraft(),
           itemNaturePreviewId: "",
           itemFormDraft: createEmptyItemDraft(),
@@ -2042,6 +2080,30 @@
             state.ui.chartAccountFormDraft = createEmptyChartAccountDraft();
             renderApp();
             break;
+          case "open-chart-accounts-modal":
+            state.ui.chartAccountsModalOpen = true;
+            renderApp();
+            break;
+          case "close-chart-accounts-modal":
+            state.ui.chartAccountsModalOpen = false;
+            renderApp();
+            break;
+          case "toggle-chart-account-node":
+            state.ui.chartAccountTreeCollapsed[id] = !state.ui.chartAccountTreeCollapsed[id];
+            renderApp();
+            break;
+          case "expand-all-chart-accounts":
+            state.ui.chartAccountTreeCollapsed = {};
+            renderApp();
+            break;
+          case "collapse-all-chart-accounts":
+            state.ui.chartAccountTreeCollapsed = Object.fromEntries(
+              state.data.chartAccounts
+                .filter((account) => accountHasChildren(account))
+                .map((account) => [account.id, true])
+            );
+            renderApp();
+            break;
           case "reset-financial-nature":
             state.ui.editing.financialNatureId = null;
             state.ui.financialNatureFormDraft = createEmptyFinancialNatureDraft();
@@ -2077,6 +2139,7 @@
               const account = getChartAccountById(id);
               state.ui.chartAccountFormDraft = createEmptyChartAccountDraft(account);
             }
+            state.ui.chartAccountsModalOpen = false;
             state.ui.editing.chartAccountId = id;
             navigate("chartAccounts");
             break;
@@ -3080,10 +3143,23 @@
             rowsByAccount.set(accountId, {
               previousBalance: 0,
               debit: 0,
-              credit: 0
+              credit: 0,
+              hasDirectMovement: false
             });
           }
           return rowsByAccount.get(accountId);
+        }
+
+        function applyToAccountAndAncestors(accountId, field, amount, markDirect = false) {
+          let account = getChartAccountById(accountId);
+          while (account) {
+            const row = ensureAccountRow(account.id);
+            row[field] = roundCurrency(row[field] + amount);
+            if (markDirect && account.id === accountId) {
+              row.hasDirectMovement = true;
+            }
+            account = account.parentCode ? getChartAccountByCode(account.parentCode) : null;
+          }
         }
 
         beforeEntries.forEach((entry) => {
@@ -3091,8 +3167,8 @@
           if (amount <= 0) {
             return;
           }
-          ensureAccountRow(entry.debitAccountId).previousBalance = roundCurrency(ensureAccountRow(entry.debitAccountId).previousBalance + amount);
-          ensureAccountRow(entry.creditAccountId).previousBalance = roundCurrency(ensureAccountRow(entry.creditAccountId).previousBalance - amount);
+          applyToAccountAndAncestors(entry.debitAccountId, "previousBalance", amount, true);
+          applyToAccountAndAncestors(entry.creditAccountId, "previousBalance", -amount, true);
         });
 
         periodEntries.forEach((entry) => {
@@ -3100,8 +3176,8 @@
           if (amount <= 0) {
             return;
           }
-          ensureAccountRow(entry.debitAccountId).debit = roundCurrency(ensureAccountRow(entry.debitAccountId).debit + amount);
-          ensureAccountRow(entry.creditAccountId).credit = roundCurrency(ensureAccountRow(entry.creditAccountId).credit + amount);
+          applyToAccountAndAncestors(entry.debitAccountId, "debit", amount, true);
+          applyToAccountAndAncestors(entry.creditAccountId, "credit", amount, true);
         });
 
         const rows = sortAccountsByCode(
@@ -3116,6 +3192,7 @@
             const credit = roundCurrency(movement.credit);
             const netMovement = roundCurrency(debit - credit);
             const balance = roundCurrency(previousBalance + netMovement);
+            const syntheticFromMovement = isSyntheticAccount(account) && (Math.abs(previousBalance) > 0.009 || Math.abs(debit) > 0.009 || Math.abs(credit) > 0.009);
             return {
               account,
               previousBalance,
@@ -3126,12 +3203,14 @@
               code: account.code,
               normalizedCode: account.normalizedCode,
               level: account.level,
-              name: account.name
+              name: account.name,
+              includeInReport: movement.hasDirectMovement || syntheticFromMovement
             };
-          }).filter(Boolean)
+          }).filter((row) => row && row.includeInReport)
         );
 
-        const totals = rows.reduce((acc, row) => ({
+        const analyticalRows = rows.filter((row) => isAnalyticalAccount(row.account));
+        const totals = analyticalRows.reduce((acc, row) => ({
           previousBalance: roundCurrency(acc.previousBalance + row.previousBalance),
           debit: roundCurrency(acc.debit + row.debit),
           credit: roundCurrency(acc.credit + row.credit),
@@ -3153,6 +3232,7 @@
       }
 
       function buildTrialBalancePrintHtml(filters, report, selectedCostCenter) {
+
         const visibleColumns = getTrialBalanceVisibleColumns(filters);
         const headerCells = visibleColumns.map((column) => `<th>${escapeHtml(column.label)}</th>`).join("");
         const rowsHtml = report.rows.map((row) => `
@@ -3317,6 +3397,66 @@
 
       function accountHasChildren(account) {
         return getAccountChildren(account).length > 0;
+      }
+
+      function getChartAccountAncestors(account) {
+        const ancestors = [];
+        let current = account;
+        while (current?.parentCode) {
+          const parent = getChartAccountByCode(current.parentCode);
+          if (!parent) {
+            break;
+          }
+          ancestors.push(parent);
+          current = parent;
+        }
+        return ancestors;
+      }
+
+      function getChartAccountTreeRows(searchTerm = "") {
+        const records = sortAccountsByCode(state.data.chartAccounts);
+        const grouped = new Map();
+        records.forEach((record) => {
+          const key = record.parentCode || "root";
+          if (!grouped.has(key)) {
+            grouped.set(key, []);
+          }
+          grouped.get(key).push(record);
+        });
+
+        const term = (searchTerm || "").toLowerCase().trim();
+        const visibleIds = new Set();
+        if (term) {
+          records.forEach((record) => {
+            const haystack = `${record.code} ${record.normalizedCode || ""} ${record.name} ${record.type} ${record.group} ${record.balanceNature} ${record.isActive ? "ativa" : "inativa"}`.toLowerCase();
+            if (haystack.includes(term)) {
+              visibleIds.add(record.id);
+              getChartAccountAncestors(record).forEach((ancestor) => visibleIds.add(ancestor.id));
+            }
+          });
+        }
+
+        const rows = [];
+        function walk(parentCode = "", depth = 0) {
+          const children = grouped.get(parentCode || "root") || [];
+          children.forEach((record) => {
+            if (term && !visibleIds.has(record.id)) {
+              return;
+            }
+            const hasChildren = Boolean((grouped.get(record.code) || []).length);
+            rows.push({
+              ...record,
+              treeDepth: depth,
+              treeHasChildren: hasChildren
+            });
+            if (term || !state.ui.chartAccountTreeCollapsed[record.id]) {
+              walk(record.code, depth + 1);
+            }
+          });
+        }
+
+        walk();
+        return rows;
       }
 
       function getChartAccountLinkSummary(account) {
@@ -3747,6 +3887,7 @@
             ${state.ui.toasts.map(renderToast).join("")}
           </div>
           ${state.ui.invoiceModalOpen ? renderInvoiceModal() : ""}
+          ${state.ui.chartAccountsModalOpen ? renderChartAccountsModal() : ""}
           ${state.ui.accountingEntriesModalOpen ? renderAccountingEntriesModal() : ""}
           ${state.ui.accountingEntryFormModalOpen ? renderAccountingEntryFormModal() : ""}
           ${state.ui.trialBalanceModalOpen ? renderTrialBalanceModal() : ""}
@@ -4190,16 +4331,105 @@
         `;
       }
 
+      function renderChartAccountsModal() {
+        const searchTerm = state.ui.search.chartAccounts;
+        const rows = getChartAccountTreeRows(searchTerm);
+
+        return `
+          <div class="modal-overlay">
+            <button class="modal-backdrop" type="button" data-action="close-chart-accounts-modal" aria-label="Fechar modal"></button>
+            <div class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="chart-accounts-modal-title">
+              <div class="modal-header">
+                <div>
+                  <h3 class="modal-title" id="chart-accounts-modal-title">Plano de Contas</h3>
+                  <p class="modal-subtitle">Visualize somente a estrutura das contas e controle a árvore hierárquica com expandir e recolher.</p>
+                </div>
+                <div class="inline-actions">
+                  <button class="secondary-button" type="button" data-action="expand-all-chart-accounts">Expandir tudo</button>
+                  <button class="secondary-button" type="button" data-action="collapse-all-chart-accounts">Recolher tudo</button>
+                  <button class="ghost-button" type="button" data-action="close-chart-accounts-modal">Fechar</button>
+                </div>
+              </div>
+              <div class="modal-body">
+                <section class="table-card">
+                  <div class="table-toolbar">
+                    <div>
+                      <h4>Árvore do plano de contas</h4>
+                      <p class="page-subtitle">Pesquise por código ou nome. A visualização mostra somente as contas contábeis.</p>
+                    </div>
+                    <input class="search-input" data-search="chartAccounts" placeholder="Pesquisar contas contábeis" value="${escapeHtml(searchTerm)}">
+                  </div>
+                  ${rows.length ? `
+                    <div class="table-scroll">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Código</th>
+                            <th>Conta contábil</th>
+                            <th>Tipo</th>
+                            <th>Grupo</th>
+                            <th>Natureza</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${rows.map((record) => `
+                            <tr class="chart-account-row ${isSyntheticAccount(record) ? "synthetic" : ""}">
+                              <td class="mono">${escapeHtml(record.code)}</td>
+                              <td>
+                                <div class="tree-account-line">
+                                  ${Array.from({ length: Math.max(record.treeDepth || 0, 0) }).map(() => `<span class="tree-account-indent" aria-hidden="true"></span>`).join("")}
+                                  ${record.treeHasChildren
+                                    ? `<button class="tree-toggle" type="button" data-action="toggle-chart-account-node" data-id="${escapeHtml(record.id)}" aria-label="${state.ui.chartAccountTreeCollapsed[record.id] ? "Expandir" : "Recolher"} conta">${state.ui.chartAccountTreeCollapsed[record.id] ? "▸" : "▾"}</button>`
+                                    : `<span class="tree-toggle placeholder" aria-hidden="true">•</span>`}
+                                  <div>
+                                    <strong>${escapeHtml(record.name)}</strong>
+                                    <div class="account-meta">
+                                      ${record.parentCode ? `<span class="badge">Pai: ${escapeHtml(record.parentCode)}</span>` : `<span class="badge">Raiz</span>`}
+                                      ${record.requiresCodeAdjustment ? `<span class="badge warning">Pendente de ajuste</span>` : ""}
+                                      ${isAnalyticalAccount(record) && !record.requiresCodeAdjustment && record.isActive !== false ? `<span class="badge positive">Permitida para vínculo</span>` : ""}
+                                      ${isSyntheticAccount(record) ? `<span class="badge">Conta sintética</span>` : ""}
+                                    </div>
+                                    ${record.adjustmentMessage ? `<div class="table-muted">${escapeHtml(record.adjustmentMessage)}</div>` : ""}
+                                  </div>
+                                </div>
+                              </td>
+                              <td><span class="badge ${isAnalyticalAccount(record) ? "positive" : ""}">${escapeHtml(record.type)}</span></td>
+                              <td>${escapeHtml(record.group || "-")}</td>
+                              <td>${escapeHtml(record.balanceNature || "-")}</td>
+                              <td><span class="badge ${record.isActive !== false ? "positive" : "danger"}">${record.isActive !== false ? "Ativa" : "Inativa"}</span></td>
+                              <td>
+                                <div class="table-actions">
+                                  <button class="action-chip" type="button" data-action="edit-chart-account" data-id="${escapeHtml(record.id)}">Editar</button>
+                                  <button class="action-chip danger" type="button" data-action="delete-chart-account" data-id="${escapeHtml(record.id)}">Excluir</button>
+                                </div>
+                              </td>
+                            </tr>
+                          `).join("")}
+                        </tbody>
+                      </table>
+                    </div>
+                  ` : `
+                    <div class="empty-card">
+                      <strong>Nenhuma conta contábil encontrada.</strong>
+                      <p>${searchTerm ? "Nenhuma conta corresponde ao termo pesquisado." : "Cadastre contas contábeis e depois abra o plano de contas para visualizar a árvore."}</p>
+                    </div>
+                  `}
+                </section>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
       function renderChartAccountsView() {
         const editing = getActiveEditRecord("chartAccounts", state.ui.editing.chartAccountId);
         const chartDraft = state.ui.chartAccountFormDraft;
-        const searchTerm = state.ui.search.chartAccounts;
         const pendingAdjustments = state.data.chartAccounts.filter((record) => record.requiresCodeAdjustment).length;
-        const records = filterRecords(
-          sortAccountsByCode(state.data.chartAccounts),
-          searchTerm,
-          (record) => `${record.code} ${record.normalizedCode || ""} ${record.name} ${record.type} ${record.group} ${record.balanceNature} ${record.isActive ? "ativa" : "inativa"}`
-        );
+        const totalAccounts = state.data.chartAccounts.length;
+        const syntheticCount = state.data.chartAccounts.filter((record) => isSyntheticAccount(record)).length;
+        const analyticalCount = state.data.chartAccounts.filter((record) => isAnalyticalAccount(record)).length;
 
         return `
           <section class="split-grid">
@@ -4207,7 +4437,7 @@
               <div class="notice-icon">PL</div>
               <div>
                 <strong>Base do plano de contas</strong>
-                <p>O cadastro agora respeita hierarquia, máscara e diferença entre contas sintéticas e analíticas para apoiar análises futuras de balancete.</p>
+                <p>O cadastro respeita hierarquia, máscara e diferença entre contas sintéticas e analíticas para apoiar análises futuras de balancete.</p>
               </div>
             </article>
             <article class="notice-card">
@@ -4223,7 +4453,7 @@
               <div class="notice-icon">AJ</div>
               <div>
                 <strong>Contas pendentes de ajuste</strong>
-                <p>${escapeHtml(String(pendingAdjustments))} conta(s) antiga(s) foram preservadas, mas possuem código fora da nova máscara e aparecem sinalizadas na listagem.</p>
+                <p>${escapeHtml(String(pendingAdjustments))} conta(s) antiga(s) foram preservadas, mas possuem código fora da nova máscara e aparecem sinalizadas quando você abre o plano de contas.</p>
               </div>
             </section>
           ` : ""}
@@ -4234,7 +4464,10 @@
                   <h3>${editing ? "Editar conta contábil" : "Nova conta contábil"}</h3>
                   <p>Cadastre o plano de contas usando a máscara 9.9.99.99.999. O sistema calcula automaticamente grupo, nível, conta pai e código normalizado.</p>
                 </div>
-                <button class="secondary-button" type="button" data-action="load-default-chart-accounts">Carregar plano base</button>
+                <div class="inline-actions">
+                  <button class="secondary-button" type="button" data-action="load-default-chart-accounts">Carregar plano base</button>
+                  <button class="ghost-button" type="button" data-action="open-chart-accounts-modal">Plano de Contas</button>
+                </div>
               </div>
               <form data-form="chart-account" autocomplete="off">
                 <input type="hidden" name="id" value="${escapeHtml(chartDraft.id || editing?.id || "")}">
@@ -4279,74 +4512,31 @@
                 </div>
               </form>
             </article>
-            <article class="table-card">
-              <div class="table-toolbar">
+            <article class="card">
+              <div class="section-head">
                 <div>
-                  <h4>Lista de contas contábeis</h4>
-                  <p class="page-subtitle">Pesquisa por código ou descrição da conta.</p>
+                  <h3>Plano em visualização separada</h3>
+                  <p>A lista de contas não fica mais fixa nesta tela. Ela aparece somente ao clicar no botão <strong>Plano de Contas</strong>.</p>
                 </div>
-                <input class="search-input" data-search="chartAccounts" placeholder="Pesquisar contas contábeis" value="${escapeHtml(searchTerm)}">
               </div>
-              ${records.length ? `
-                <div class="table-scroll">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Código</th>
-                        <th>Conta contábil</th>
-                        <th>Tipo</th>
-                        <th>Grupo</th>
-                        <th>Natureza</th>
-                        <th>Status</th>
-                        <th>Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${records.map((record) => `
-                        <tr class="chart-account-row ${isSyntheticAccount(record) ? "synthetic" : ""}">
-                          <td class="mono">${escapeHtml(record.code)}</td>
-                          <td>
-                            <div class="chart-account-name">
-                              ${Array.from({ length: Math.max((record.level || 1) - 1, 0) }).map(() => `<span class="account-indent-guide" aria-hidden="true"></span>`).join("")}
-                              <strong>${escapeHtml(record.name)}</strong>
-                            </div>
-                            <div class="account-meta">
-                              ${record.parentCode ? `<span class="badge">Pai: ${escapeHtml(record.parentCode)}</span>` : `<span class="badge">Raiz</span>`}
-                              ${record.requiresCodeAdjustment ? `<span class="badge warning">Pendente de ajuste</span>` : ""}
-                              ${isAnalyticalAccount(record) && !record.requiresCodeAdjustment && record.isActive !== false ? `<span class="badge positive">Permitida para vínculo</span>` : ""}
-                              ${isSyntheticAccount(record) ? `<span class="badge">Conta sintética</span>` : ""}
-                            </div>
-                            ${record.adjustmentMessage ? `<div class="table-muted">${escapeHtml(record.adjustmentMessage)}</div>` : ""}
-                          </td>
-                          <td><span class="badge ${isAnalyticalAccount(record) ? "positive" : ""}">${escapeHtml(record.type)}</span></td>
-                          <td>${escapeHtml(record.group || "-")}</td>
-                          <td>${escapeHtml(record.balanceNature || "-")}</td>
-                          <td>
-                            <span class="badge ${record.isActive !== false ? "positive" : "danger"}">${record.isActive !== false ? "Ativa" : "Inativa"}</span>
-                          </td>
-                          <td>
-                            <div class="table-actions">
-                              <button class="action-chip" type="button" data-action="edit-chart-account" data-id="${escapeHtml(record.id)}">Editar</button>
-                              <button class="action-chip danger" type="button" data-action="delete-chart-account" data-id="${escapeHtml(record.id)}">Excluir</button>
-                            </div>
-                          </td>
-                        </tr>
-                      `).join("")}
-                    </tbody>
-                  </table>
-                </div>
-              ` : `
-                <div class="empty-card">
-                  <strong>Nenhuma conta contábil encontrada.</strong>
-                  <p>${searchTerm ? "Refine o termo pesquisado ou limpe o campo de busca." : "Cadastre pelo menos uma conta contábil para liberar o cadastro de naturezas financeiras."}</p>
-                </div>
-              `}
+              <div class="subtle-panel">
+                <ul class="subtle-list">
+                  <li>Total de contas cadastradas: ${escapeHtml(String(totalAccounts))}.</li>
+                  <li>Contas sintéticas: ${escapeHtml(String(syntheticCount))}.</li>
+                  <li>Contas analíticas: ${escapeHtml(String(analyticalCount))}.</li>
+                  <li>A árvore pode ser expandida e recolhida diretamente na visualização do plano.</li>
+                </ul>
+              </div>
+              <div class="form-actions">
+                <button class="primary-button" type="button" data-action="open-chart-accounts-modal">Abrir Plano de Contas</button>
+              </div>
             </article>
           </section>
         `;
       }
 
       function renderFinancialNaturesView() {
+
         const editing = getActiveEditRecord("financialNatures", state.ui.editing.financialNatureId);
         const natureDraft = state.ui.financialNatureFormDraft;
         const searchTerm = state.ui.search.financialNatures;
