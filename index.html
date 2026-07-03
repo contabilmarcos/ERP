@@ -1500,9 +1500,9 @@
           subtitle: "Mantenha os itens utilizados nas notas fiscais com vínculo direto à natureza financeira."
         },
         accountingEntries: {
-          icon: "LC",
-          title: "Lançamentos contábeis",
-          subtitle: "Registre partidas com data, centro de custo, conta débito, conta crédito e valor."
+          icon: "CB",
+          title: "Módulo contábil",
+          subtitle: "Registre lançamentos contábeis e emita balancete por período e centro de custo."
         },
         fiscal: {
           icon: "FI",
@@ -1539,6 +1539,7 @@
           itemNaturePreviewId: "",
           itemFormDraft: createEmptyItemDraft(),
           accountingEntryDraft: createEmptyAccountingEntryDraft(),
+          trialBalanceFilters: createEmptyTrialBalanceFilters(),
           editing: {
             costCenterId: null,
             supplierId: null,
@@ -1613,6 +1614,15 @@
           debitAccountId: entry?.debitAccountId || "",
           creditAccountId: entry?.creditAccountId || "",
           amount: entry?.amount != null ? String(entry.amount) : ""
+        };
+      }
+
+      function createEmptyTrialBalanceFilters() {
+        return {
+          startDate: "",
+          endDate: "",
+          costCenterId: "all",
+          submitted: false
         };
       }
 
@@ -2096,6 +2106,9 @@
           case "accounting-entry":
             submitAccountingEntry(new FormData(form));
             break;
+          case "trial-balance":
+            submitTrialBalance(new FormData(form));
+            break;
           case "invoice":
             submitInvoice(new FormData(form));
             break;
@@ -2167,6 +2180,10 @@
           }
         }
 
+        if (formType === "trial-balance") {
+          state.ui.trialBalanceFilters[fieldName] = target.value;
+        }
+
         if (formType === "cloud-config") {
           state.ui.cloudDraft[fieldName] = target.value;
         }
@@ -2187,6 +2204,36 @@
       function navigate(view) {
         state.ui.activeView = view;
         state.ui.sidebarOpen = false;
+        renderApp();
+      }
+
+      function submitTrialBalance(formData) {
+        const startDate = clean(formData.get("startDate"));
+        const endDate = clean(formData.get("endDate"));
+        const costCenterId = clean(formData.get("costCenterId")) || "all";
+
+        if (!startDate || !endDate) {
+          notify("error", "Balancete", "Informe a data inicial e a data final para emitir o balancete.");
+          return;
+        }
+
+        if (startDate > endDate) {
+          notify("error", "Balancete", "A data inicial não pode ser maior que a data final.");
+          return;
+        }
+
+        if (costCenterId !== "all" && !getCostCenterById(costCenterId)) {
+          notify("error", "Balancete", "Selecione um centro de custo válido ou use a opção todos.");
+          return;
+        }
+
+        state.ui.trialBalanceFilters = {
+          startDate,
+          endDate,
+          costCenterId,
+          submitted: true
+        };
+        notify("success", "Balancete", "Balancete emitido com os filtros informados.");
         renderApp();
       }
 
@@ -2811,6 +2858,63 @@
         return state.data.costCenters.find((record) => record.id === id) || null;
       }
 
+      function getTrialBalanceEntries(filters) {
+        return state.data.accountingEntries.filter((entry) => {
+          const matchesDate = (!filters.startDate || entry.entryDate >= filters.startDate)
+            && (!filters.endDate || entry.entryDate <= filters.endDate);
+          const matchesCostCenter = filters.costCenterId === "all" || entry.costCenterId === filters.costCenterId;
+          return matchesDate && matchesCostCenter;
+        });
+      }
+
+      function getTrialBalanceRows(filters) {
+        const rowsByAccount = new Map();
+        getTrialBalanceEntries(filters).forEach((entry) => {
+          const amount = roundCurrency(Number(entry.amount || 0));
+          if (amount <= 0) {
+            return;
+          }
+
+          if (!rowsByAccount.has(entry.debitAccountId)) {
+            rowsByAccount.set(entry.debitAccountId, { debit: 0, credit: 0 });
+          }
+          if (!rowsByAccount.has(entry.creditAccountId)) {
+            rowsByAccount.set(entry.creditAccountId, { debit: 0, credit: 0 });
+          }
+
+          rowsByAccount.get(entry.debitAccountId).debit = roundCurrency(rowsByAccount.get(entry.debitAccountId).debit + amount);
+          rowsByAccount.get(entry.creditAccountId).credit = roundCurrency(rowsByAccount.get(entry.creditAccountId).credit + amount);
+        });
+
+        return sortAccountsByCode(
+          Array.from(rowsByAccount.keys())
+            .map((accountId) => {
+              const account = getChartAccountById(accountId);
+              if (!account) {
+                return null;
+              }
+              const movement = rowsByAccount.get(accountId) || { debit: 0, credit: 0 };
+              const difference = roundCurrency(movement.debit - movement.credit);
+              return {
+                accountId,
+                account,
+                debit: roundCurrency(movement.debit),
+                credit: roundCurrency(movement.credit),
+                debitBalance: difference > 0 ? difference : 0,
+                creditBalance: difference < 0 ? roundCurrency(Math.abs(difference)) : 0
+              };
+            })
+            .filter(Boolean)
+            .map((row) => ({
+              ...row,
+              code: row.account.code,
+              normalizedCode: row.account.normalizedCode,
+              level: row.account.level,
+              name: row.account.name
+            }))
+        );
+      }
+
       function getItemById(id) {
         return state.data.items.find((record) => record.id === id) || null;
       }
@@ -3328,7 +3432,7 @@
           { view: "chartAccounts", title: "Contas contábeis", subtitle: "Estrutura contábil" },
           { view: "financialNatures", title: "Naturezas", subtitle: "Classificação financeira" },
           { view: "items", title: "Itens", subtitle: "Base para notas" },
-          { view: "accountingEntries", title: "Lançamentos", subtitle: "Débito e crédito" },
+          { view: "accountingEntries", title: "Contábil", subtitle: "Lançamentos e balancete" },
           { view: "fiscal", title: "Fiscal", subtitle: "Notas fiscais" }
         ];
 
@@ -3419,7 +3523,7 @@
               <div class="hero-actions">
                 <button class="primary-button" type="button" data-nav="chartAccounts">Começar pelas contas</button>
                 <button class="ghost-button" type="button" data-nav="fiscal">Ir para o fiscal</button>
-                <button class="ghost-button" type="button" data-nav="accountingEntries">Ir para lançamentos</button>
+                <button class="ghost-button" type="button" data-nav="accountingEntries">Ir para o contábil</button>
               </div>
             </div>
             <div class="hero-stack">
@@ -3474,7 +3578,7 @@
                   <li>Cadastrar itens vinculados às naturezas financeiras.</li>
                   <li>Cadastrar fornecedores e centros de custo.</li>
                   <li>Lançar notas fiscais com itens e parcelas.</li>
-                  <li>Registrar lançamentos contábeis manuais quando necessário.</li>
+                  <li>Registrar lançamentos contábeis e emitir o balancete quando necessário.</li>
                 </ol>
               </div>
             </article>
@@ -4561,6 +4665,7 @@
       }
 
 
+
       function renderAccountingEntriesView() {
         const draft = state.ui.accountingEntryDraft;
         const editing = getActiveEditRecord("accountingEntries", state.ui.editing.accountingEntryId);
@@ -4581,8 +4686,34 @@
             return `${record.code} ${record.entryDate} ${costCenter?.name || ""} ${debit?.code || ""} ${debit?.name || ""} ${credit?.code || ""} ${credit?.name || ""} ${record.amount}`;
           }
         );
+        const filters = state.ui.trialBalanceFilters;
+        const selectedFilterCostCenter = filters.costCenterId === "all" ? null : getCostCenterById(filters.costCenterId);
+        const filteredEntries = filters.submitted ? getTrialBalanceEntries(filters) : [];
+        const trialBalanceRows = filters.submitted ? getTrialBalanceRows(filters) : [];
+        const trialBalanceTotals = trialBalanceRows.reduce((acc, row) => ({
+          debit: roundCurrency(acc.debit + row.debit),
+          credit: roundCurrency(acc.credit + row.credit),
+          debitBalance: roundCurrency(acc.debitBalance + row.debitBalance),
+          creditBalance: roundCurrency(acc.creditBalance + row.creditBalance)
+        }), { debit: 0, credit: 0, debitBalance: 0, creditBalance: 0 });
 
         return `
+          <section class="split-grid">
+            <article class="notice-card">
+              <div class="notice-icon">CT</div>
+              <div>
+                <strong>Módulo contábil</strong>
+                <p>Concentre aqui os lançamentos contábeis manuais e a emissão do balancete por período e centro de custo.</p>
+              </div>
+            </article>
+            <article class="notice-card">
+              <div class="notice-icon">BT</div>
+              <div>
+                <strong>Balancete por filtro</strong>
+                <p>O balancete considera a data inicial, a data final e o centro de custo selecionado, com opção de todos os centros.</p>
+              </div>
+            </article>
+          </section>
           ${!canCreate ? `
             <section class="notice-card">
               <div class="notice-icon">LC</div>
@@ -4669,7 +4800,7 @@
             <article class="table-card">
               <div class="table-toolbar">
                 <div>
-                  <h4>Lista de lançamentos contábeis</h4>
+                  <h4>Lançamentos contábeis</h4>
                   <p class="page-subtitle">Consulte, edite e exclua partidas registradas manualmente.</p>
                 </div>
                 <input class="search-input" data-search="accountingEntries" placeholder="Pesquisar lançamentos" value="${escapeHtml(searchTerm)}">
@@ -4730,10 +4861,111 @@
               `}
             </article>
           </section>
+          <section class="card">
+            <div class="section-head">
+              <div>
+                <h3>Emitir balancete</h3>
+                <p>Defina o período e o centro de custo para apurar os movimentos contábeis. Você pode emitir considerando todos os centros de custo.</p>
+              </div>
+            </div>
+            <form data-form="trial-balance" autocomplete="off">
+              <div class="form-grid">
+                <div class="field">
+                  <label for="trial-balance-start-date">Período inicial</label>
+                  <input id="trial-balance-start-date" type="date" name="startDate" value="${escapeHtml(filters.startDate || "")}" required>
+                </div>
+                <div class="field">
+                  <label for="trial-balance-end-date">Período final</label>
+                  <input id="trial-balance-end-date" type="date" name="endDate" value="${escapeHtml(filters.endDate || "")}" required>
+                </div>
+                <div class="field full">
+                  <label for="trial-balance-cost-center">Centro de custo</label>
+                  <select id="trial-balance-cost-center" name="costCenterId">
+                    <option value="all" ${filters.costCenterId === "all" ? "selected" : ""}>Todos os centros de custo</option>
+                    ${costCenters.map((record) => `
+                      <option value="${escapeHtml(record.id)}" ${filters.costCenterId === record.id ? "selected" : ""}>
+                        ${escapeHtml(record.code)} - ${escapeHtml(record.name)}
+                      </option>
+                    `).join("")}
+                  </select>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button class="primary-button" type="submit">Emitir balancete</button>
+              </div>
+            </form>
+          </section>
+          ${filters.submitted ? `
+            <section class="table-card">
+              <div class="table-toolbar">
+                <div>
+                  <h4>Balancete emitido</h4>
+                  <p class="page-subtitle">
+                    Período de ${escapeHtml(formatDate(filters.startDate))} até ${escapeHtml(formatDate(filters.endDate))}
+                    ${selectedFilterCostCenter ? ` | Centro de custo: ${escapeHtml(selectedFilterCostCenter.code)} - ${escapeHtml(selectedFilterCostCenter.name)}` : " | Centro de custo: todos"}
+                  </p>
+                </div>
+                <div class="badge-row">
+                  <span class="badge">${escapeHtml(String(filteredEntries.length))} lançamento(s)</span>
+                  <span class="badge positive">${escapeHtml(String(trialBalanceRows.length))} conta(s)</span>
+                </div>
+              </div>
+              ${trialBalanceRows.length ? `
+                <div class="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Código</th>
+                        <th>Conta</th>
+                        <th>Débitos</th>
+                        <th>Créditos</th>
+                        <th>Saldo devedor</th>
+                        <th>Saldo credor</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${trialBalanceRows.map((row) => `
+                        <tr>
+                          <td class="mono">${escapeHtml(row.account.code)}</td>
+                          <td>
+                            <strong>${escapeHtml(row.account.name)}</strong>
+                            <div class="table-muted">${escapeHtml(`${row.account.group} | ${row.account.balanceNature}`)}</div>
+                          </td>
+                          <td class="mono">${escapeHtml(formatCurrency(row.debit))}</td>
+                          <td class="mono">${escapeHtml(formatCurrency(row.credit))}</td>
+                          <td class="mono">${escapeHtml(formatCurrency(row.debitBalance))}</td>
+                          <td class="mono">${escapeHtml(formatCurrency(row.creditBalance))}</td>
+                        </tr>
+                      `).join("")}
+                      <tr>
+                        <td class="mono"><strong>Total</strong></td>
+                        <td class="table-muted">Totais do período filtrado</td>
+                        <td class="mono"><strong>${escapeHtml(formatCurrency(trialBalanceTotals.debit))}</strong></td>
+                        <td class="mono"><strong>${escapeHtml(formatCurrency(trialBalanceTotals.credit))}</strong></td>
+                        <td class="mono"><strong>${escapeHtml(formatCurrency(trialBalanceTotals.debitBalance))}</strong></td>
+                        <td class="mono"><strong>${escapeHtml(formatCurrency(trialBalanceTotals.creditBalance))}</strong></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              ` : `
+                <div class="empty-card">
+                  <strong>Nenhum movimento encontrado para o balancete.</strong>
+                  <p>Revise o período informado ou altere o centro de custo para emitir novamente.</p>
+                </div>
+              `}
+            </section>
+          ` : `
+            <section class="empty-card">
+              <strong>Balancete ainda não emitido.</strong>
+              <p>Informe a data inicial, a data final e o centro de custo desejado para gerar o balancete.</p>
+            </section>
+          `}
         `;
       }
 
       function renderFiscalView() {
+
 
         const searchTerm = state.ui.search.invoices;
         const selectableItems = getSelectableItems();
