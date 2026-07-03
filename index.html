@@ -1425,7 +1425,8 @@
         financialNatures: "erp_financial_natures",
         chartAccounts: "erp_chart_accounts",
         items: "erp_items",
-        invoices: "erp_invoices"
+        invoices: "erp_invoices",
+        accountingEntries: "erp_accounting_entries"
       };
       const CLOUD_CONFIG_STORAGE_KEY = "erp_cloud_sync_config";
       const CLOUD_LAST_MODIFIED_STORAGE_KEY = "erp_cloud_last_modified";
@@ -1435,7 +1436,8 @@
         suppliers: { prefix: "FOR", digits: 4 },
         financialNatures: { prefix: "NAT", digits: 4 },
         items: { prefix: "ITE", digits: 4 },
-        invoices: { prefix: "NF", digits: 6 }
+        invoices: { prefix: "NF", digits: 6 },
+        accountingEntries: { prefix: "LC", digits: 6 }
       };
 
       const CHART_ACCOUNT_GROUP_LABELS = {
@@ -1497,6 +1499,11 @@
           title: "Cadastro de itens",
           subtitle: "Mantenha os itens utilizados nas notas fiscais com vínculo direto à natureza financeira."
         },
+        accountingEntries: {
+          icon: "LC",
+          title: "Lançamentos contábeis",
+          subtitle: "Registre partidas com data, centro de custo, conta débito, conta crédito e valor."
+        },
         fiscal: {
           icon: "FI",
           title: "Módulo fiscal",
@@ -1511,7 +1518,8 @@
           financialNatures: [],
           chartAccounts: [],
           items: [],
-          invoices: []
+          invoices: [],
+          accountingEntries: []
         },
         ui: {
           activeView: "dashboard",
@@ -1522,19 +1530,22 @@
             chartAccounts: "",
             financialNatures: "",
             items: "",
-            invoices: ""
+            invoices: "",
+            accountingEntries: ""
           },
           cloudDraft: createEmptyCloudDraft(),
           chartAccountFormDraft: createEmptyChartAccountDraft(),
           financialNatureFormDraft: createEmptyFinancialNatureDraft(),
           itemNaturePreviewId: "",
           itemFormDraft: createEmptyItemDraft(),
+          accountingEntryDraft: createEmptyAccountingEntryDraft(),
           editing: {
             costCenterId: null,
             supplierId: null,
             chartAccountId: null,
             financialNatureId: null,
-            itemId: null
+            itemId: null,
+            accountingEntryId: null
           },
           invoiceDraft: createEmptyInvoiceDraft(),
           invoiceModalOpen: false,
@@ -1590,6 +1601,18 @@
             paymentMethod: "",
             status: "Em aberto"
           }
+        };
+      }
+
+      function createEmptyAccountingEntryDraft(entry) {
+        return {
+          id: entry?.id || "",
+          code: entry?.code || "",
+          entryDate: entry?.entryDate || getToday(),
+          costCenterId: entry?.costCenterId || "",
+          debitAccountId: entry?.debitAccountId || "",
+          creditAccountId: entry?.creditAccountId || "",
+          amount: entry?.amount != null ? String(entry.amount) : ""
         };
       }
 
@@ -1680,7 +1703,8 @@
           financialNatures: [...state.data.financialNatures],
           chartAccounts: [...state.data.chartAccounts],
           items: [...state.data.items],
-          invoices: [...state.data.invoices]
+          invoices: [...state.data.invoices],
+          accountingEntries: [...state.data.accountingEntries]
         };
       }
 
@@ -1973,6 +1997,14 @@
             state.ui.editing.itemId = id;
             navigate("items");
             break;
+          case "reset-accounting-entry":
+            state.ui.editing.accountingEntryId = null;
+            state.ui.accountingEntryDraft = createEmptyAccountingEntryDraft();
+            renderApp();
+            break;
+          case "edit-accounting-entry":
+            startAccountingEntryEdit(id);
+            break;
           case "edit-invoice":
             startInvoiceEdit(id);
             break;
@@ -2014,6 +2046,9 @@
             break;
           case "delete-item":
             deleteItem(id);
+            break;
+          case "delete-accounting-entry":
+            deleteAccountingEntry(id);
             break;
           case "delete-invoice":
             deleteInvoice(id);
@@ -2057,6 +2092,9 @@
             break;
           case "item":
             submitItem(new FormData(form));
+            break;
+          case "accounting-entry":
+            submitAccountingEntry(new FormData(form));
             break;
           case "invoice":
             submitInvoice(new FormData(form));
@@ -2122,6 +2160,13 @@
           }
         }
 
+        if (formType === "accounting-entry") {
+          state.ui.accountingEntryDraft[fieldName] = target.value;
+          if (fieldName === "costCenterId" || fieldName === "debitAccountId" || fieldName === "creditAccountId") {
+            renderApp();
+          }
+        }
+
         if (formType === "cloud-config") {
           state.ui.cloudDraft[fieldName] = target.value;
         }
@@ -2142,6 +2187,62 @@
       function navigate(view) {
         state.ui.activeView = view;
         state.ui.sidebarOpen = false;
+        renderApp();
+      }
+
+      function submitAccountingEntry(formData) {
+        const id = clean(formData.get("id"));
+        const entryDate = clean(formData.get("entryDate"));
+        const costCenterId = clean(formData.get("costCenterId"));
+        const debitAccountId = clean(formData.get("debitAccountId"));
+        const creditAccountId = clean(formData.get("creditAccountId"));
+        const amount = Number(clean(formData.get("amount")) || 0);
+
+        if (!entryDate || !costCenterId || !debitAccountId || !creditAccountId || !amount || amount <= 0) {
+          notify("error", "Lançamento contábil", "Informe data, centro de custo, conta débito, conta crédito e valor maior que zero.");
+          return;
+        }
+
+        const costCenter = getCostCenterById(costCenterId);
+        if (!costCenter) {
+          notify("error", "Lançamento contábil", "Selecione um centro de custo válido.");
+          return;
+        }
+
+        const debitAccount = getChartAccountById(debitAccountId);
+        const creditAccount = getChartAccountById(creditAccountId);
+        if (!debitAccount || !creditAccount) {
+          notify("error", "Lançamento contábil", "Selecione contas contábeis válidas para débito e crédito.");
+          return;
+        }
+
+        if (!isChartAccountAvailableForLinks(debitAccount) || !isChartAccountAvailableForLinks(creditAccount)) {
+          notify("error", "Lançamento contábil", "Use apenas contas contábeis analíticas, ativas e válidas no lançamento.");
+          return;
+        }
+
+        if (debitAccountId == creditAccountId) {
+          notify("error", "Lançamento contábil", "A conta de débito deve ser diferente da conta de crédito.");
+          return;
+        }
+
+        const existing = state.data.accountingEntries.find((record) => record.id === id);
+        const record = {
+          id: existing?.id || generateId(),
+          code: existing?.code || generateCode("accountingEntries"),
+          entryDate,
+          costCenterId,
+          debitAccountId,
+          creditAccountId,
+          amount: roundCurrency(amount),
+          createdAt: existing?.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        upsertRecord("accountingEntries", record);
+        state.ui.editing.accountingEntryId = null;
+        state.ui.accountingEntryDraft = createEmptyAccountingEntryDraft();
+        notify("success", "Lançamento contábil", existing ? "Lançamento contábil atualizado com sucesso." : "Lançamento contábil cadastrado com sucesso.");
         renderApp();
       }
 
@@ -2506,6 +2607,18 @@
         renderApp();
       }
 
+      function startAccountingEntryEdit(entryId) {
+        const entry = state.data.accountingEntries.find((record) => record.id === entryId);
+        if (!entry) {
+          notify("error", "Lançamento contábil", "Lançamento contábil não encontrado para edição.");
+          return;
+        }
+
+        state.ui.accountingEntryDraft = createEmptyAccountingEntryDraft(entry);
+        state.ui.editing.accountingEntryId = entryId;
+        navigate("accountingEntries");
+      }
+
       function startInvoiceEdit(invoiceId) {
         const invoice = state.data.invoices.find((record) => record.id === invoiceId);
         if (!invoice) {
@@ -2520,6 +2633,11 @@
       }
 
       function deleteCostCenter(id) {
+        const linkedEntry = state.data.accountingEntries.find((entry) => entry.costCenterId === id);
+        if (linkedEntry) {
+          notify("error", "Centro de custo", "Não é possível excluir: o centro de custo está vinculado a um lançamento contábil.");
+          return;
+        }
         deleteRecord("costCenters", id, "Centro de custo", "Centro de custo excluído com sucesso.");
       }
 
@@ -2539,10 +2657,11 @@
           return nature?.chartAccountId === id;
         });
         const linkedInvoice = state.data.invoices.find((invoice) => invoice.items.some((item) => item.chartAccountId === id));
+        const linkedEntry = state.data.accountingEntries.find((entry) => entry.debitAccountId === id || entry.creditAccountId === id);
         const account = getChartAccountById(id);
         const hasChildren = account ? accountHasChildren(account) : false;
 
-        if (hasChildren || linkedNature || linkedItem || linkedInvoice) {
+        if (hasChildren || linkedNature || linkedItem || linkedInvoice || linkedEntry) {
           notify("error", "Conta contábil", "Não é possível excluir: a conta contábil possui vínculos ativos.");
           return;
         }
@@ -2573,6 +2692,10 @@
 
       function deleteInvoice(id) {
         deleteRecord("invoices", id, "Nota fiscal", "Nota fiscal excluída com sucesso.");
+      }
+
+      function deleteAccountingEntry(id) {
+        deleteRecord("accountingEntries", id, "Lançamento contábil", "Lançamento contábil excluído com sucesso.");
       }
 
       function removeInvoiceLine(lineId) {
@@ -2620,6 +2743,10 @@
           state.ui.invoiceDraft = createEmptyInvoiceDraft();
           state.ui.invoiceModalOpen = false;
           state.ui.activeInvoiceTab = "dados";
+        }
+
+        if (state.ui.accountingEntryDraft.id === id) {
+          state.ui.accountingEntryDraft = createEmptyAccountingEntryDraft();
         }
 
         notify("success", title, successMessage);
@@ -2678,6 +2805,10 @@
 
       function getSupplierById(id) {
         return state.data.suppliers.find((record) => record.id === id) || null;
+      }
+
+      function getCostCenterById(id) {
+        return state.data.costCenters.find((record) => record.id === id) || null;
       }
 
       function getItemById(id) {
@@ -3197,6 +3328,7 @@
           { view: "chartAccounts", title: "Contas contábeis", subtitle: "Estrutura contábil" },
           { view: "financialNatures", title: "Naturezas", subtitle: "Classificação financeira" },
           { view: "items", title: "Itens", subtitle: "Base para notas" },
+          { view: "accountingEntries", title: "Lançamentos", subtitle: "Débito e crédito" },
           { view: "fiscal", title: "Fiscal", subtitle: "Notas fiscais" }
         ];
 
@@ -3258,6 +3390,8 @@
             return renderFinancialNaturesView();
           case "items":
             return renderItemsView();
+          case "accountingEntries":
+            return renderAccountingEntriesView();
           case "fiscal":
             return renderFiscalView();
           case "dashboard":
@@ -3271,7 +3405,8 @@
           { label: "Centros de custo", value: state.data.costCenters.length, helper: "Estrutura interna configurável" },
           { label: "Fornecedores", value: state.data.suppliers.length, helper: "Base de parceiros fiscais" },
           { label: "Itens", value: state.data.items.length, helper: "Disponíveis para notas fiscais" },
-          { label: "Notas fiscais", value: state.data.invoices.length, helper: "Lançamentos registrados localmente" }
+          { label: "Notas fiscais", value: state.data.invoices.length, helper: "Lançamentos registrados localmente" },
+          { label: "Lançamentos contábeis", value: state.data.accountingEntries.length, helper: "Partidas manuais registradas" }
         ];
         const isEmpty = totals.every((item) => item.value === 0);
 
@@ -3280,10 +3415,11 @@
             <div>
               <span class="hero-eyebrow">Sistema pronto para configurar</span>
               <h2>ERP limpo, modular e pronto para começar do zero.</h2>
-              <p>Cadastre primeiro as contas contábeis, depois naturezas financeiras, itens, centros de custo e fornecedores. Em seguida, use o módulo fiscal para lançar suas notas com itens e parcelas financeiras.</p>
+              <p>Cadastre primeiro as contas contábeis, depois naturezas financeiras, itens, centros de custo e fornecedores. Em seguida, use o módulo fiscal e a área de lançamentos contábeis para registrar o movimento operacional e contábil.</p>
               <div class="hero-actions">
                 <button class="primary-button" type="button" data-nav="chartAccounts">Começar pelas contas</button>
                 <button class="ghost-button" type="button" data-nav="fiscal">Ir para o fiscal</button>
+                <button class="ghost-button" type="button" data-nav="accountingEntries">Ir para lançamentos</button>
               </div>
             </div>
             <div class="hero-stack">
@@ -3338,6 +3474,7 @@
                   <li>Cadastrar itens vinculados às naturezas financeiras.</li>
                   <li>Cadastrar fornecedores e centros de custo.</li>
                   <li>Lançar notas fiscais com itens e parcelas.</li>
+                  <li>Registrar lançamentos contábeis manuais quando necessário.</li>
                 </ol>
               </div>
             </article>
@@ -3353,6 +3490,7 @@
                   <li>Item exige natureza financeira vinculada.</li>
                   <li>Natureza financeira exige conta contábil vinculada.</li>
                   <li>Notas usam apenas fornecedores e itens já cadastrados.</li>
+                  <li>Lançamentos contábeis usam centro de custo e contas válidas.</li>
                   <li>Exclusões barram registros em uso por outros módulos.</li>
                 </ul>
               </div>
@@ -4422,7 +4560,181 @@
         `;
       }
 
+
+      function renderAccountingEntriesView() {
+        const draft = state.ui.accountingEntryDraft;
+        const editing = getActiveEditRecord("accountingEntries", state.ui.editing.accountingEntryId);
+        const searchTerm = state.ui.search.accountingEntries;
+        const selectableAccounts = getSelectableChartAccounts();
+        const costCenters = state.data.costCenters;
+        const selectedCostCenter = getCostCenterById(draft.costCenterId);
+        const debitAccount = getChartAccountById(draft.debitAccountId);
+        const creditAccount = getChartAccountById(draft.creditAccountId);
+        const canCreate = costCenters.length > 0 && selectableAccounts.length >= 2;
+        const records = filterRecords(
+          state.data.accountingEntries,
+          searchTerm,
+          (record) => {
+            const costCenter = getCostCenterById(record.costCenterId);
+            const debit = getChartAccountById(record.debitAccountId);
+            const credit = getChartAccountById(record.creditAccountId);
+            return `${record.code} ${record.entryDate} ${costCenter?.name || ""} ${debit?.code || ""} ${debit?.name || ""} ${credit?.code || ""} ${credit?.name || ""} ${record.amount}`;
+          }
+        );
+
+        return `
+          ${!canCreate ? `
+            <section class="notice-card">
+              <div class="notice-icon">LC</div>
+              <div>
+                <strong>Pré-requisitos para lançar contabilmente</strong>
+                <p>Você precisa ter ao menos um centro de custo e duas contas contábeis analíticas ativas para registrar débito e crédito.</p>
+              </div>
+            </section>
+          ` : ""}
+          <section class="layout-grid">
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h3>${editing ? `Editar lançamento ${escapeHtml(editing.code)}` : "Novo lançamento contábil"}</h3>
+                  <p>Informe a data, o centro de custo, a conta de débito, a conta de crédito e o valor do lançamento.</p>
+                </div>
+              </div>
+              <form data-form="accounting-entry" autocomplete="off">
+                <input type="hidden" name="id" value="${escapeHtml(draft.id || editing?.id || "")}">
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="entry-date">Data do lançamento</label>
+                    <input id="entry-date" type="date" name="entryDate" value="${escapeHtml(draft.entryDate || "")}" ${canCreate ? "required" : "disabled"}>
+                  </div>
+                  <div class="field">
+                    <label for="entry-amount">Valor</label>
+                    <input id="entry-amount" type="number" name="amount" min="0.01" step="0.01" value="${escapeHtml(String(draft.amount || ""))}" placeholder="0,00" ${canCreate ? "required" : "disabled"}>
+                  </div>
+                  <div class="field full">
+                    <label for="entry-cost-center">Centro de custo</label>
+                    <select id="entry-cost-center" name="costCenterId" ${canCreate ? "required" : "disabled"}>
+                      <option value="">Selecione um centro de custo</option>
+                      ${costCenters.map((record) => `
+                        <option value="${escapeHtml(record.id)}" ${draft.costCenterId === record.id ? "selected" : ""}>
+                          ${escapeHtml(record.code)} - ${escapeHtml(record.name)}
+                        </option>
+                      `).join("")}
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="entry-debit-account">Conta débito</label>
+                    <select id="entry-debit-account" name="debitAccountId" ${canCreate ? "required" : "disabled"}>
+                      <option value="">Selecione a conta de débito</option>
+                      ${selectableAccounts.map((account) => `
+                        <option value="${escapeHtml(account.id)}" ${draft.debitAccountId === account.id ? "selected" : ""}>
+                          ${escapeHtml(account.code)} - ${escapeHtml(account.name)}
+                        </option>
+                      `).join("")}
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="entry-credit-account">Conta crédito</label>
+                    <select id="entry-credit-account" name="creditAccountId" ${canCreate ? "required" : "disabled"}>
+                      <option value="">Selecione a conta de crédito</option>
+                      ${selectableAccounts.map((account) => `
+                        <option value="${escapeHtml(account.id)}" ${draft.creditAccountId === account.id ? "selected" : ""}>
+                          ${escapeHtml(account.code)} - ${escapeHtml(account.name)}
+                        </option>
+                      `).join("")}
+                    </select>
+                  </div>
+                  <div class="field full">
+                    <label>Resumo do lançamento</label>
+                    <div class="field-readonly">
+                      ${selectedCostCenter ? `${escapeHtml(selectedCostCenter.code)} - ${escapeHtml(selectedCostCenter.name)}` : "Selecione um centro de custo."}
+                    </div>
+                  </div>
+                  <div class="field full">
+                    <label>Partidas selecionadas</label>
+                    <div class="field-readonly">
+                      ${debitAccount && creditAccount
+                        ? `Débito: ${escapeHtml(debitAccount.code)} - ${escapeHtml(debitAccount.name)} | Crédito: ${escapeHtml(creditAccount.code)} - ${escapeHtml(creditAccount.name)}`
+                        : "Selecione as contas de débito e crédito para revisar o lançamento."}
+                    </div>
+                    ${draft.debitAccountId && draft.creditAccountId && draft.debitAccountId === draft.creditAccountId ? `<div class="inline-note warning">Débito e crédito não podem usar a mesma conta contábil.</div>` : ""}
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button class="primary-button" type="submit" ${canCreate ? "" : "disabled"}>${editing ? "Salvar alterações" : "Cadastrar lançamento"}</button>
+                  ${editing ? `<button class="ghost-button" type="button" data-action="reset-accounting-entry">Cancelar edição</button>` : ""}
+                </div>
+              </form>
+            </article>
+            <article class="table-card">
+              <div class="table-toolbar">
+                <div>
+                  <h4>Lista de lançamentos contábeis</h4>
+                  <p class="page-subtitle">Consulte, edite e exclua partidas registradas manualmente.</p>
+                </div>
+                <input class="search-input" data-search="accountingEntries" placeholder="Pesquisar lançamentos" value="${escapeHtml(searchTerm)}">
+              </div>
+              ${records.length ? `
+                <div class="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Código</th>
+                        <th>Data</th>
+                        <th>Centro de custo</th>
+                        <th>Débito</th>
+                        <th>Crédito</th>
+                        <th>Valor</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${records.map((record) => {
+                        const costCenter = getCostCenterById(record.costCenterId);
+                        const debit = getChartAccountById(record.debitAccountId);
+                        const credit = getChartAccountById(record.creditAccountId);
+                        return `
+                          <tr>
+                            <td class="mono">${escapeHtml(record.code)}</td>
+                            <td>${escapeHtml(formatDate(record.entryDate))}</td>
+                            <td>
+                              <strong>${escapeHtml(costCenter?.name || "Centro de custo indisponível")}</strong>
+                              <div class="table-muted">${escapeHtml(costCenter?.code || "Sem código")}</div>
+                            </td>
+                            <td>
+                              <strong>${escapeHtml(debit?.code || "Conta indisponível")}</strong>
+                              <div class="table-muted">${escapeHtml(debit?.name || "Conta removida")}</div>
+                            </td>
+                            <td>
+                              <strong>${escapeHtml(credit?.code || "Conta indisponível")}</strong>
+                              <div class="table-muted">${escapeHtml(credit?.name || "Conta removida")}</div>
+                            </td>
+                            <td class="mono">${escapeHtml(formatCurrency(record.amount))}</td>
+                            <td>
+                              <div class="table-actions">
+                                <button class="action-chip" type="button" data-action="edit-accounting-entry" data-id="${escapeHtml(record.id)}">Editar</button>
+                                <button class="action-chip danger" type="button" data-action="delete-accounting-entry" data-id="${escapeHtml(record.id)}">Excluir</button>
+                              </div>
+                            </td>
+                          </tr>
+                        `;
+                      }).join("")}
+                    </tbody>
+                  </table>
+                </div>
+              ` : `
+                <div class="empty-card">
+                  <strong>Nenhum lançamento contábil encontrado.</strong>
+                  <p>${searchTerm ? "Nenhum lançamento corresponde ao termo pesquisado." : "Cadastre o primeiro lançamento informando data, centro de custo, débito, crédito e valor."}</p>
+                </div>
+              `}
+            </article>
+          </section>
+        `;
+      }
+
       function renderFiscalView() {
+
         const searchTerm = state.ui.search.invoices;
         const selectableItems = getSelectableItems();
         const records = filterRecords(
