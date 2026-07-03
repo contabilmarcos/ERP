@@ -1270,6 +1270,73 @@
       border-color: transparent;
     }
 
+
+    .option-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .option-card {
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      box-shadow: var(--shadow-xs);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .option-card h3 {
+      margin: 0;
+      font-size: 0.98rem;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .option-card p {
+      margin: 0;
+      color: var(--ink-2);
+      font-size: 0.83rem;
+      line-height: 1.55;
+    }
+
+    .option-card small {
+      color: var(--ink-3);
+      font-size: 0.76rem;
+    }
+
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 40px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .checkbox-item input {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      accent-color: var(--accent);
+    }
+
+    .checkbox-item span {
+      color: var(--ink);
+      font-size: 0.83rem;
+      font-weight: 500;
+    }
+
     .summary-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1539,7 +1606,12 @@
           itemNaturePreviewId: "",
           itemFormDraft: createEmptyItemDraft(),
           accountingEntryDraft: createEmptyAccountingEntryDraft(),
+          accountingEntryFilters: createEmptyAccountingEntryFilters(),
+          accountingPanel: "menu",
+          accountingEntriesModalOpen: false,
+          accountingEntryFormModalOpen: false,
           trialBalanceFilters: createEmptyTrialBalanceFilters(),
+          trialBalanceModalOpen: false,
           editing: {
             costCenterId: null,
             supplierId: null,
@@ -1610,10 +1682,20 @@
           id: entry?.id || "",
           code: entry?.code || "",
           entryDate: entry?.entryDate || getToday(),
+          description: entry?.description || "",
           costCenterId: entry?.costCenterId || "",
           debitAccountId: entry?.debitAccountId || "",
           creditAccountId: entry?.creditAccountId || "",
           amount: entry?.amount != null ? String(entry.amount) : ""
+        };
+      }
+
+      function createEmptyAccountingEntryFilters() {
+        return {
+          startDate: "",
+          endDate: "",
+          amount: "",
+          description: ""
         };
       }
 
@@ -1622,6 +1704,11 @@
           startDate: "",
           endDate: "",
           costCenterId: "all",
+          showPreviousBalance: true,
+          showDebit: true,
+          showCredit: true,
+          showMovement: true,
+          showBalance: true,
           submitted: false
         };
       }
@@ -1917,6 +2004,9 @@
 
         if (target.dataset.nav) {
           event.preventDefault();
+          if (target.dataset.nav === "accountingEntries") {
+            state.ui.accountingPanel = "menu";
+          }
           navigate(target.dataset.nav);
           return;
         }
@@ -2007,13 +2097,58 @@
             state.ui.editing.itemId = id;
             navigate("items");
             break;
+          case "open-accounting-entries":
+            state.ui.accountingEntriesModalOpen = true;
+            renderApp();
+            break;
+          case "close-accounting-entries-modal":
+            state.ui.accountingEntriesModalOpen = false;
+            renderApp();
+            break;
+          case "clear-accounting-entry-filters":
+            state.ui.accountingEntryFilters = createEmptyAccountingEntryFilters();
+            renderApp();
+            break;
+          case "new-accounting-entry":
+            state.ui.editing.accountingEntryId = null;
+            state.ui.accountingEntryDraft = createEmptyAccountingEntryDraft();
+            state.ui.accountingEntriesModalOpen = false;
+            state.ui.accountingEntryFormModalOpen = true;
+            renderApp();
+            break;
           case "reset-accounting-entry":
             state.ui.editing.accountingEntryId = null;
             state.ui.accountingEntryDraft = createEmptyAccountingEntryDraft();
+            state.ui.accountingEntryFormModalOpen = false;
+            state.ui.accountingEntriesModalOpen = true;
+            renderApp();
+            break;
+          case "close-accounting-entry-form":
+            state.ui.accountingEntryFormModalOpen = false;
+            state.ui.accountingEntriesModalOpen = true;
             renderApp();
             break;
           case "edit-accounting-entry":
             startAccountingEntryEdit(id);
+            break;
+          case "open-accounting-reports":
+            state.ui.accountingPanel = "reports";
+            renderApp();
+            break;
+          case "back-accounting-menu":
+            state.ui.accountingPanel = "menu";
+            renderApp();
+            break;
+          case "open-trial-balance-modal":
+            state.ui.trialBalanceModalOpen = true;
+            renderApp();
+            break;
+          case "close-trial-balance-modal":
+            state.ui.trialBalanceModalOpen = false;
+            renderApp();
+            break;
+          case "export-trial-balance-pdf":
+            exportTrialBalancePdf();
             break;
           case "edit-invoice":
             startInvoiceEdit(id);
@@ -2180,8 +2315,16 @@
           }
         }
 
+        if (formType === "accounting-entry-filters") {
+          state.ui.accountingEntryFilters[fieldName] = target.value;
+          renderApp();
+        }
+
         if (formType === "trial-balance") {
-          state.ui.trialBalanceFilters[fieldName] = target.value;
+          const nextValue = target instanceof HTMLInputElement && target.type === "checkbox" ? target.checked : target.value;
+          state.ui.trialBalanceFilters[fieldName] = nextValue;
+          state.ui.trialBalanceFilters.submitted = false;
+          renderApp();
         }
 
         if (formType === "cloud-config") {
@@ -2211,6 +2354,11 @@
         const startDate = clean(formData.get("startDate"));
         const endDate = clean(formData.get("endDate"));
         const costCenterId = clean(formData.get("costCenterId")) || "all";
+        const showPreviousBalance = formData.get("showPreviousBalance") === "on";
+        const showDebit = formData.get("showDebit") === "on";
+        const showCredit = formData.get("showCredit") === "on";
+        const showMovement = formData.get("showMovement") === "on";
+        const showBalance = formData.get("showBalance") === "on";
 
         if (!startDate || !endDate) {
           notify("error", "Balancete", "Informe a data inicial e a data final para emitir o balancete.");
@@ -2227,10 +2375,20 @@
           return;
         }
 
+        if (!showPreviousBalance && !showDebit && !showCredit && !showMovement && !showBalance) {
+          notify("error", "Balancete", "Selecione pelo menos uma coluna de configuração para emitir o balancete.");
+          return;
+        }
+
         state.ui.trialBalanceFilters = {
           startDate,
           endDate,
           costCenterId,
+          showPreviousBalance,
+          showDebit,
+          showCredit,
+          showMovement,
+          showBalance,
           submitted: true
         };
         notify("success", "Balancete", "Balancete emitido com os filtros informados.");
@@ -2240,6 +2398,7 @@
       function submitAccountingEntry(formData) {
         const id = clean(formData.get("id"));
         const entryDate = clean(formData.get("entryDate"));
+        const description = clean(formData.get("description"));
         const costCenterId = clean(formData.get("costCenterId"));
         const debitAccountId = clean(formData.get("debitAccountId"));
         const creditAccountId = clean(formData.get("creditAccountId"));
@@ -2268,7 +2427,7 @@
           return;
         }
 
-        if (debitAccountId == creditAccountId) {
+        if (debitAccountId === creditAccountId) {
           notify("error", "Lançamento contábil", "A conta de débito deve ser diferente da conta de crédito.");
           return;
         }
@@ -2278,6 +2437,7 @@
           id: existing?.id || generateId(),
           code: existing?.code || generateCode("accountingEntries"),
           entryDate,
+          description,
           costCenterId,
           debitAccountId,
           creditAccountId,
@@ -2289,11 +2449,14 @@
         upsertRecord("accountingEntries", record);
         state.ui.editing.accountingEntryId = null;
         state.ui.accountingEntryDraft = createEmptyAccountingEntryDraft();
+        state.ui.accountingEntryFormModalOpen = false;
+        state.ui.accountingEntriesModalOpen = true;
         notify("success", "Lançamento contábil", existing ? "Lançamento contábil atualizado com sucesso." : "Lançamento contábil cadastrado com sucesso.");
         renderApp();
       }
 
       function submitCostCenter(formData) {
+
         const id = clean(formData.get("id"));
         const name = clean(formData.get("name"));
 
@@ -2663,7 +2826,11 @@
 
         state.ui.accountingEntryDraft = createEmptyAccountingEntryDraft(entry);
         state.ui.editing.accountingEntryId = entryId;
-        navigate("accountingEntries");
+        state.ui.activeView = "accountingEntries";
+        state.ui.sidebarOpen = false;
+        state.ui.accountingEntriesModalOpen = false;
+        state.ui.accountingEntryFormModalOpen = true;
+        renderApp();
       }
 
       function startInvoiceEdit(invoiceId) {
@@ -2794,6 +2961,7 @@
 
         if (state.ui.accountingEntryDraft.id === id) {
           state.ui.accountingEntryDraft = createEmptyAccountingEntryDraft();
+          state.ui.accountingEntryFormModalOpen = false;
         }
 
         notify("success", title, successMessage);
@@ -2858,6 +3026,17 @@
         return state.data.costCenters.find((record) => record.id === id) || null;
       }
 
+      function getFilteredAccountingEntries() {
+        const filters = state.ui.accountingEntryFilters;
+        return state.data.accountingEntries.filter((record) => {
+          const matchesStartDate = !filters.startDate || record.entryDate >= filters.startDate;
+          const matchesEndDate = !filters.endDate || record.entryDate <= filters.endDate;
+          const matchesAmount = !filters.amount || roundCurrency(record.amount) === roundCurrency(filters.amount);
+          const matchesDescription = !filters.description || (record.description || "").toLowerCase().includes(filters.description.toLowerCase().trim());
+          return matchesStartDate && matchesEndDate && matchesAmount && matchesDescription;
+        });
+      }
+
       function getTrialBalanceEntries(filters) {
         return state.data.accountingEntries.filter((entry) => {
           const matchesDate = (!filters.startDate || entry.entryDate >= filters.startDate)
@@ -2867,55 +3046,190 @@
         });
       }
 
-      function getTrialBalanceRows(filters) {
+      function getTrialBalanceVisibleColumns(filters) {
+        const columns = [];
+        if (filters.showPreviousBalance) {
+          columns.push({ key: "previousBalance", label: "Saldo anterior", formatter: formatSignedCurrency });
+        }
+        if (filters.showDebit) {
+          columns.push({ key: "debit", label: "Débito", formatter: formatCurrency });
+        }
+        if (filters.showCredit) {
+          columns.push({ key: "credit", label: "Crédito", formatter: formatCurrency });
+        }
+        if (filters.showMovement) {
+          columns.push({ key: "movement", label: "Movimento", formatter: formatSignedCurrency });
+        }
+        if (filters.showBalance) {
+          columns.push({ key: "balance", label: "Saldo", formatter: formatSignedCurrency });
+        }
+        return columns;
+      }
+
+      function getTrialBalanceReport(filters) {
+        const beforeEntries = state.data.accountingEntries.filter((entry) => {
+          const matchesDate = !filters.startDate || entry.entryDate < filters.startDate;
+          const matchesCostCenter = filters.costCenterId === "all" || entry.costCenterId === filters.costCenterId;
+          return matchesDate && matchesCostCenter;
+        });
+        const periodEntries = getTrialBalanceEntries(filters);
         const rowsByAccount = new Map();
-        getTrialBalanceEntries(filters).forEach((entry) => {
+
+        function ensureAccountRow(accountId) {
+          if (!rowsByAccount.has(accountId)) {
+            rowsByAccount.set(accountId, {
+              previousBalance: 0,
+              debit: 0,
+              credit: 0
+            });
+          }
+          return rowsByAccount.get(accountId);
+        }
+
+        beforeEntries.forEach((entry) => {
           const amount = roundCurrency(Number(entry.amount || 0));
           if (amount <= 0) {
             return;
           }
-
-          if (!rowsByAccount.has(entry.debitAccountId)) {
-            rowsByAccount.set(entry.debitAccountId, { debit: 0, credit: 0 });
-          }
-          if (!rowsByAccount.has(entry.creditAccountId)) {
-            rowsByAccount.set(entry.creditAccountId, { debit: 0, credit: 0 });
-          }
-
-          rowsByAccount.get(entry.debitAccountId).debit = roundCurrency(rowsByAccount.get(entry.debitAccountId).debit + amount);
-          rowsByAccount.get(entry.creditAccountId).credit = roundCurrency(rowsByAccount.get(entry.creditAccountId).credit + amount);
+          ensureAccountRow(entry.debitAccountId).previousBalance = roundCurrency(ensureAccountRow(entry.debitAccountId).previousBalance + amount);
+          ensureAccountRow(entry.creditAccountId).previousBalance = roundCurrency(ensureAccountRow(entry.creditAccountId).previousBalance - amount);
         });
 
-        return sortAccountsByCode(
-          Array.from(rowsByAccount.keys())
-            .map((accountId) => {
-              const account = getChartAccountById(accountId);
-              if (!account) {
-                return null;
-              }
-              const movement = rowsByAccount.get(accountId) || { debit: 0, credit: 0 };
-              const difference = roundCurrency(movement.debit - movement.credit);
-              return {
-                accountId,
-                account,
-                debit: roundCurrency(movement.debit),
-                credit: roundCurrency(movement.credit),
-                debitBalance: difference > 0 ? difference : 0,
-                creditBalance: difference < 0 ? roundCurrency(Math.abs(difference)) : 0
-              };
-            })
-            .filter(Boolean)
-            .map((row) => ({
-              ...row,
-              code: row.account.code,
-              normalizedCode: row.account.normalizedCode,
-              level: row.account.level,
-              name: row.account.name
-            }))
+        periodEntries.forEach((entry) => {
+          const amount = roundCurrency(Number(entry.amount || 0));
+          if (amount <= 0) {
+            return;
+          }
+          ensureAccountRow(entry.debitAccountId).debit = roundCurrency(ensureAccountRow(entry.debitAccountId).debit + amount);
+          ensureAccountRow(entry.creditAccountId).credit = roundCurrency(ensureAccountRow(entry.creditAccountId).credit + amount);
+        });
+
+        const rows = sortAccountsByCode(
+          Array.from(rowsByAccount.keys()).map((accountId) => {
+            const account = getChartAccountById(accountId);
+            if (!account) {
+              return null;
+            }
+            const movement = rowsByAccount.get(accountId);
+            const previousBalance = roundCurrency(movement.previousBalance);
+            const debit = roundCurrency(movement.debit);
+            const credit = roundCurrency(movement.credit);
+            const netMovement = roundCurrency(debit - credit);
+            const balance = roundCurrency(previousBalance + netMovement);
+            return {
+              account,
+              previousBalance,
+              debit,
+              credit,
+              movement: netMovement,
+              balance,
+              code: account.code,
+              normalizedCode: account.normalizedCode,
+              level: account.level,
+              name: account.name
+            };
+          }).filter(Boolean)
         );
+
+        const totals = rows.reduce((acc, row) => ({
+          previousBalance: roundCurrency(acc.previousBalance + row.previousBalance),
+          debit: roundCurrency(acc.debit + row.debit),
+          credit: roundCurrency(acc.credit + row.credit),
+          movement: roundCurrency(acc.movement + row.movement),
+          balance: roundCurrency(acc.balance + row.balance)
+        }), {
+          previousBalance: 0,
+          debit: 0,
+          credit: 0,
+          movement: 0,
+          balance: 0
+        });
+
+        return {
+          rows,
+          totals,
+          entries: periodEntries
+        };
+      }
+
+      function buildTrialBalancePrintHtml(filters, report, selectedCostCenter) {
+        const visibleColumns = getTrialBalanceVisibleColumns(filters);
+        const headerCells = visibleColumns.map((column) => `<th>${escapeHtml(column.label)}</th>`).join("");
+        const rowsHtml = report.rows.map((row) => `
+          <tr>
+            <td>${escapeHtml(row.account.code)}</td>
+            <td>${escapeHtml(row.account.name)}</td>
+            ${visibleColumns.map((column) => `<td style="text-align:right;">${escapeHtml(column.formatter(row[column.key]))}</td>`).join("")}
+          </tr>
+        `).join("");
+        const totalCells = visibleColumns.map((column) => `<td style="text-align:right;"><strong>${escapeHtml(column.formatter(report.totals[column.key]))}</strong></td>`).join("");
+        return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Balancete</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 24px; color: #111827; }
+    h1 { font-size: 20px; margin: 0 0 8px; }
+    p { margin: 0 0 6px; color: #4b5563; }
+    table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+    th, td { border: 1px solid #d1d5db; padding: 8px 10px; font-size: 12px; }
+    th { background: #f3f4f6; text-align: left; }
+    .right { text-align: right; }
+  </style>
+</head>
+<body>
+  <h1>Balancete</h1>
+  <p>Período: ${escapeHtml(formatDate(filters.startDate))} até ${escapeHtml(formatDate(filters.endDate))}</p>
+  <p>Centro de custo: ${selectedCostCenter ? `${escapeHtml(selectedCostCenter.code)} - ${escapeHtml(selectedCostCenter.name)}` : "Todos os centros de custo"}</p>
+  <p>Lançamentos considerados: ${escapeHtml(String(report.entries.length))}</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Conta</th>
+        ${headerCells}
+      </tr>
+    </thead>
+    <tbody>
+      ${rowsHtml}
+      <tr>
+        <td><strong>Total</strong></td>
+        <td>Totais do período</td>
+        ${totalCells}
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>`;
+      }
+
+      function exportTrialBalancePdf() {
+        const filters = state.ui.trialBalanceFilters;
+        if (!filters.submitted) {
+          notify("error", "Balancete", "Emita o balancete antes de exportar em PDF.");
+          return;
+        }
+        const report = getTrialBalanceReport(filters);
+        if (!report.rows.length) {
+          notify("error", "Balancete", "Não há dados para exportar com os filtros atuais.");
+          return;
+        }
+        const selectedCostCenter = filters.costCenterId === "all" ? null : getCostCenterById(filters.costCenterId);
+        const printWindow = window.open("", "_blank", "width=1200,height=900");
+        if (!printWindow) {
+          notify("error", "Balancete", "O navegador bloqueou a janela de exportação. Libere pop-ups e tente novamente.");
+          return;
+        }
+        printWindow.document.open();
+        printWindow.document.write(buildTrialBalancePrintHtml(filters, report, selectedCostCenter));
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
       }
 
       function getItemById(id) {
+
         return state.data.items.find((record) => record.id === id) || null;
       }
 
@@ -3308,6 +3622,14 @@
         }).format(Number(value || 0));
       }
 
+      function formatSignedCurrency(value) {
+        const numericValue = Number(value || 0);
+        if (numericValue < 0) {
+          return "-" + formatCurrency(Math.abs(numericValue));
+        }
+        return formatCurrency(numericValue);
+      }
+
       function formatDate(value) {
         if (!value) {
           return "-";
@@ -3408,7 +3730,11 @@
                     ${renderCloudStatusChip()}
                     <button class="ghost-button" type="button" data-nav="dashboard">Painel</button>
                     <button class="secondary-button" type="button" data-nav="settings">Configurações</button>
-                    <button class="primary-button" type="button" data-action="new-invoice">Nova nota fiscal</button>
+                    ${state.ui.activeView === "fiscal"
+                      ? `<button class="primary-button" type="button" data-action="new-invoice">Nova nota fiscal</button>`
+                      : state.ui.activeView === "accountingEntries"
+                        ? `<button class="primary-button" type="button" data-action="open-accounting-entries">Lançamentos contábeis</button>`
+                        : ""}
                   </div>
                 </header>
                 <div class="page-content">
@@ -3421,6 +3747,9 @@
             ${state.ui.toasts.map(renderToast).join("")}
           </div>
           ${state.ui.invoiceModalOpen ? renderInvoiceModal() : ""}
+          ${state.ui.accountingEntriesModalOpen ? renderAccountingEntriesModal() : ""}
+          ${state.ui.accountingEntryFormModalOpen ? renderAccountingEntryFormModal() : ""}
+          ${state.ui.trialBalanceModalOpen ? renderTrialBalanceModal() : ""}
         `;
       }
 
@@ -4667,304 +4996,439 @@
 
 
       function renderAccountingEntriesView() {
+        const reportCount = state.data.accountingEntries.length;
+        const costCenterCount = state.data.costCenters.length;
+        const accountCount = getSelectableChartAccounts().length;
+
+        return `
+          <section class="card">
+            <div class="section-head">
+              <div>
+                <h3>Módulo contábil</h3>
+                <p>Escolha entre lançamentos contábeis e relatórios. Cada fluxo abre em modal próprio, sem misturar a tela principal.</p>
+              </div>
+              ${state.ui.accountingPanel === "reports" ? `<button class="ghost-button" type="button" data-action="back-accounting-menu">Voltar</button>` : ""}
+            </div>
+            <div class="option-grid">
+              <article class="option-card">
+                <h3>Lançamentos contábeis</h3>
+                <p>Consulte todos os lançamentos, filtre por data de emissão, valor e descrição, e abra o modal de cadastro quando precisar lançar um novo registro.</p>
+                <small>${escapeHtml(String(reportCount))} lançamento(s) cadastrados.</small>
+                <div class="form-actions">
+                  <button class="primary-button" type="button" data-action="open-accounting-entries">Abrir lançamentos contábeis</button>
+                </div>
+              </article>
+              <article class="option-card">
+                <h3>Relatórios</h3>
+                <p>Acesse os relatórios do módulo contábil. Inicialmente, o relatório disponível é o balancete com configuração de colunas e exportação em PDF.</p>
+                <small>${escapeHtml(String(costCenterCount))} centro(s) de custo e ${escapeHtml(String(accountCount))} conta(s) apta(s) para apuração.</small>
+                <div class="form-actions">
+                  <button class="secondary-button" type="button" data-action="open-accounting-reports">Abrir relatórios</button>
+                </div>
+              </article>
+            </div>
+          </section>
+          ${state.ui.accountingPanel === "reports" ? `
+            <section class="card">
+              <div class="section-head">
+                <div>
+                  <h3>Relatórios contábeis</h3>
+                  <p>Selecione o relatório desejado. Neste momento, o balancete já permite parâmetros e configuração de colunas.</p>
+                </div>
+              </div>
+              <div class="option-grid">
+                <article class="option-card">
+                  <h3>Balancete</h3>
+                  <p>Emita o balancete por período e centro de custo, configurando quais colunas devem aparecer no relatório antes da emissão.</p>
+                  <div class="form-actions">
+                    <button class="primary-button" type="button" data-action="open-trial-balance-modal">Abrir balancete</button>
+                  </div>
+                </article>
+              </div>
+            </section>
+          ` : ""}
+        `;
+      }
+
+      function renderAccountingEntriesModal() {
+        const filters = state.ui.accountingEntryFilters;
+        const records = getFilteredAccountingEntries();
+
+        return `
+          <div class="modal-overlay">
+            <button class="modal-backdrop" type="button" data-action="close-accounting-entries-modal" aria-label="Fechar modal"></button>
+            <div class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="accounting-entries-modal-title">
+              <div class="modal-header">
+                <div>
+                  <h3 class="modal-title" id="accounting-entries-modal-title">Lançamentos contábeis</h3>
+                  <p class="modal-subtitle">Consulte todos os lançamentos e filtre por data de emissão, valor e descrição.</p>
+                </div>
+                <div class="inline-actions">
+                  <button class="primary-button" type="button" data-action="new-accounting-entry">Novo</button>
+                  <button class="ghost-button" type="button" data-action="close-accounting-entries-modal">Fechar</button>
+                </div>
+              </div>
+              <div class="modal-body">
+                <section class="card">
+                  <div class="section-head">
+                    <div>
+                      <h3>Filtros</h3>
+                      <p>Use os campos abaixo para refinar a listagem antes de abrir ou criar um lançamento.</p>
+                    </div>
+                    <button class="ghost-button" type="button" data-action="clear-accounting-entry-filters">Limpar filtros</button>
+                  </div>
+                  <form data-form="accounting-entry-filters" autocomplete="off">
+                    <div class="form-grid">
+                      <div class="field">
+                        <label for="accounting-filter-start-date">Data inicial de emissão</label>
+                        <input id="accounting-filter-start-date" type="date" name="startDate" value="${escapeHtml(filters.startDate || "")}">
+                      </div>
+                      <div class="field">
+                        <label for="accounting-filter-end-date">Data final de emissão</label>
+                        <input id="accounting-filter-end-date" type="date" name="endDate" value="${escapeHtml(filters.endDate || "")}">
+                      </div>
+                      <div class="field">
+                        <label for="accounting-filter-amount">Valor</label>
+                        <input id="accounting-filter-amount" type="number" name="amount" min="0" step="0.01" value="${escapeHtml(filters.amount || "")}" placeholder="Ex.: 1500,00">
+                      </div>
+                      <div class="field">
+                        <label for="accounting-filter-description">Descrição</label>
+                        <input id="accounting-filter-description" name="description" maxlength="180" value="${escapeHtml(filters.description || "")}" placeholder="Pesquisar pela descrição do lançamento">
+                      </div>
+                    </div>
+                  </form>
+                </section>
+                <section class="table-card">
+                  <div class="table-toolbar">
+                    <div>
+                      <h4>Lista de lançamentos</h4>
+                      <p class="page-subtitle">${escapeHtml(String(records.length))} resultado(s) encontrado(s) com os filtros atuais.</p>
+                    </div>
+                  </div>
+                  ${records.length ? `
+                    <div class="table-scroll">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Código</th>
+                            <th>Data</th>
+                            <th>Descrição</th>
+                            <th>Centro de custo</th>
+                            <th>Débito</th>
+                            <th>Crédito</th>
+                            <th>Valor</th>
+                            <th>Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${records.map((record) => {
+                            const costCenter = getCostCenterById(record.costCenterId);
+                            const debit = getChartAccountById(record.debitAccountId);
+                            const credit = getChartAccountById(record.creditAccountId);
+                            return `
+                              <tr>
+                                <td class="mono">${escapeHtml(record.code)}</td>
+                                <td>${escapeHtml(formatDate(record.entryDate))}</td>
+                                <td>
+                                  <strong>${escapeHtml(record.description || "Sem descrição")}</strong>
+                                  <div class="table-muted">Lançamento manual</div>
+                                </td>
+                                <td>
+                                  <strong>${escapeHtml(costCenter?.name || "Centro de custo indisponível")}</strong>
+                                  <div class="table-muted">${escapeHtml(costCenter?.code || "Sem código")}</div>
+                                </td>
+                                <td>
+                                  <strong>${escapeHtml(debit?.code || "Conta indisponível")}</strong>
+                                  <div class="table-muted">${escapeHtml(debit?.name || "Conta removida")}</div>
+                                </td>
+                                <td>
+                                  <strong>${escapeHtml(credit?.code || "Conta indisponível")}</strong>
+                                  <div class="table-muted">${escapeHtml(credit?.name || "Conta removida")}</div>
+                                </td>
+                                <td class="mono">${escapeHtml(formatCurrency(record.amount))}</td>
+                                <td>
+                                  <div class="table-actions">
+                                    <button class="action-chip" type="button" data-action="edit-accounting-entry" data-id="${escapeHtml(record.id)}">Editar</button>
+                                    <button class="action-chip danger" type="button" data-action="delete-accounting-entry" data-id="${escapeHtml(record.id)}">Excluir</button>
+                                  </div>
+                                </td>
+                              </tr>
+                            `;
+                          }).join("")}
+                        </tbody>
+                      </table>
+                    </div>
+                  ` : `
+                    <div class="empty-card">
+                      <strong>Nenhum lançamento encontrado.</strong>
+                      <p>Ajuste os filtros informados ou use o botão novo para cadastrar outro lançamento contábil.</p>
+                    </div>
+                  `}
+                </section>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderAccountingEntryFormModal() {
         const draft = state.ui.accountingEntryDraft;
         const editing = getActiveEditRecord("accountingEntries", state.ui.editing.accountingEntryId);
-        const searchTerm = state.ui.search.accountingEntries;
         const selectableAccounts = getSelectableChartAccounts();
         const costCenters = state.data.costCenters;
         const selectedCostCenter = getCostCenterById(draft.costCenterId);
         const debitAccount = getChartAccountById(draft.debitAccountId);
         const creditAccount = getChartAccountById(draft.creditAccountId);
         const canCreate = costCenters.length > 0 && selectableAccounts.length >= 2;
-        const records = filterRecords(
-          state.data.accountingEntries,
-          searchTerm,
-          (record) => {
-            const costCenter = getCostCenterById(record.costCenterId);
-            const debit = getChartAccountById(record.debitAccountId);
-            const credit = getChartAccountById(record.creditAccountId);
-            return `${record.code} ${record.entryDate} ${costCenter?.name || ""} ${debit?.code || ""} ${debit?.name || ""} ${credit?.code || ""} ${credit?.name || ""} ${record.amount}`;
-          }
-        );
-        const filters = state.ui.trialBalanceFilters;
-        const selectedFilterCostCenter = filters.costCenterId === "all" ? null : getCostCenterById(filters.costCenterId);
-        const filteredEntries = filters.submitted ? getTrialBalanceEntries(filters) : [];
-        const trialBalanceRows = filters.submitted ? getTrialBalanceRows(filters) : [];
-        const trialBalanceTotals = trialBalanceRows.reduce((acc, row) => ({
-          debit: roundCurrency(acc.debit + row.debit),
-          credit: roundCurrency(acc.credit + row.credit),
-          debitBalance: roundCurrency(acc.debitBalance + row.debitBalance),
-          creditBalance: roundCurrency(acc.creditBalance + row.creditBalance)
-        }), { debit: 0, credit: 0, debitBalance: 0, creditBalance: 0 });
 
         return `
-          <section class="split-grid">
-            <article class="notice-card">
-              <div class="notice-icon">CT</div>
-              <div>
-                <strong>Módulo contábil</strong>
-                <p>Concentre aqui os lançamentos contábeis manuais e a emissão do balancete por período e centro de custo.</p>
-              </div>
-            </article>
-            <article class="notice-card">
-              <div class="notice-icon">BT</div>
-              <div>
-                <strong>Balancete por filtro</strong>
-                <p>O balancete considera a data inicial, a data final e o centro de custo selecionado, com opção de todos os centros.</p>
-              </div>
-            </article>
-          </section>
-          ${!canCreate ? `
-            <section class="notice-card">
-              <div class="notice-icon">LC</div>
-              <div>
-                <strong>Pré-requisitos para lançar contabilmente</strong>
-                <p>Você precisa ter ao menos um centro de custo e duas contas contábeis analíticas ativas para registrar débito e crédito.</p>
-              </div>
-            </section>
-          ` : ""}
-          <section class="layout-grid">
-            <article class="card">
-              <div class="section-head">
+          <div class="modal-overlay">
+            <button class="modal-backdrop" type="button" data-action="close-accounting-entry-form" aria-label="Fechar modal"></button>
+            <div class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="accounting-entry-form-modal-title">
+              <div class="modal-header">
                 <div>
-                  <h3>${editing ? `Editar lançamento ${escapeHtml(editing.code)}` : "Novo lançamento contábil"}</h3>
-                  <p>Informe a data, o centro de custo, a conta de débito, a conta de crédito e o valor do lançamento.</p>
+                  <h3 class="modal-title" id="accounting-entry-form-modal-title">${editing ? `Editar lançamento ${escapeHtml(editing.code)}` : "Novo lançamento contábil"}</h3>
+                  <p class="modal-subtitle">Cadastre o lançamento contábil em um modal separado da listagem.</p>
+                </div>
+                <div class="inline-actions">
+                  <button class="ghost-button" type="button" data-action="close-accounting-entry-form">Fechar</button>
                 </div>
               </div>
-              <form data-form="accounting-entry" autocomplete="off">
-                <input type="hidden" name="id" value="${escapeHtml(draft.id || editing?.id || "")}">
-                <div class="form-grid">
-                  <div class="field">
-                    <label for="entry-date">Data do lançamento</label>
-                    <input id="entry-date" type="date" name="entryDate" value="${escapeHtml(draft.entryDate || "")}" ${canCreate ? "required" : "disabled"}>
-                  </div>
-                  <div class="field">
-                    <label for="entry-amount">Valor</label>
-                    <input id="entry-amount" type="number" name="amount" min="0.01" step="0.01" value="${escapeHtml(String(draft.amount || ""))}" placeholder="0,00" ${canCreate ? "required" : "disabled"}>
-                  </div>
-                  <div class="field full">
-                    <label for="entry-cost-center">Centro de custo</label>
-                    <select id="entry-cost-center" name="costCenterId" ${canCreate ? "required" : "disabled"}>
-                      <option value="">Selecione um centro de custo</option>
-                      ${costCenters.map((record) => `
-                        <option value="${escapeHtml(record.id)}" ${draft.costCenterId === record.id ? "selected" : ""}>
-                          ${escapeHtml(record.code)} - ${escapeHtml(record.name)}
-                        </option>
-                      `).join("")}
-                    </select>
-                  </div>
-                  <div class="field">
-                    <label for="entry-debit-account">Conta débito</label>
-                    <select id="entry-debit-account" name="debitAccountId" ${canCreate ? "required" : "disabled"}>
-                      <option value="">Selecione a conta de débito</option>
-                      ${selectableAccounts.map((account) => `
-                        <option value="${escapeHtml(account.id)}" ${draft.debitAccountId === account.id ? "selected" : ""}>
-                          ${escapeHtml(account.code)} - ${escapeHtml(account.name)}
-                        </option>
-                      `).join("")}
-                    </select>
-                  </div>
-                  <div class="field">
-                    <label for="entry-credit-account">Conta crédito</label>
-                    <select id="entry-credit-account" name="creditAccountId" ${canCreate ? "required" : "disabled"}>
-                      <option value="">Selecione a conta de crédito</option>
-                      ${selectableAccounts.map((account) => `
-                        <option value="${escapeHtml(account.id)}" ${draft.creditAccountId === account.id ? "selected" : ""}>
-                          ${escapeHtml(account.code)} - ${escapeHtml(account.name)}
-                        </option>
-                      `).join("")}
-                    </select>
-                  </div>
-                  <div class="field full">
-                    <label>Resumo do lançamento</label>
-                    <div class="field-readonly">
-                      ${selectedCostCenter ? `${escapeHtml(selectedCostCenter.code)} - ${escapeHtml(selectedCostCenter.name)}` : "Selecione um centro de custo."}
+              <div class="modal-body">
+                ${!canCreate ? `
+                  <section class="notice-card">
+                    <div class="notice-icon">LC</div>
+                    <div>
+                      <strong>Pré-requisitos para lançar contabilmente</strong>
+                      <p>Você precisa ter ao menos um centro de custo e duas contas contábeis analíticas ativas para registrar débito e crédito.</p>
+                    </div>
+                  </section>
+                ` : ""}
+                <section class="card">
+                  <div class="section-head">
+                    <div>
+                      <h3>Dados do lançamento</h3>
+                      <p>Preencha descrição, data de emissão, centro de custo, partidas e valor.</p>
                     </div>
                   </div>
-                  <div class="field full">
-                    <label>Partidas selecionadas</label>
-                    <div class="field-readonly">
-                      ${debitAccount && creditAccount
-                        ? `Débito: ${escapeHtml(debitAccount.code)} - ${escapeHtml(debitAccount.name)} | Crédito: ${escapeHtml(creditAccount.code)} - ${escapeHtml(creditAccount.name)}`
-                        : "Selecione as contas de débito e crédito para revisar o lançamento."}
+                  <form data-form="accounting-entry" autocomplete="off">
+                    <input type="hidden" name="id" value="${escapeHtml(draft.id || editing?.id || "")}">
+                    <div class="form-grid">
+                      <div class="field full">
+                        <label for="accounting-entry-description">Descrição</label>
+                        <input id="accounting-entry-description" name="description" maxlength="180" value="${escapeHtml(draft.description || "")}" placeholder="Descreva o lançamento contábil" ${canCreate ? "" : "disabled"}>
+                      </div>
+                      <div class="field">
+                        <label for="accounting-entry-date">Data de emissão</label>
+                        <input id="accounting-entry-date" type="date" name="entryDate" value="${escapeHtml(draft.entryDate || "")}" ${canCreate ? "required" : "disabled"}>
+                      </div>
+                      <div class="field">
+                        <label for="accounting-entry-amount">Valor</label>
+                        <input id="accounting-entry-amount" type="number" name="amount" min="0.01" step="0.01" value="${escapeHtml(String(draft.amount || ""))}" placeholder="0,00" ${canCreate ? "required" : "disabled"}>
+                      </div>
+                      <div class="field full">
+                        <label for="accounting-entry-cost-center">Centro de custo</label>
+                        <select id="accounting-entry-cost-center" name="costCenterId" ${canCreate ? "required" : "disabled"}>
+                          <option value="">Selecione um centro de custo</option>
+                          ${costCenters.map((record) => `
+                            <option value="${escapeHtml(record.id)}" ${draft.costCenterId === record.id ? "selected" : ""}>
+                              ${escapeHtml(record.code)} - ${escapeHtml(record.name)}
+                            </option>
+                          `).join("")}
+                        </select>
+                      </div>
+                      <div class="field">
+                        <label for="accounting-entry-debit-account">Conta débito</label>
+                        <select id="accounting-entry-debit-account" name="debitAccountId" ${canCreate ? "required" : "disabled"}>
+                          <option value="">Selecione a conta de débito</option>
+                          ${selectableAccounts.map((account) => `
+                            <option value="${escapeHtml(account.id)}" ${draft.debitAccountId === account.id ? "selected" : ""}>
+                              ${escapeHtml(account.code)} - ${escapeHtml(account.name)}
+                            </option>
+                          `).join("")}
+                        </select>
+                      </div>
+                      <div class="field">
+                        <label for="accounting-entry-credit-account">Conta crédito</label>
+                        <select id="accounting-entry-credit-account" name="creditAccountId" ${canCreate ? "required" : "disabled"}>
+                          <option value="">Selecione a conta de crédito</option>
+                          ${selectableAccounts.map((account) => `
+                            <option value="${escapeHtml(account.id)}" ${draft.creditAccountId === account.id ? "selected" : ""}>
+                              ${escapeHtml(account.code)} - ${escapeHtml(account.name)}
+                            </option>
+                          `).join("")}
+                        </select>
+                      </div>
+                      <div class="field full">
+                        <label>Resumo do lançamento</label>
+                        <div class="field-readonly">
+                          ${selectedCostCenter ? `${escapeHtml(selectedCostCenter.code)} - ${escapeHtml(selectedCostCenter.name)}` : "Selecione um centro de custo."}
+                        </div>
+                      </div>
+                      <div class="field full">
+                        <label>Partidas selecionadas</label>
+                        <div class="field-readonly">
+                          ${debitAccount && creditAccount
+                            ? `Débito: ${escapeHtml(debitAccount.code)} - ${escapeHtml(debitAccount.name)} | Crédito: ${escapeHtml(creditAccount.code)} - ${escapeHtml(creditAccount.name)}`
+                            : "Selecione as contas de débito e crédito para revisar o lançamento."}
+                        </div>
+                        ${draft.debitAccountId && draft.creditAccountId && draft.debitAccountId === draft.creditAccountId ? `<div class="inline-note warning">Débito e crédito não podem usar a mesma conta contábil.</div>` : ""}
+                      </div>
                     </div>
-                    ${draft.debitAccountId && draft.creditAccountId && draft.debitAccountId === draft.creditAccountId ? `<div class="inline-note warning">Débito e crédito não podem usar a mesma conta contábil.</div>` : ""}
-                  </div>
-                </div>
-                <div class="form-actions">
-                  <button class="primary-button" type="submit" ${canCreate ? "" : "disabled"}>${editing ? "Salvar alterações" : "Cadastrar lançamento"}</button>
-                  ${editing ? `<button class="ghost-button" type="button" data-action="reset-accounting-entry">Cancelar edição</button>` : ""}
-                </div>
-              </form>
-            </article>
-            <article class="table-card">
-              <div class="table-toolbar">
-                <div>
-                  <h4>Lançamentos contábeis</h4>
-                  <p class="page-subtitle">Consulte, edite e exclua partidas registradas manualmente.</p>
-                </div>
-                <input class="search-input" data-search="accountingEntries" placeholder="Pesquisar lançamentos" value="${escapeHtml(searchTerm)}">
-              </div>
-              ${records.length ? `
-                <div class="table-scroll">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Código</th>
-                        <th>Data</th>
-                        <th>Centro de custo</th>
-                        <th>Débito</th>
-                        <th>Crédito</th>
-                        <th>Valor</th>
-                        <th>Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${records.map((record) => {
-                        const costCenter = getCostCenterById(record.costCenterId);
-                        const debit = getChartAccountById(record.debitAccountId);
-                        const credit = getChartAccountById(record.creditAccountId);
-                        return `
-                          <tr>
-                            <td class="mono">${escapeHtml(record.code)}</td>
-                            <td>${escapeHtml(formatDate(record.entryDate))}</td>
-                            <td>
-                              <strong>${escapeHtml(costCenter?.name || "Centro de custo indisponível")}</strong>
-                              <div class="table-muted">${escapeHtml(costCenter?.code || "Sem código")}</div>
-                            </td>
-                            <td>
-                              <strong>${escapeHtml(debit?.code || "Conta indisponível")}</strong>
-                              <div class="table-muted">${escapeHtml(debit?.name || "Conta removida")}</div>
-                            </td>
-                            <td>
-                              <strong>${escapeHtml(credit?.code || "Conta indisponível")}</strong>
-                              <div class="table-muted">${escapeHtml(credit?.name || "Conta removida")}</div>
-                            </td>
-                            <td class="mono">${escapeHtml(formatCurrency(record.amount))}</td>
-                            <td>
-                              <div class="table-actions">
-                                <button class="action-chip" type="button" data-action="edit-accounting-entry" data-id="${escapeHtml(record.id)}">Editar</button>
-                                <button class="action-chip danger" type="button" data-action="delete-accounting-entry" data-id="${escapeHtml(record.id)}">Excluir</button>
-                              </div>
-                            </td>
-                          </tr>
-                        `;
-                      }).join("")}
-                    </tbody>
-                  </table>
-                </div>
-              ` : `
-                <div class="empty-card">
-                  <strong>Nenhum lançamento contábil encontrado.</strong>
-                  <p>${searchTerm ? "Nenhum lançamento corresponde ao termo pesquisado." : "Cadastre o primeiro lançamento informando data, centro de custo, débito, crédito e valor."}</p>
-                </div>
-              `}
-            </article>
-          </section>
-          <section class="card">
-            <div class="section-head">
-              <div>
-                <h3>Emitir balancete</h3>
-                <p>Defina o período e o centro de custo para apurar os movimentos contábeis. Você pode emitir considerando todos os centros de custo.</p>
+                    <div class="form-actions">
+                      <button class="primary-button" type="submit" ${canCreate ? "" : "disabled"}>${editing ? "Salvar alterações" : "Salvar lançamento"}</button>
+                      <button class="ghost-button" type="button" data-action="reset-accounting-entry">Cancelar</button>
+                    </div>
+                  </form>
+                </section>
               </div>
             </div>
-            <form data-form="trial-balance" autocomplete="off">
-              <div class="form-grid">
-                <div class="field">
-                  <label for="trial-balance-start-date">Período inicial</label>
-                  <input id="trial-balance-start-date" type="date" name="startDate" value="${escapeHtml(filters.startDate || "")}" required>
-                </div>
-                <div class="field">
-                  <label for="trial-balance-end-date">Período final</label>
-                  <input id="trial-balance-end-date" type="date" name="endDate" value="${escapeHtml(filters.endDate || "")}" required>
-                </div>
-                <div class="field full">
-                  <label for="trial-balance-cost-center">Centro de custo</label>
-                  <select id="trial-balance-cost-center" name="costCenterId">
-                    <option value="all" ${filters.costCenterId === "all" ? "selected" : ""}>Todos os centros de custo</option>
-                    ${costCenters.map((record) => `
-                      <option value="${escapeHtml(record.id)}" ${filters.costCenterId === record.id ? "selected" : ""}>
-                        ${escapeHtml(record.code)} - ${escapeHtml(record.name)}
-                      </option>
-                    `).join("")}
-                  </select>
-                </div>
-              </div>
-              <div class="form-actions">
-                <button class="primary-button" type="submit">Emitir balancete</button>
-              </div>
-            </form>
-          </section>
-          ${filters.submitted ? `
-            <section class="table-card">
-              <div class="table-toolbar">
+          </div>
+        `;
+      }
+
+      function renderTrialBalanceModal() {
+        const filters = state.ui.trialBalanceFilters;
+        const visibleColumns = getTrialBalanceVisibleColumns(filters);
+        const selectedCostCenter = filters.costCenterId === "all" ? null : getCostCenterById(filters.costCenterId);
+        const report = filters.submitted ? getTrialBalanceReport(filters) : { rows: [], totals: {}, entries: [] };
+
+        return `
+          <div class="modal-overlay">
+            <button class="modal-backdrop" type="button" data-action="close-trial-balance-modal" aria-label="Fechar modal"></button>
+            <div class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="trial-balance-modal-title">
+              <div class="modal-header">
                 <div>
-                  <h4>Balancete emitido</h4>
-                  <p class="page-subtitle">
-                    Período de ${escapeHtml(formatDate(filters.startDate))} até ${escapeHtml(formatDate(filters.endDate))}
-                    ${selectedFilterCostCenter ? ` | Centro de custo: ${escapeHtml(selectedFilterCostCenter.code)} - ${escapeHtml(selectedFilterCostCenter.name)}` : " | Centro de custo: todos"}
-                  </p>
+                  <h3 class="modal-title" id="trial-balance-modal-title">Balancete</h3>
+                  <p class="modal-subtitle">Informe os parâmetros de emissão, configure as colunas e depois emita ou exporte o relatório em PDF.</p>
                 </div>
-                <div class="badge-row">
-                  <span class="badge">${escapeHtml(String(filteredEntries.length))} lançamento(s)</span>
-                  <span class="badge positive">${escapeHtml(String(trialBalanceRows.length))} conta(s)</span>
+                <div class="inline-actions">
+                  ${filters.submitted ? `<button class="secondary-button" type="button" data-action="export-trial-balance-pdf">Exportar PDF</button>` : ""}
+                  <button class="ghost-button" type="button" data-action="close-trial-balance-modal">Fechar</button>
                 </div>
               </div>
-              ${trialBalanceRows.length ? `
-                <div class="table-scroll">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Código</th>
-                        <th>Conta</th>
-                        <th>Débitos</th>
-                        <th>Créditos</th>
-                        <th>Saldo devedor</th>
-                        <th>Saldo credor</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${trialBalanceRows.map((row) => `
-                        <tr>
-                          <td class="mono">${escapeHtml(row.account.code)}</td>
-                          <td>
-                            <strong>${escapeHtml(row.account.name)}</strong>
-                            <div class="table-muted">${escapeHtml(`${row.account.group} | ${row.account.balanceNature}`)}</div>
-                          </td>
-                          <td class="mono">${escapeHtml(formatCurrency(row.debit))}</td>
-                          <td class="mono">${escapeHtml(formatCurrency(row.credit))}</td>
-                          <td class="mono">${escapeHtml(formatCurrency(row.debitBalance))}</td>
-                          <td class="mono">${escapeHtml(formatCurrency(row.creditBalance))}</td>
-                        </tr>
-                      `).join("")}
-                      <tr>
-                        <td class="mono"><strong>Total</strong></td>
-                        <td class="table-muted">Totais do período filtrado</td>
-                        <td class="mono"><strong>${escapeHtml(formatCurrency(trialBalanceTotals.debit))}</strong></td>
-                        <td class="mono"><strong>${escapeHtml(formatCurrency(trialBalanceTotals.credit))}</strong></td>
-                        <td class="mono"><strong>${escapeHtml(formatCurrency(trialBalanceTotals.debitBalance))}</strong></td>
-                        <td class="mono"><strong>${escapeHtml(formatCurrency(trialBalanceTotals.creditBalance))}</strong></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              ` : `
-                <div class="empty-card">
-                  <strong>Nenhum movimento encontrado para o balancete.</strong>
-                  <p>Revise o período informado ou altere o centro de custo para emitir novamente.</p>
-                </div>
-              `}
-            </section>
-          ` : `
-            <section class="empty-card">
-              <strong>Balancete ainda não emitido.</strong>
-              <p>Informe a data inicial, a data final e o centro de custo desejado para gerar o balancete.</p>
-            </section>
-          `}
+              <div class="modal-body">
+                <section class="card">
+                  <div class="section-head">
+                    <div>
+                      <h3>Parâmetros e configuração</h3>
+                      <p>Defina o período, o centro de custo e quais colunas devem aparecer no balancete.</p>
+                    </div>
+                  </div>
+                  <form data-form="trial-balance" autocomplete="off">
+                    <div class="form-grid">
+                      <div class="field">
+                        <label for="trial-balance-start-date">Período inicial</label>
+                        <input id="trial-balance-start-date" type="date" name="startDate" value="${escapeHtml(filters.startDate || "")}" required>
+                      </div>
+                      <div class="field">
+                        <label for="trial-balance-end-date">Período final</label>
+                        <input id="trial-balance-end-date" type="date" name="endDate" value="${escapeHtml(filters.endDate || "")}" required>
+                      </div>
+                      <div class="field full">
+                        <label for="trial-balance-cost-center">Centro de custo</label>
+                        <select id="trial-balance-cost-center" name="costCenterId">
+                          <option value="all" ${filters.costCenterId === "all" ? "selected" : ""}>Todos os centros de custo</option>
+                          ${state.data.costCenters.map((record) => `
+                            <option value="${escapeHtml(record.id)}" ${filters.costCenterId === record.id ? "selected" : ""}>
+                              ${escapeHtml(record.code)} - ${escapeHtml(record.name)}
+                            </option>
+                          `).join("")}
+                        </select>
+                      </div>
+                      <div class="field full">
+                        <label>Configuração das colunas</label>
+                        <div class="checkbox-grid">
+                          <label class="checkbox-item">
+                            <input type="checkbox" name="showPreviousBalance" ${filters.showPreviousBalance ? "checked" : ""}>
+                            <span>Saldo anterior</span>
+                          </label>
+                          <label class="checkbox-item">
+                            <input type="checkbox" name="showDebit" ${filters.showDebit ? "checked" : ""}>
+                            <span>Débito</span>
+                          </label>
+                          <label class="checkbox-item">
+                            <input type="checkbox" name="showCredit" ${filters.showCredit ? "checked" : ""}>
+                            <span>Crédito</span>
+                          </label>
+                          <label class="checkbox-item">
+                            <input type="checkbox" name="showMovement" ${filters.showMovement ? "checked" : ""}>
+                            <span>Movimento</span>
+                          </label>
+                          <label class="checkbox-item">
+                            <input type="checkbox" name="showBalance" ${filters.showBalance ? "checked" : ""}>
+                            <span>Saldo</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="form-actions">
+                      <button class="primary-button" type="submit">Emitir</button>
+                    </div>
+                  </form>
+                </section>
+                ${filters.submitted ? `
+                  <section class="table-card">
+                    <div class="table-toolbar">
+                      <div>
+                        <h4>Balancete emitido</h4>
+                        <p class="page-subtitle">Período de ${escapeHtml(formatDate(filters.startDate))} até ${escapeHtml(formatDate(filters.endDate))}${selectedCostCenter ? ` | Centro de custo: ${escapeHtml(selectedCostCenter.code)} - ${escapeHtml(selectedCostCenter.name)}` : " | Centro de custo: todos"}</p>
+                      </div>
+                      <div class="badge-row">
+                        <span class="badge">${escapeHtml(String(report.entries.length))} lançamento(s)</span>
+                        <span class="badge positive">${escapeHtml(String(report.rows.length))} conta(s)</span>
+                      </div>
+                    </div>
+                    ${report.rows.length ? `
+                      <div class="table-scroll">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Código</th>
+                              <th>Conta</th>
+                              ${visibleColumns.map((column) => `<th>${escapeHtml(column.label)}</th>`).join("")}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            ${report.rows.map((row) => `
+                              <tr>
+                                <td class="mono">${escapeHtml(row.account.code)}</td>
+                                <td>
+                                  <strong>${escapeHtml(row.account.name)}</strong>
+                                  <div class="table-muted">${escapeHtml(`${row.account.group} | ${row.account.balanceNature}`)}</div>
+                                </td>
+                                ${visibleColumns.map((column) => `<td class="mono">${escapeHtml(column.formatter(row[column.key]))}</td>`).join("")}
+                              </tr>
+                            `).join("")}
+                            <tr>
+                              <td class="mono"><strong>Total</strong></td>
+                              <td class="table-muted">Totais do período</td>
+                              ${visibleColumns.map((column) => `<td class="mono"><strong>${escapeHtml(column.formatter(report.totals[column.key]))}</strong></td>`).join("")}
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    ` : `
+                      <div class="empty-card">
+                        <strong>Nenhum movimento encontrado para o balancete.</strong>
+                        <p>Revise o período informado, o centro de custo selecionado ou os lançamentos cadastrados antes de emitir novamente.</p>
+                      </div>
+                    `}
+                  </section>
+                ` : `
+                  <section class="empty-card">
+                    <strong>Balancete ainda não emitido.</strong>
+                    <p>Informe os parâmetros desejados, configure as colunas e clique em emitir para visualizar o relatório.</p>
+                  </section>
+                `}
+              </div>
+            </div>
+          </div>
         `;
       }
 
       function renderFiscalView() {
+
 
 
         const searchTerm = state.ui.search.invoices;
