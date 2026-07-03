@@ -969,6 +969,92 @@
       gap: 16px;
     }
 
+    .trial-balance-split {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(280px, 360px);
+      gap: 16px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .trial-balance-split .table-card {
+      min-height: 0;
+    }
+
+    .ledger-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: auto;
+      overscroll-behavior: contain;
+    }
+
+    .ledger-summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 4px 0 12px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+
+    .ledger-summary strong {
+      display: block;
+      font-family: var(--mono);
+      font-size: 0.86rem;
+      margin-top: 2px;
+    }
+
+    .ledger-entries-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .ledger-entry {
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.82rem;
+    }
+
+    .ledger-entry-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .ledger-entry-amounts {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 2px;
+    }
+
+    tr.selectable-row {
+      cursor: pointer;
+    }
+
+    tr.selectable-row:hover {
+      background: var(--accent-soft);
+    }
+
+    tr.selectable-row.selected {
+      background: var(--accent-soft-2);
+    }
+
+    @media (max-width: 860px) {
+      .trial-balance-split {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .subtle-panel {
       padding: 16px;
       border-radius: var(--radius-md);
@@ -1194,6 +1280,14 @@
       backdrop-filter: blur(3px);
     }
 
+    .modal-shell.fullscreen {
+      width: 100vw;
+      height: 100vh;
+      max-height: 100vh;
+      border-radius: 0;
+      border: none;
+    }
+
     .modal-shell {
       position: relative;
       z-index: 1;
@@ -1238,11 +1332,27 @@
     .modal-body {
       padding: 20px;
       overflow: auto;
+      overscroll-behavior: contain;
       min-height: 0;
       background: var(--canvas);
       display: flex;
       flex-direction: column;
       gap: 16px;
+    }
+
+    .modal-body .table-card {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .modal-body .table-scroll {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      overscroll-behavior: contain;
     }
 
     .modal-tabs {
@@ -1532,7 +1642,11 @@
         chartAccounts: "erp_chart_accounts",
         items: "erp_items",
         invoices: "erp_invoices",
-        accountingEntries: "erp_accounting_entries"
+        accountingEntries: "erp_accounting_entries",
+        documentTypes: "erp_document_types",
+        accountingEvents: "erp_accounting_events",
+        settlementEvents: "erp_settlement_events",
+        settlements: "erp_settlements"
       };
       const CLOUD_CONFIG_STORAGE_KEY = "erp_cloud_sync_config";
       const CLOUD_LAST_MODIFIED_STORAGE_KEY = "erp_cloud_last_modified";
@@ -1543,7 +1657,11 @@
         financialNatures: { prefix: "NAT", digits: 4 },
         items: { prefix: "ITE", digits: 4 },
         invoices: { prefix: "NF", digits: 6 },
-        accountingEntries: { prefix: "LC", digits: 6 }
+        accountingEntries: { prefix: "LC", digits: 6 },
+        documentTypes: { prefix: "DOC", digits: 4 },
+        accountingEvents: { prefix: "EVC", digits: 4 },
+        settlementEvents: { prefix: "EVB", digits: 4 },
+        settlements: { prefix: "BX", digits: 6 }
       };
 
       const CHART_ACCOUNT_GROUP_LABELS = {
@@ -1614,6 +1732,11 @@
           icon: "FI",
           title: "Módulo fiscal",
           subtitle: "Lance notas fiscais de serviço ou produto com itens, vínculo contábil e parcelas financeiras."
+        },
+        financeiro: {
+          icon: "FN",
+          title: "Módulo financeiro",
+          subtitle: "Acompanhe as parcelas lançadas e registre baixas com data, conta e valor."
         }
       };
 
@@ -1625,7 +1748,11 @@
           chartAccounts: [],
           items: [],
           invoices: [],
-          accountingEntries: []
+          accountingEntries: [],
+          documentTypes: [],
+          accountingEvents: [],
+          settlementEvents: [],
+          settlements: []
         },
         ui: {
           activeView: "dashboard",
@@ -1637,7 +1764,11 @@
             financialNatures: "",
             items: "",
             invoices: "",
-            accountingEntries: ""
+            accountingEntries: "",
+            documentTypes: "",
+            accountingEvents: "",
+            settlementEvents: "",
+            financeiro: ""
           },
           cloudDraft: createEmptyCloudDraft(),
           chartAccountFormDraft: createEmptyChartAccountDraft(),
@@ -1653,13 +1784,27 @@
           accountingEntryFormModalOpen: false,
           trialBalanceFilters: createEmptyTrialBalanceFilters(),
           trialBalanceModalOpen: false,
+          trialBalanceReportModalOpen: false,
+          trialBalanceSelectedAccountId: "",
+          settingsPanel: "costCenters",
+          documentTypeFormDraft: createEmptyDocumentTypeDraft(),
+          accountingEventFormDraft: createEmptyAccountingEventDraft(),
+          settlementEventFormDraft: createEmptySettlementEventDraft(),
+          eventEntriesModalOpen: false,
+          payableEntriesModalOpen: false,
+          settlementModalOpen: false,
+          settlementTarget: null,
+          settlementFormDraft: createEmptySettlementDraft(),
           editing: {
             costCenterId: null,
             supplierId: null,
             chartAccountId: null,
             financialNatureId: null,
             itemId: null,
-            accountingEntryId: null
+            accountingEntryId: null,
+            documentTypeId: null,
+            accountingEventId: null,
+            settlementEventId: null
           },
           invoiceDraft: createEmptyInvoiceDraft(),
           invoiceModalOpen: false,
@@ -1674,6 +1819,9 @@
             id: invoice.id,
             code: invoice.code,
             type: invoice.type,
+            kind: invoice.kind || "invoice",
+            documentNumber: invoice.documentNumber || "",
+            costCenterId: invoice.costCenterId || "",
             supplierId: invoice.supplierId,
             issueDate: invoice.issueDate,
             description: invoice.description,
@@ -1698,6 +1846,9 @@
           id: null,
           code: "",
           type: "Nota de serviço",
+          kind: "invoice",
+          documentNumber: "",
+          costCenterId: "",
           supplierId: "",
           issueDate: getToday(),
           description: "",
@@ -1715,6 +1866,42 @@
             paymentMethod: "",
             status: "Em aberto"
           }
+        };
+      }
+
+      function createEmptyDocumentTypeDraft(record) {
+        return {
+          id: record?.id || "",
+          name: record?.name || "",
+          status: record?.isActive === false ? "Inativo" : "Ativo"
+        };
+      }
+
+      function createEmptyAccountingEventDraft(record) {
+        return {
+          id: record?.id || "",
+          documentTypeId: record?.documentTypeId || "",
+          creditAccountId: record?.creditAccountId || "",
+          description: record?.description || "",
+          status: record?.isActive === false ? "Inativo" : "Ativo"
+        };
+      }
+
+      function createEmptySettlementEventDraft(record) {
+        return {
+          id: record?.id || "",
+          documentTypeId: record?.documentTypeId || "",
+          debitAccountId: record?.debitAccountId || "",
+          description: record?.description || "",
+          status: record?.isActive === false ? "Inativo" : "Ativo"
+        };
+      }
+
+      function createEmptySettlementDraft() {
+        return {
+          settlementDate: getToday(),
+          payingAccountId: "",
+          amount: ""
         };
       }
 
@@ -1808,6 +1995,56 @@
         const migratedAccounts = migrateChartAccounts(state.data.chartAccounts);
         state.data.chartAccounts = migratedAccounts;
         persistCollection("chartAccounts");
+
+        migrateDocumentTypes();
+        migrateInvoices();
+      }
+
+      function migrateDocumentTypes() {
+        if (!Array.isArray(state.data.documentTypes)) {
+          state.data.documentTypes = [];
+        }
+        const defaultNames = ["Nota de serviço", "Nota de produto"];
+        let changed = false;
+        defaultNames.forEach((name) => {
+          const exists = state.data.documentTypes.some((record) => record.name === name);
+          if (!exists) {
+            state.data.documentTypes.push({
+              id: generateId(),
+              code: generateCode("documentTypes"),
+              name,
+              isActive: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            });
+            changed = true;
+          }
+        });
+        if (changed) {
+          persistCollection("documentTypes");
+        }
+      }
+
+      function migrateInvoices() {
+        if (!Array.isArray(state.data.invoices) || !state.data.invoices.length) {
+          return;
+        }
+        let changed = false;
+        state.data.invoices = state.data.invoices.map((invoice) => {
+          if (invoice.kind && invoice.documentNumber !== undefined && invoice.costCenterId !== undefined) {
+            return invoice;
+          }
+          changed = true;
+          return {
+            ...invoice,
+            kind: invoice.kind || "invoice",
+            documentNumber: invoice.documentNumber || "",
+            costCenterId: invoice.costCenterId || ""
+          };
+        });
+        if (changed) {
+          persistCollection("invoices");
+        }
       }
 
       function readCollection(storageKey) {
@@ -1842,7 +2079,11 @@
           chartAccounts: [...state.data.chartAccounts],
           items: [...state.data.items],
           invoices: [...state.data.invoices],
-          accountingEntries: [...state.data.accountingEntries]
+          accountingEntries: [...state.data.accountingEntries],
+          documentTypes: [...state.data.documentTypes],
+          accountingEvents: [...state.data.accountingEvents],
+          settlementEvents: [...state.data.settlementEvents],
+          settlements: [...state.data.settlements]
         };
       }
 
@@ -2062,6 +2303,10 @@
         const { action, id } = target.dataset;
 
         switch (action) {
+          case "switch-settings-panel":
+            state.ui.settingsPanel = target.dataset.panel || "costCenters";
+            renderApp();
+            break;
           case "toggle-sidebar":
             state.ui.sidebarOpen = !state.ui.sidebarOpen;
             renderApp();
@@ -2120,6 +2365,17 @@
             break;
           case "new-invoice":
             state.ui.invoiceDraft = createEmptyInvoiceDraft();
+            state.ui.invoiceDraft.kind = "invoice";
+            state.ui.invoiceModalOpen = true;
+            state.ui.activeInvoiceTab = "dados";
+            navigate("fiscal");
+            break;
+          case "new-lancamento":
+            state.ui.invoiceDraft = createEmptyInvoiceDraft();
+            state.ui.invoiceDraft.kind = "lancamento";
+            state.ui.invoiceDraft.type = getActiveDocumentTypes().find((docType) => !["Nota de serviço", "Nota de produto"].includes(docType.name))?.name
+              || getActiveDocumentTypes()[0]?.name
+              || "";
             state.ui.invoiceModalOpen = true;
             state.ui.activeInvoiceTab = "dados";
             navigate("fiscal");
@@ -2127,6 +2383,94 @@
           case "close-invoice-modal":
             state.ui.invoiceModalOpen = false;
             state.ui.activeInvoiceTab = "dados";
+            renderApp();
+            break;
+          case "reset-document-type":
+            state.ui.editing.documentTypeId = null;
+            state.ui.documentTypeFormDraft = createEmptyDocumentTypeDraft();
+            renderApp();
+            break;
+          case "edit-document-type":
+            {
+              const record = getDocumentTypeById(id);
+              state.ui.documentTypeFormDraft = createEmptyDocumentTypeDraft(record);
+            }
+            state.ui.editing.documentTypeId = id;
+            renderApp();
+            break;
+          case "delete-document-type":
+            deleteDocumentType(id);
+            break;
+          case "reset-accounting-event":
+            state.ui.editing.accountingEventId = null;
+            state.ui.accountingEventFormDraft = createEmptyAccountingEventDraft();
+            renderApp();
+            break;
+          case "edit-accounting-event":
+            {
+              const record = state.data.accountingEvents.find((item) => item.id === id);
+              state.ui.accountingEventFormDraft = createEmptyAccountingEventDraft(record);
+            }
+            state.ui.editing.accountingEventId = id;
+            renderApp();
+            break;
+          case "delete-accounting-event":
+            deleteAccountingEvent(id);
+            break;
+          case "reset-settlement-event":
+            state.ui.editing.settlementEventId = null;
+            state.ui.settlementEventFormDraft = createEmptySettlementEventDraft();
+            renderApp();
+            break;
+          case "edit-settlement-event":
+            {
+              const record = state.data.settlementEvents.find((item) => item.id === id);
+              state.ui.settlementEventFormDraft = createEmptySettlementEventDraft(record);
+            }
+            state.ui.editing.settlementEventId = id;
+            renderApp();
+            break;
+          case "delete-settlement-event":
+            deleteSettlementEvent(id);
+            break;
+          case "open-event-entries-modal":
+            state.ui.eventEntriesModalOpen = true;
+            renderApp();
+            break;
+          case "close-event-entries-modal":
+            state.ui.eventEntriesModalOpen = false;
+            renderApp();
+            break;
+          case "open-payable-entries-modal":
+            state.ui.payableEntriesModalOpen = true;
+            renderApp();
+            break;
+          case "close-payable-entries-modal":
+            state.ui.payableEntriesModalOpen = false;
+            renderApp();
+            break;
+          case "open-settlement-modal":
+            {
+              const invoiceId = target.dataset.invoiceId;
+              const installmentId = target.dataset.installmentId;
+              const invoice = state.data.invoices.find((record) => record.id === invoiceId);
+              const installment = invoice?.installments.find((item) => item.id === installmentId);
+              const remaining = invoice && installment
+                ? roundCurrency(installment.amount - getInstallmentSettledAmount(invoiceId, installmentId))
+                : 0;
+              state.ui.settlementTarget = { invoiceId, installmentId };
+              state.ui.settlementFormDraft = {
+                settlementDate: getToday(),
+                payingAccountId: "",
+                amount: remaining > 0 ? String(remaining) : ""
+              };
+              state.ui.settlementModalOpen = true;
+              renderApp();
+            }
+            break;
+          case "close-settlement-modal":
+            state.ui.settlementModalOpen = false;
+            state.ui.settlementTarget = null;
             renderApp();
             break;
           case "edit-cost-center":
@@ -2211,6 +2555,20 @@
             break;
           case "close-trial-balance-modal":
             state.ui.trialBalanceModalOpen = false;
+            renderApp();
+            break;
+          case "close-trial-balance-report-modal":
+            state.ui.trialBalanceReportModalOpen = false;
+            state.ui.trialBalanceSelectedAccountId = "";
+            renderApp();
+            break;
+          case "edit-trial-balance-filters":
+            state.ui.trialBalanceReportModalOpen = false;
+            state.ui.trialBalanceModalOpen = true;
+            renderApp();
+            break;
+          case "select-trial-balance-account":
+            state.ui.trialBalanceSelectedAccountId = id;
             renderApp();
             break;
           case "export-trial-balance-pdf":
@@ -2318,6 +2676,18 @@
             break;
           case "invoice-installment":
             submitInstallment(new FormData(form));
+            break;
+          case "document-type":
+            submitDocumentType(new FormData(form));
+            break;
+          case "accounting-event":
+            submitAccountingEvent(new FormData(form));
+            break;
+          case "settlement-event":
+            submitSettlementEvent(new FormData(form));
+            break;
+          case "settlement":
+            submitSettlement(new FormData(form));
             break;
           case "cloud-config":
             submitCloudConfig(new FormData(form));
@@ -2457,6 +2827,9 @@
           showBalance,
           submitted: true
         };
+        state.ui.trialBalanceSelectedAccountId = "";
+        state.ui.trialBalanceModalOpen = false;
+        state.ui.trialBalanceReportModalOpen = true;
         notify("success", "Balancete", "Balancete emitido com os filtros informados.");
         renderApp();
       }
@@ -2546,6 +2919,125 @@
         renderApp();
       }
 
+      function submitDocumentType(formData) {
+        const id = clean(formData.get("id"));
+        const name = clean(formData.get("name"));
+        const isActive = clean(formData.get("status")) !== "Inativo";
+
+        if (!name) {
+          notify("error", "Documentos", "Informe o nome do tipo de documento.");
+          return;
+        }
+
+        const existing = state.data.documentTypes.find((record) => record.id === id);
+        const duplicate = state.data.documentTypes.find((record) => record.id !== id && record.name.toLowerCase() === name.toLowerCase());
+        if (duplicate) {
+          notify("error", "Documentos", "Já existe um tipo de documento com esse nome.");
+          return;
+        }
+
+        const record = {
+          id: existing?.id || generateId(),
+          code: existing?.code || generateCode("documentTypes"),
+          name,
+          isActive,
+          createdAt: existing?.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        upsertRecord("documentTypes", record);
+        state.ui.editing.documentTypeId = null;
+        state.ui.documentTypeFormDraft = createEmptyDocumentTypeDraft();
+        notify("success", "Documentos", existing ? "Tipo de documento atualizado com sucesso." : "Tipo de documento cadastrado com sucesso.");
+        renderApp();
+      }
+
+      function deleteDocumentType(id) {
+        deleteRecord("documentTypes", id, "Documentos", "Tipo de documento excluído com sucesso.");
+      }
+
+      function submitAccountingEvent(formData) {
+        const id = clean(formData.get("id"));
+        const documentTypeId = clean(formData.get("documentTypeId"));
+        const creditAccountId = clean(formData.get("creditAccountId"));
+        const description = clean(formData.get("description"));
+        const isActive = clean(formData.get("status")) !== "Inativo";
+
+        if (!documentTypeId || !getDocumentTypeById(documentTypeId)) {
+          notify("error", "Eventos contábeis", "Selecione um tipo de documento válido.");
+          return;
+        }
+
+        const creditAccount = getChartAccountById(creditAccountId);
+        if (!creditAccount || !isChartAccountAvailableForLinks(creditAccount)) {
+          notify("error", "Eventos contábeis", "Selecione uma conta de crédito analítica, ativa e válida.");
+          return;
+        }
+
+        const existing = state.data.accountingEvents.find((record) => record.id === id);
+        const record = {
+          id: existing?.id || generateId(),
+          code: existing?.code || generateCode("accountingEvents"),
+          documentTypeId,
+          creditAccountId,
+          description,
+          isActive,
+          createdAt: existing?.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        upsertRecord("accountingEvents", record);
+        state.ui.editing.accountingEventId = null;
+        state.ui.accountingEventFormDraft = createEmptyAccountingEventDraft();
+        notify("success", "Eventos contábeis", existing ? "Evento contábil atualizado com sucesso." : "Evento contábil cadastrado com sucesso.");
+        renderApp();
+      }
+
+      function deleteAccountingEvent(id) {
+        deleteRecord("accountingEvents", id, "Eventos contábeis", "Evento contábil excluído com sucesso.");
+      }
+
+      function submitSettlementEvent(formData) {
+        const id = clean(formData.get("id"));
+        const documentTypeId = clean(formData.get("documentTypeId"));
+        const debitAccountId = clean(formData.get("debitAccountId"));
+        const description = clean(formData.get("description"));
+        const isActive = clean(formData.get("status")) !== "Inativo";
+
+        if (!documentTypeId || !getDocumentTypeById(documentTypeId)) {
+          notify("error", "Eventos de baixas", "Selecione um tipo de documento válido.");
+          return;
+        }
+
+        const debitAccount = getChartAccountById(debitAccountId);
+        if (!debitAccount || !isChartAccountAvailableForLinks(debitAccount)) {
+          notify("error", "Eventos de baixas", "Selecione uma conta de débito analítica, ativa e válida.");
+          return;
+        }
+
+        const existing = state.data.settlementEvents.find((record) => record.id === id);
+        const record = {
+          id: existing?.id || generateId(),
+          code: existing?.code || generateCode("settlementEvents"),
+          documentTypeId,
+          debitAccountId,
+          description,
+          isActive,
+          createdAt: existing?.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        upsertRecord("settlementEvents", record);
+        state.ui.editing.settlementEventId = null;
+        state.ui.settlementEventFormDraft = createEmptySettlementEventDraft();
+        notify("success", "Eventos de baixas", existing ? "Evento de baixa atualizado com sucesso." : "Evento de baixa cadastrado com sucesso.");
+        renderApp();
+      }
+
+      function deleteSettlementEvent(id) {
+        deleteRecord("settlementEvents", id, "Eventos de baixas", "Evento de baixa excluído com sucesso.");
+      }
+
       function submitSupplier(formData) {
         const id = clean(formData.get("id"));
         const legalName = clean(formData.get("legalName"));
@@ -2610,6 +3102,7 @@
           id: existing?.id || generateId(),
           code: validation.record.code,
           normalizedCode: validation.record.normalizedCode,
+          reducedCode: existing?.reducedCode || generateNextReducedCode(),
           name,
           type,
           level: validation.record.level,
@@ -2727,28 +3220,43 @@
 
       function submitInvoice(formData) {
         const draft = state.ui.invoiceDraft;
-        draft.type = clean(formData.get("type")) || "Nota de serviço";
+        draft.type = clean(formData.get("type")) || draft.type || "Nota de serviço";
+        draft.documentNumber = clean(formData.get("documentNumber"));
+        draft.costCenterId = clean(formData.get("costCenterId"));
         draft.supplierId = clean(formData.get("supplierId"));
         draft.issueDate = clean(formData.get("issueDate"));
         draft.description = clean(formData.get("description"));
 
-        if (!draft.supplierId || !getSupplierById(draft.supplierId)) {
-          notify("error", "Nota fiscal", "Selecione um fornecedor válido.");
+        const isLancamento = draft.kind === "lancamento";
+        const noun = isLancamento ? "Lançamento" : "Nota fiscal";
+
+        if (!isLancamento && (!draft.supplierId || !getSupplierById(draft.supplierId))) {
+          notify("error", noun, "Selecione um fornecedor válido.");
+          return;
+        }
+
+        if (draft.supplierId && !getSupplierById(draft.supplierId)) {
+          notify("error", noun, "Fornecedor selecionado é inválido.");
           return;
         }
 
         if (!draft.issueDate) {
-          notify("error", "Nota fiscal", "Informe a data de emissão da nota.");
+          notify("error", noun, "Informe a data de emissão.");
+          return;
+        }
+
+        if (draft.costCenterId && !getCostCenterById(draft.costCenterId)) {
+          notify("error", noun, "Selecione um centro de custo válido.");
           return;
         }
 
         if (draft.items.length === 0) {
-          notify("error", "Nota fiscal", "Adicione pelo menos um item à nota fiscal.");
+          notify("error", noun, `Adicione pelo menos um item ${isLancamento ? "ao lançamento" : "à nota fiscal"}.`);
           return;
         }
 
         if (draft.installments.length === 0) {
-          notify("error", "Nota fiscal", "Adicione pelo menos uma parcela financeira.");
+          notify("error", noun, "Adicione pelo menos uma parcela financeira.");
           return;
         }
 
@@ -2758,13 +3266,13 @@
         });
 
         if (invalidLine) {
-          notify("error", "Nota fiscal", "Existe item na nota com conta contábil inativa, inválida ou não analítica.");
+          notify("error", noun, "Existe item com conta contábil inativa, inválida ou não analítica.");
           return;
         }
 
         const totals = getInvoiceTotals(draft);
         if (Math.abs(totals.totalItemsAmount - totals.totalInstallmentsAmount) > 0.009) {
-          notify("error", "Nota fiscal", "O total das parcelas precisa ser igual ao total dos itens para salvar a nota.");
+          notify("error", noun, "O total das parcelas precisa ser igual ao total dos itens para salvar o registro.");
           return;
         }
 
@@ -2773,6 +3281,9 @@
           id: existing?.id || generateId(),
           code: existing?.code || generateCode("invoices"),
           type: draft.type,
+          kind: draft.kind || "invoice",
+          documentNumber: draft.documentNumber,
+          costCenterId: draft.costCenterId,
           supplierId: draft.supplierId,
           issueDate: draft.issueDate,
           description: draft.description,
@@ -2785,10 +3296,173 @@
         };
 
         upsertRecord("invoices", record);
+        syncAccountingEventEntries(record);
         state.ui.invoiceDraft = createEmptyInvoiceDraft();
         state.ui.invoiceModalOpen = false;
         state.ui.activeInvoiceTab = "dados";
-        notify("success", "Nota fiscal", existing ? "Nota fiscal atualizada com sucesso." : "Nota fiscal lançada com sucesso.");
+        notify("success", noun, existing ? "Registro atualizado com sucesso." : `${noun} lançado(a) com sucesso.`);
+        renderApp();
+      }
+
+      function syncAccountingEventEntries(invoice) {
+        const prefix = `auto-event-${invoice.id}-`;
+        const currentLineIds = new Set(invoice.items.map((line) => line.id));
+
+        let entries = state.data.accountingEntries.filter((entry) => {
+          if (!entry.id.startsWith(prefix)) {
+            return true;
+          }
+          return currentLineIds.has(entry.id.slice(prefix.length));
+        });
+
+        const documentType = getDocumentTypeByName(invoice.type);
+        const event = documentType ? getAccountingEventByDocumentTypeId(documentType.id) : null;
+
+        if (event && invoice.costCenterId) {
+          invoice.items.forEach((line) => {
+            const id = prefix + line.id;
+            const record = {
+              id,
+              code: id,
+              entryDate: invoice.issueDate,
+              description: `${documentType.name} ${invoice.documentNumber || invoice.code} - ${line.itemName}`,
+              costCenterId: invoice.costCenterId,
+              debitAccountId: line.chartAccountId,
+              creditAccountId: event.creditAccountId,
+              amount: line.totalPrice,
+              origin: "accounting-event",
+              sourceInvoiceId: invoice.id,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            };
+            const idx = entries.findIndex((entry) => entry.id === id);
+            if (idx >= 0) {
+              entries[idx] = record;
+            } else {
+              entries.push(record);
+            }
+          });
+        }
+
+        saveCollection("accountingEntries", entries);
+      }
+
+      function removeInvoiceGeneratedEntries(invoiceId) {
+        const eventPrefix = `auto-event-${invoiceId}-`;
+        const remainingEntries = state.data.accountingEntries.filter((entry) => {
+          if (entry.id.startsWith(eventPrefix)) {
+            return false;
+          }
+          if (entry.origin === "settlement-event" && entry.sourceInvoiceId === invoiceId) {
+            return false;
+          }
+          return true;
+        });
+        saveCollection("accountingEntries", remainingEntries);
+        saveCollection("settlements", state.data.settlements.filter((record) => record.invoiceId !== invoiceId));
+      }
+
+      function generateSettlementAccountingEntry(settlement, invoice) {
+        const id = `auto-settlement-${settlement.id}`;
+        let entries = state.data.accountingEntries.filter((entry) => entry.id !== id);
+
+        const documentType = getDocumentTypeByName(invoice.type);
+        const event = documentType ? getSettlementEventByDocumentTypeId(documentType.id) : null;
+
+        if (event && invoice.costCenterId) {
+          const installment = invoice.installments.find((item) => item.id === settlement.installmentId);
+          entries.push({
+            id,
+            code: id,
+            entryDate: settlement.settlementDate,
+            description: `Baixa - ${documentType.name} ${invoice.documentNumber || invoice.code}${installment ? ` - parcela ${installment.installmentNumber}` : ""}`,
+            costCenterId: invoice.costCenterId,
+            debitAccountId: event.debitAccountId,
+            creditAccountId: settlement.payingAccountId,
+            amount: settlement.amount,
+            origin: "settlement-event",
+            sourceInvoiceId: invoice.id,
+            sourceSettlementId: settlement.id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+          saveCollection("accountingEntries", entries);
+          return true;
+        }
+
+        saveCollection("accountingEntries", entries);
+        return false;
+      }
+
+      function submitSettlement(formData) {
+        const target = state.ui.settlementTarget;
+        if (!target) {
+          notify("error", "Baixa", "Nenhuma parcela selecionada para baixa.");
+          return;
+        }
+
+        const invoice = state.data.invoices.find((record) => record.id === target.invoiceId);
+        const installment = invoice?.installments.find((item) => item.id === target.installmentId);
+
+        if (!invoice || !installment) {
+          notify("error", "Baixa", "Parcela não encontrada.");
+          return;
+        }
+
+        const settlementDate = clean(formData.get("settlementDate"));
+        const payingAccountId = clean(formData.get("payingAccountId"));
+        const amount = Number(clean(formData.get("amount")) || 0);
+
+        const payingAccount = getChartAccountById(payingAccountId);
+        if (!payingAccount || !isChartAccountAvailableForLinks(payingAccount)) {
+          notify("error", "Baixa", "Selecione uma conta analítica, ativa e válida para a baixa.");
+          return;
+        }
+
+        if (!settlementDate) {
+          notify("error", "Baixa", "Informe a data da baixa.");
+          return;
+        }
+
+        const alreadySettled = getInstallmentSettledAmount(invoice.id, installment.id);
+        const remaining = roundCurrency(installment.amount - alreadySettled);
+
+        if (!amount || amount <= 0) {
+          notify("error", "Baixa", "Informe um valor de baixa maior que zero.");
+          return;
+        }
+
+        if (amount - remaining > 0.009) {
+          notify("error", "Baixa", `O valor da baixa não pode ultrapassar o saldo em aberto de ${formatCurrency(remaining)}.`);
+          return;
+        }
+
+        const settlement = {
+          id: generateId(),
+          code: generateCode("settlements"),
+          invoiceId: invoice.id,
+          installmentId: installment.id,
+          settlementDate,
+          payingAccountId,
+          amount: roundCurrency(amount),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        saveCollection("settlements", [settlement, ...state.data.settlements]);
+        const generated = generateSettlementAccountingEntry(settlement, invoice);
+
+        state.ui.settlementModalOpen = false;
+        state.ui.settlementTarget = null;
+        state.ui.settlementFormDraft = createEmptySettlementDraft();
+
+        notify(
+          "success",
+          "Baixa",
+          generated
+            ? "Baixa registrada e lançamento contábil gerado com sucesso."
+            : "Baixa registrada. Cadastre um evento de baixa para esse tipo de documento e informe o centro de custo para gerar o lançamento contábil automaticamente."
+        );
         renderApp();
       }
 
@@ -2971,6 +3645,7 @@
       }
 
       function deleteInvoice(id) {
+        removeInvoiceGeneratedEntries(id);
         deleteRecord("invoices", id, "Nota fiscal", "Nota fiscal excluída com sucesso.");
       }
 
@@ -3090,6 +3765,34 @@
 
       function getCostCenterById(id) {
         return state.data.costCenters.find((record) => record.id === id) || null;
+      }
+
+      function getDocumentTypeById(id) {
+        return state.data.documentTypes.find((record) => record.id === id) || null;
+      }
+
+      function getDocumentTypeByName(name) {
+        return state.data.documentTypes.find((record) => record.name === name) || null;
+      }
+
+      function getActiveDocumentTypes() {
+        return state.data.documentTypes.filter((record) => record.isActive !== false);
+      }
+
+      function getAccountingEventByDocumentTypeId(documentTypeId) {
+        return state.data.accountingEvents.find((record) => record.documentTypeId === documentTypeId && record.isActive !== false) || null;
+      }
+
+      function getSettlementEventByDocumentTypeId(documentTypeId) {
+        return state.data.settlementEvents.find((record) => record.documentTypeId === documentTypeId && record.isActive !== false) || null;
+      }
+
+      function getInstallmentSettlements(invoiceId, installmentId) {
+        return state.data.settlements.filter((record) => record.invoiceId === invoiceId && record.installmentId === installmentId);
+      }
+
+      function getInstallmentSettledAmount(invoiceId, installmentId) {
+        return roundCurrency(getInstallmentSettlements(invoiceId, installmentId).reduce((sum, record) => sum + Number(record.amount || 0), 0));
       }
 
       function getFilteredAccountingEntries() {
@@ -3575,8 +4278,27 @@
         };
       }
 
+      function generateNextReducedCode() {
+        const maxCode = state.data.chartAccounts.reduce((max, account) => {
+          const numeric = parseInt(account.reducedCode, 10);
+          return Number.isFinite(numeric) && numeric > max ? numeric : max;
+        }, 0);
+        return String(maxCode + 1).padStart(6, "0");
+      }
+
       function migrateChartAccounts(accounts) {
-        return sortAccountsByCode(accounts.map((account) => migrateChartAccountRecord(account)));
+        const migrated = sortAccountsByCode(accounts.map((account) => migrateChartAccountRecord(account)));
+        let nextReducedCode = migrated.reduce((max, account) => {
+          const numeric = parseInt(account.reducedCode, 10);
+          return Number.isFinite(numeric) && numeric > max ? numeric : max;
+        }, 0) + 1;
+        migrated.forEach((account) => {
+          if (!account.reducedCode) {
+            account.reducedCode = String(nextReducedCode).padStart(6, "0");
+            nextReducedCode += 1;
+          }
+        });
+        return migrated;
       }
 
       function migrateChartAccountRecord(account) {
@@ -3849,6 +4571,31 @@
         return `<span class="cloud-chip ${meta.className}" title="${escapeHtml(meta.detail)}">☁ ${escapeHtml(meta.label)}</span>`;
       }
 
+      let lockedScrollY = 0;
+
+      function applyModalScrollLock(shouldLock) {
+        const alreadyLocked = document.body.dataset.scrollLocked === "true";
+        if (shouldLock && !alreadyLocked) {
+          lockedScrollY = window.scrollY || window.pageYOffset || 0;
+          document.body.dataset.scrollLocked = "true";
+          document.body.style.position = "fixed";
+          document.body.style.top = `-${lockedScrollY}px`;
+          document.body.style.left = "0";
+          document.body.style.right = "0";
+          document.body.style.width = "100%";
+          document.body.style.overflow = "hidden";
+        } else if (!shouldLock && alreadyLocked) {
+          document.body.dataset.scrollLocked = "false";
+          document.body.style.position = "";
+          document.body.style.top = "";
+          document.body.style.left = "";
+          document.body.style.right = "";
+          document.body.style.width = "";
+          document.body.style.overflow = "";
+          window.scrollTo(0, lockedScrollY);
+        }
+      }
+
       function renderApp() {
         const meta = VIEW_META[state.ui.activeView] || VIEW_META.dashboard;
         const app = document.getElementById("app");
@@ -3858,8 +4605,12 @@
           || state.ui.accountingEntriesModalOpen
           || state.ui.accountingEntryFormModalOpen
           || state.ui.trialBalanceModalOpen
+          || state.ui.trialBalanceReportModalOpen
+          || state.ui.eventEntriesModalOpen
+          || state.ui.payableEntriesModalOpen
+          || state.ui.settlementModalOpen
         );
-        document.body.style.overflow = hasOpenModal ? "hidden" : "";
+        applyModalScrollLock(hasOpenModal);
         app.innerHTML = `
           <div class="app-shell">
             <aside class="sidebar ${state.ui.sidebarOpen ? "open" : ""}">
@@ -3902,6 +4653,10 @@
           ${state.ui.accountingEntriesModalOpen ? renderAccountingEntriesModal() : ""}
           ${state.ui.accountingEntryFormModalOpen ? renderAccountingEntryFormModal() : ""}
           ${state.ui.trialBalanceModalOpen ? renderTrialBalanceModal() : ""}
+          ${state.ui.trialBalanceReportModalOpen ? renderTrialBalanceReportModal() : ""}
+          ${state.ui.eventEntriesModalOpen ? renderEventEntriesModal() : ""}
+          ${state.ui.payableEntriesModalOpen ? renderPayableEntriesModal() : ""}
+          ${state.ui.settlementModalOpen ? renderSettlementModal() : ""}
         `;
       }
 
@@ -3914,7 +4669,8 @@
           { view: "financialNatures", title: "Naturezas", subtitle: "Classificação financeira" },
           { view: "items", title: "Itens", subtitle: "Base para notas" },
           { view: "accountingEntries", title: "Contábil", subtitle: "Lançamentos e balancete" },
-          { view: "fiscal", title: "Fiscal", subtitle: "Notas fiscais" }
+          { view: "fiscal", title: "Fiscal", subtitle: "Notas fiscais" },
+          { view: "financeiro", title: "Financeiro", subtitle: "Parcelas e baixas" }
         ];
 
         return `
@@ -3979,6 +4735,8 @@
             return renderAccountingEntriesView();
           case "fiscal":
             return renderFiscalView();
+          case "financeiro":
+            return renderFinanceiroView();
           case "dashboard":
           default:
             return renderDashboardView();
@@ -4085,6 +4843,41 @@
       }
 
       function renderSettingsView() {
+        const panel = state.ui.settingsPanel || "costCenters";
+        const tabs = [
+          { key: "costCenters", label: "Centros de custo" },
+          { key: "documentTypes", label: "Documentos" },
+          { key: "accountingEvents", label: "Eventos Contábeis" },
+          { key: "settlementEvents", label: "Eventos de Baixas" }
+        ];
+
+        const panelContent = panel === "documentTypes"
+          ? renderSettingsDocumentTypesPanel()
+          : panel === "accountingEvents"
+            ? renderSettingsAccountingEventsPanel()
+            : panel === "settlementEvents"
+              ? renderSettingsSettlementEventsPanel()
+              : renderSettingsCostCentersPanel();
+
+        return `
+          <section class="card">
+            <div class="section-head">
+              <div>
+                <h3>Configurações</h3>
+                <p>Organize os parâmetros do sistema por abas: centros de custo, documentos e eventos de lançamento automático.</p>
+              </div>
+            </div>
+            <div class="modal-tabs">
+              ${tabs.map((tab) => `
+                <button class="modal-tab ${panel === tab.key ? "active" : ""}" type="button" data-action="switch-settings-panel" data-panel="${tab.key}">${escapeHtml(tab.label)}</button>
+              `).join("")}
+            </div>
+          </section>
+          ${panelContent}
+        `;
+      }
+
+      function renderSettingsCostCentersPanel() {
         const editing = getActiveEditRecord("costCenters", state.ui.editing.costCenterId);
         const searchTerm = state.ui.search.costCenters;
         const cloudStatus = getCloudStatusMeta();
@@ -4239,6 +5032,347 @@
         `;
       }
 
+      function renderSettingsDocumentTypesPanel() {
+        const editing = getActiveEditRecord("documentTypes", state.ui.editing.documentTypeId);
+        const draft = state.ui.documentTypeFormDraft;
+        const searchTerm = state.ui.search.documentTypes;
+        const records = filterRecords(
+          state.data.documentTypes,
+          searchTerm,
+          (record) => `${record.code} ${record.name}`
+        );
+
+        return `
+          <section class="layout-grid">
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h3>${editing ? "Editar tipo de documento" : "Novo tipo de documento"}</h3>
+                  <p>Cadastre os tipos de documento usados nas notas fiscais e nos lançamentos avulsos. "Nota de serviço" e "Nota de produto" já vêm cadastrados.</p>
+                </div>
+              </div>
+              <form data-form="document-type" autocomplete="off">
+                <input type="hidden" name="id" value="${escapeHtml(editing?.id || draft.id || "")}">
+                <div class="form-grid single-column">
+                  <div class="field">
+                    <label for="document-type-name">Nome do documento</label>
+                    <input id="document-type-name" name="name" maxlength="80" value="${escapeHtml(editing?.name ?? draft.name ?? "")}" placeholder="Ex.: Recibo, Boleto avulso" required>
+                  </div>
+                  <div class="field">
+                    <label for="document-type-status">Situação</label>
+                    <select id="document-type-status" name="status">
+                      <option value="Ativo" ${(editing?.isActive !== false) ? "selected" : ""}>Ativo</option>
+                      <option value="Inativo" ${editing?.isActive === false ? "selected" : ""}>Inativo</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button class="primary-button" type="submit">${editing ? "Salvar alterações" : "Cadastrar documento"}</button>
+                  ${editing ? `<button class="ghost-button" type="button" data-action="reset-document-type">Cancelar edição</button>` : ""}
+                </div>
+              </form>
+            </article>
+            <article class="table-card">
+              <div class="table-toolbar">
+                <div>
+                  <h4>Tipos de documento</h4>
+                  <p class="page-subtitle">Usados no tipo da nota fiscal, nos lançamentos e nos eventos contábeis/de baixa.</p>
+                </div>
+                <input class="search-input" data-search="documentTypes" placeholder="Pesquisar documentos" value="${escapeHtml(searchTerm)}">
+              </div>
+              ${records.length ? `
+                <div class="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Código</th>
+                        <th>Nome</th>
+                        <th>Situação</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${records.map((record) => `
+                        <tr>
+                          <td class="mono">${escapeHtml(record.code)}</td>
+                          <td>${escapeHtml(record.name)}</td>
+                          <td><span class="badge ${record.isActive !== false ? "positive" : "danger"}">${record.isActive !== false ? "Ativo" : "Inativo"}</span></td>
+                          <td>
+                            <div class="table-actions">
+                              <button class="action-chip" type="button" data-action="edit-document-type" data-id="${escapeHtml(record.id)}">Editar</button>
+                              <button class="action-chip danger" type="button" data-action="delete-document-type" data-id="${escapeHtml(record.id)}">Excluir</button>
+                            </div>
+                          </td>
+                        </tr>
+                      `).join("")}
+                    </tbody>
+                  </table>
+                </div>
+              ` : `
+                <div class="empty-card">
+                  <strong>Nenhum tipo de documento encontrado.</strong>
+                  <p>${searchTerm ? "Ajuste a pesquisa." : "Cadastre o primeiro tipo de documento."}</p>
+                </div>
+              `}
+            </article>
+          </section>
+        `;
+      }
+
+      function renderSettingsAccountingEventsPanel() {
+        const editing = getActiveEditRecord("accountingEvents", state.ui.editing.accountingEventId);
+        const draft = state.ui.accountingEventFormDraft;
+        const searchTerm = state.ui.search.accountingEvents;
+        const accounts = getSelectableChartAccounts();
+        const records = filterRecords(
+          state.data.accountingEvents,
+          searchTerm,
+          (record) => {
+            const docType = getDocumentTypeById(record.documentTypeId);
+            const account = getChartAccountById(record.creditAccountId);
+            return `${record.code} ${docType?.name || ""} ${account?.code || ""} ${account?.name || ""}`;
+          }
+        );
+
+        return `
+          <section class="notice-card">
+            <div class="notice-icon">EV</div>
+            <div>
+              <strong>Como funciona o evento contábil</strong>
+              <p>Ao lançar um documento desse tipo, cada item gera um lançamento automático: a conta de <strong>débito</strong> é a conta contábil vinculada à natureza financeira do item, e a conta de <strong>crédito</strong> é a configurada aqui. O lançamento aparece em "Lançamentos" no módulo contábil.</p>
+            </div>
+          </section>
+          <section class="layout-grid">
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h3>${editing ? "Editar evento contábil" : "Novo evento contábil"}</h3>
+                  <p>Escolha o tipo de documento e a conta de crédito que será usada ao lançá-lo.</p>
+                </div>
+              </div>
+              <form data-form="accounting-event" autocomplete="off">
+                <input type="hidden" name="id" value="${escapeHtml(editing?.id || draft.id || "")}">
+                <div class="form-grid single-column">
+                  <div class="field">
+                    <label for="accounting-event-document-type">Tipo de documento</label>
+                    <select id="accounting-event-document-type" name="documentTypeId" required>
+                      <option value="">Selecione o tipo de documento</option>
+                      ${getActiveDocumentTypes().map((docType) => `
+                        <option value="${escapeHtml(docType.id)}" ${(editing?.documentTypeId ?? draft.documentTypeId) === docType.id ? "selected" : ""}>${escapeHtml(docType.name)}</option>
+                      `).join("")}
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="accounting-event-credit-account">Conta de crédito</label>
+                    <select id="accounting-event-credit-account" name="creditAccountId" required>
+                      <option value="">Selecione a conta contábil</option>
+                      ${accounts.map((account) => `
+                        <option value="${escapeHtml(account.id)}" ${(editing?.creditAccountId ?? draft.creditAccountId) === account.id ? "selected" : ""}>${escapeHtml(account.code)} - ${escapeHtml(account.name)}</option>
+                      `).join("")}
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="accounting-event-description">Descrição (opcional)</label>
+                    <input id="accounting-event-description" name="description" maxlength="140" value="${escapeHtml(editing?.description ?? draft.description ?? "")}" placeholder="Ex.: Provisão de fornecedores">
+                  </div>
+                  <div class="field">
+                    <label for="accounting-event-status">Situação</label>
+                    <select id="accounting-event-status" name="status">
+                      <option value="Ativo" ${(editing?.isActive !== false) ? "selected" : ""}>Ativo</option>
+                      <option value="Inativo" ${editing?.isActive === false ? "selected" : ""}>Inativo</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button class="primary-button" type="submit">${editing ? "Salvar alterações" : "Cadastrar evento"}</button>
+                  ${editing ? `<button class="ghost-button" type="button" data-action="reset-accounting-event">Cancelar edição</button>` : ""}
+                </div>
+              </form>
+            </article>
+            <article class="table-card">
+              <div class="table-toolbar">
+                <div>
+                  <h4>Eventos contábeis</h4>
+                  <p class="page-subtitle">Um evento por tipo de documento define a conta de crédito usada no lançamento automático.</p>
+                </div>
+                <input class="search-input" data-search="accountingEvents" placeholder="Pesquisar eventos" value="${escapeHtml(searchTerm)}">
+              </div>
+              ${records.length ? `
+                <div class="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Documento</th>
+                        <th>Conta de crédito</th>
+                        <th>Situação</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${records.map((record) => {
+                        const docType = getDocumentTypeById(record.documentTypeId);
+                        const account = getChartAccountById(record.creditAccountId);
+                        return `
+                          <tr>
+                            <td>
+                              <strong>${escapeHtml(docType?.name || "Documento removido")}</strong>
+                              ${record.description ? `<div class="table-muted">${escapeHtml(record.description)}</div>` : ""}
+                            </td>
+                            <td>
+                              <strong>${escapeHtml(account?.code || "Conta indisponível")}</strong>
+                              <div class="table-muted">${escapeHtml(account?.name || "Conta removida")}</div>
+                            </td>
+                            <td><span class="badge ${record.isActive !== false ? "positive" : "danger"}">${record.isActive !== false ? "Ativo" : "Inativo"}</span></td>
+                            <td>
+                              <div class="table-actions">
+                                <button class="action-chip" type="button" data-action="edit-accounting-event" data-id="${escapeHtml(record.id)}">Editar</button>
+                                <button class="action-chip danger" type="button" data-action="delete-accounting-event" data-id="${escapeHtml(record.id)}">Excluir</button>
+                              </div>
+                            </td>
+                          </tr>
+                        `;
+                      }).join("")}
+                    </tbody>
+                  </table>
+                </div>
+              ` : `
+                <div class="empty-card">
+                  <strong>Nenhum evento contábil encontrado.</strong>
+                  <p>${searchTerm ? "Ajuste a pesquisa." : "Cadastre o primeiro evento contábil para automatizar os lançamentos."}</p>
+                </div>
+              `}
+            </article>
+          </section>
+        `;
+      }
+
+      function renderSettingsSettlementEventsPanel() {
+        const editing = getActiveEditRecord("settlementEvents", state.ui.editing.settlementEventId);
+        const draft = state.ui.settlementEventFormDraft;
+        const searchTerm = state.ui.search.settlementEvents;
+        const accounts = getSelectableChartAccounts();
+        const records = filterRecords(
+          state.data.settlementEvents,
+          searchTerm,
+          (record) => {
+            const docType = getDocumentTypeById(record.documentTypeId);
+            const account = getChartAccountById(record.debitAccountId);
+            return `${record.code} ${docType?.name || ""} ${account?.code || ""} ${account?.name || ""}`;
+          }
+        );
+
+        return `
+          <section class="notice-card">
+            <div class="notice-icon">BX</div>
+            <div>
+              <strong>Como funciona o evento de baixa</strong>
+              <p>Ao dar baixa em uma parcela desse tipo de documento, o sistema gera um lançamento automático: a conta de <strong>crédito</strong> é a conta informada na baixa (a conta que pagou), e a conta de <strong>débito</strong> é a configurada aqui. O lançamento aparece em "Lançamentos a Pagar" no módulo contábil.</p>
+            </div>
+          </section>
+          <section class="layout-grid">
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h3>${editing ? "Editar evento de baixa" : "Novo evento de baixa"}</h3>
+                  <p>Escolha o tipo de documento e a conta de débito que será usada ao dar baixa nele.</p>
+                </div>
+              </div>
+              <form data-form="settlement-event" autocomplete="off">
+                <input type="hidden" name="id" value="${escapeHtml(editing?.id || draft.id || "")}">
+                <div class="form-grid single-column">
+                  <div class="field">
+                    <label for="settlement-event-document-type">Tipo de documento</label>
+                    <select id="settlement-event-document-type" name="documentTypeId" required>
+                      <option value="">Selecione o tipo de documento</option>
+                      ${getActiveDocumentTypes().map((docType) => `
+                        <option value="${escapeHtml(docType.id)}" ${(editing?.documentTypeId ?? draft.documentTypeId) === docType.id ? "selected" : ""}>${escapeHtml(docType.name)}</option>
+                      `).join("")}
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="settlement-event-debit-account">Conta de débito</label>
+                    <select id="settlement-event-debit-account" name="debitAccountId" required>
+                      <option value="">Selecione a conta contábil</option>
+                      ${accounts.map((account) => `
+                        <option value="${escapeHtml(account.id)}" ${(editing?.debitAccountId ?? draft.debitAccountId) === account.id ? "selected" : ""}>${escapeHtml(account.code)} - ${escapeHtml(account.name)}</option>
+                      `).join("")}
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="settlement-event-description">Descrição (opcional)</label>
+                    <input id="settlement-event-description" name="description" maxlength="140" value="${escapeHtml(editing?.description ?? draft.description ?? "")}" placeholder="Ex.: Baixa de fornecedores">
+                  </div>
+                  <div class="field">
+                    <label for="settlement-event-status">Situação</label>
+                    <select id="settlement-event-status" name="status">
+                      <option value="Ativo" ${(editing?.isActive !== false) ? "selected" : ""}>Ativo</option>
+                      <option value="Inativo" ${editing?.isActive === false ? "selected" : ""}>Inativo</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button class="primary-button" type="submit">${editing ? "Salvar alterações" : "Cadastrar evento"}</button>
+                  ${editing ? `<button class="ghost-button" type="button" data-action="reset-settlement-event">Cancelar edição</button>` : ""}
+                </div>
+              </form>
+            </article>
+            <article class="table-card">
+              <div class="table-toolbar">
+                <div>
+                  <h4>Eventos de baixa</h4>
+                  <p class="page-subtitle">Um evento por tipo de documento define a conta de débito usada no lançamento automático da baixa.</p>
+                </div>
+                <input class="search-input" data-search="settlementEvents" placeholder="Pesquisar eventos" value="${escapeHtml(searchTerm)}">
+              </div>
+              ${records.length ? `
+                <div class="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Documento</th>
+                        <th>Conta de débito</th>
+                        <th>Situação</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${records.map((record) => {
+                        const docType = getDocumentTypeById(record.documentTypeId);
+                        const account = getChartAccountById(record.debitAccountId);
+                        return `
+                          <tr>
+                            <td>
+                              <strong>${escapeHtml(docType?.name || "Documento removido")}</strong>
+                              ${record.description ? `<div class="table-muted">${escapeHtml(record.description)}</div>` : ""}
+                            </td>
+                            <td>
+                              <strong>${escapeHtml(account?.code || "Conta indisponível")}</strong>
+                              <div class="table-muted">${escapeHtml(account?.name || "Conta removida")}</div>
+                            </td>
+                            <td><span class="badge ${record.isActive !== false ? "positive" : "danger"}">${record.isActive !== false ? "Ativo" : "Inativo"}</span></td>
+                            <td>
+                              <div class="table-actions">
+                                <button class="action-chip" type="button" data-action="edit-settlement-event" data-id="${escapeHtml(record.id)}">Editar</button>
+                                <button class="action-chip danger" type="button" data-action="delete-settlement-event" data-id="${escapeHtml(record.id)}">Excluir</button>
+                              </div>
+                            </td>
+                          </tr>
+                        `;
+                      }).join("")}
+                    </tbody>
+                  </table>
+                </div>
+              ` : `
+                <div class="empty-card">
+                  <strong>Nenhum evento de baixa encontrado.</strong>
+                  <p>${searchTerm ? "Ajuste a pesquisa." : "Cadastre o primeiro evento de baixa para automatizar os lançamentos."}</p>
+                </div>
+              `}
+            </article>
+          </section>
+        `;
+      }
+
       function renderSuppliersView() {
         const editing = getActiveEditRecord("suppliers", state.ui.editing.supplierId);
         const searchTerm = state.ui.search.suppliers;
@@ -4376,6 +5510,7 @@
                         <thead>
                           <tr>
                             <th>Código</th>
+                            <th>Cód. reduzido</th>
                             <th>Conta contábil</th>
                             <th>Tipo</th>
                             <th>Grupo</th>
@@ -4388,6 +5523,7 @@
                           ${rows.map((record) => `
                             <tr class="chart-account-row ${isSyntheticAccount(record) ? "synthetic" : ""}">
                               <td class="mono">${escapeHtml(record.code)}</td>
+                              <td class="mono">${escapeHtml(record.reducedCode || "-")}</td>
                               <td>
                                 <div class="tree-account-line">
                                   ${Array.from({ length: Math.max(record.treeDepth || 0, 0) }).map(() => `<span class="tree-account-indent" aria-hidden="true"></span>`).join("")}
@@ -4397,9 +5533,7 @@
                                   <div>
                                     <strong>${escapeHtml(record.name)}</strong>
                                     <div class="account-meta">
-                                      ${record.parentCode ? `<span class="badge">Pai: ${escapeHtml(record.parentCode)}</span>` : `<span class="badge">Raiz</span>`}
                                       ${record.requiresCodeAdjustment ? `<span class="badge warning">Pendente de ajuste</span>` : ""}
-                                      ${isAnalyticalAccount(record) && !record.requiresCodeAdjustment && record.isActive !== false ? `<span class="badge positive">Permitida para vínculo</span>` : ""}
                                       ${isSyntheticAccount(record) ? `<span class="badge">Conta sintética</span>` : ""}
                                     </div>
                                     ${record.adjustmentMessage ? `<div class="table-muted">${escapeHtml(record.adjustmentMessage)}</div>` : ""}
@@ -4823,31 +5957,52 @@
 
 
       function renderInvoiceBaseTab(draft, supplier, canLaunch) {
+        const isLancamento = draft.kind === "lancamento";
+        const typeOptions = isLancamento
+          ? getActiveDocumentTypes()
+          : getActiveDocumentTypes().filter((docType) => ["Nota de serviço", "Nota de produto"].includes(docType.name));
+
         return `
           <section class="card">
             <div class="section-head">
               <div>
-                <h3>${draft.id ? `Editar nota fiscal ${escapeHtml(draft.code)}` : "Dados da nova nota fiscal"}</h3>
+                <h3>${draft.id ? `Editar ${isLancamento ? "lançamento" : "nota fiscal"} ${escapeHtml(draft.code)}` : `Dados ${isLancamento ? "do novo lançamento" : "da nova nota fiscal"}`}</h3>
                 <p>Preencha os dados principais primeiro. Depois siga para as abas de itens e financeiro.</p>
               </div>
-              ${draft.id ? `<button class="ghost-button" type="button" data-action="new-invoice">Novo rascunho</button>` : ""}
+              ${draft.id ? `<button class="ghost-button" type="button" data-action="${isLancamento ? "new-lancamento" : "new-invoice"}">Novo rascunho</button>` : ""}
             </div>
             <form data-form="invoice" autocomplete="off">
               <div class="form-grid">
                 <div class="field">
-                  <label for="invoice-type">Tipo da nota</label>
+                  <label for="invoice-type">${isLancamento ? "Tipo de documento" : "Tipo da nota"}</label>
                   <select id="invoice-type" name="type" ${canLaunch ? "" : "disabled"}>
-                    <option value="Nota de serviço" ${draft.type === "Nota de serviço" ? "selected" : ""}>Nota de serviço</option>
-                    <option value="Nota de produto" ${draft.type === "Nota de produto" ? "selected" : ""}>Nota de produto</option>
+                    ${typeOptions.length ? typeOptions.map((docType) => `
+                      <option value="${escapeHtml(docType.name)}" ${draft.type === docType.name ? "selected" : ""}>${escapeHtml(docType.name)}</option>
+                    `).join("") : `<option value="">Cadastre um tipo de documento em Configurações</option>`}
                   </select>
                 </div>
                 <div class="field">
-                  <label for="invoice-supplier">Fornecedor</label>
-                  <select id="invoice-supplier" name="supplierId" ${canLaunch ? "required" : "disabled"}>
+                  <label for="invoice-document-number">Número da nota</label>
+                  <input id="invoice-document-number" name="documentNumber" maxlength="40" value="${escapeHtml(draft.documentNumber || "")}" placeholder="Ex.: 000123" ${canLaunch ? "" : "disabled"}>
+                </div>
+                <div class="field">
+                  <label for="invoice-supplier">Fornecedor${isLancamento ? " (opcional)" : ""}</label>
+                  <select id="invoice-supplier" name="supplierId" ${canLaunch ? (isLancamento ? "" : "required") : "disabled"}>
                     <option value="">Selecione um fornecedor</option>
                     ${state.data.suppliers.map((record) => `
                       <option value="${escapeHtml(record.id)}" ${draft.supplierId === record.id ? "selected" : ""}>
                         ${escapeHtml(record.code)} - ${escapeHtml(record.legalName)}
+                      </option>
+                    `).join("")}
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="invoice-cost-center">Centro de custo</label>
+                  <select id="invoice-cost-center" name="costCenterId" ${canLaunch ? "" : "disabled"}>
+                    <option value="">Sem centro de custo</option>
+                    ${state.data.costCenters.map((record) => `
+                      <option value="${escapeHtml(record.id)}" ${draft.costCenterId === record.id ? "selected" : ""}>
+                        ${escapeHtml(record.code)} - ${escapeHtml(record.name)}
                       </option>
                     `).join("")}
                   </select>
@@ -4861,12 +6016,12 @@
                   <div class="field-readonly">${supplier ? `${escapeHtml(supplier.code)} - ${escapeHtml(supplier.legalName)}` : "Selecione um fornecedor cadastrado."}</div>
                 </div>
                 <div class="field full">
-                  <label for="invoice-description">Descrição da nota</label>
-                  <textarea id="invoice-description" name="description" maxlength="300" ${canLaunch ? "" : "disabled"} placeholder="Descreva o conteúdo ou finalidade da nota">${escapeHtml(draft.description || "")}</textarea>
+                  <label for="invoice-description">${isLancamento ? "Descrição do lançamento" : "Descrição da nota"}</label>
+                  <textarea id="invoice-description" name="description" maxlength="300" ${canLaunch ? "" : "disabled"} placeholder="Descreva o conteúdo ou finalidade">${escapeHtml(draft.description || "")}</textarea>
                 </div>
               </div>
               <div class="form-actions">
-                <button class="primary-button" type="submit" ${canLaunch ? "" : "disabled"}>${draft.id ? "Salvar alterações da nota" : "Salvar nota fiscal"}</button>
+                <button class="primary-button" type="submit" ${canLaunch ? "" : "disabled"}>${draft.id ? "Salvar alterações" : "Salvar registro"}</button>
                 <button class="secondary-button" type="button" data-invoice-tab="itens" ${canLaunch ? "" : "disabled"}>Ir para itens</button>
               </div>
             </form>
@@ -5200,13 +6355,15 @@
         const reportCount = state.data.accountingEntries.length;
         const costCenterCount = state.data.costCenters.length;
         const accountCount = getSelectableChartAccounts().length;
+        const eventEntriesCount = state.data.accountingEntries.filter((entry) => entry.origin === "accounting-event").length;
+        const payableEntriesCount = state.data.accountingEntries.filter((entry) => entry.origin === "settlement-event").length;
 
         return `
           <section class="card">
             <div class="section-head">
               <div>
                 <h3>Módulo contábil</h3>
-                <p>Escolha entre lançamentos contábeis e relatórios. Cada fluxo abre em modal próprio, sem misturar a tela principal.</p>
+                <p>Escolha entre lançamentos contábeis, lançamentos automáticos e relatórios. Cada fluxo abre em modal próprio, sem misturar a tela principal.</p>
               </div>
               ${state.ui.accountingPanel === "reports" ? `<button class="ghost-button" type="button" data-action="back-accounting-menu">Voltar</button>` : ""}
             </div>
@@ -5217,6 +6374,22 @@
                 <small>${escapeHtml(String(reportCount))} lançamento(s) cadastrados.</small>
                 <div class="form-actions">
                   <button class="primary-button" type="button" data-action="open-accounting-entries">Abrir lançamentos contábeis</button>
+                </div>
+              </article>
+              <article class="option-card">
+                <h3>Lançamentos</h3>
+                <p>Lançamentos gerados automaticamente pelos eventos contábeis configurados para cada tipo de documento fiscal.</p>
+                <small>${escapeHtml(String(eventEntriesCount))} lançamento(s) gerado(s) por eventos contábeis.</small>
+                <div class="form-actions">
+                  <button class="secondary-button" type="button" data-action="open-event-entries-modal">Abrir lançamentos</button>
+                </div>
+              </article>
+              <article class="option-card">
+                <h3>Lançamentos a Pagar</h3>
+                <p>Lançamentos gerados automaticamente pelos eventos de baixa quando uma parcela é baixada no módulo financeiro.</p>
+                <small>${escapeHtml(String(payableEntriesCount))} lançamento(s) gerado(s) por eventos de baixa.</small>
+                <div class="form-actions">
+                  <button class="secondary-button" type="button" data-action="open-payable-entries-modal">Abrir lançamentos a pagar</button>
                 </div>
               </article>
               <article class="option-card">
@@ -5249,6 +6422,143 @@
             </section>
           ` : ""}
         `;
+      }
+
+      function renderAutoEntriesTable(records, emptyMessage) {
+        if (!records.length) {
+          return `
+            <div class="empty-card">
+              <strong>Nenhum lançamento encontrado.</strong>
+              <p>${escapeHtml(emptyMessage)}</p>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Documento</th>
+                  <th>Descrição</th>
+                  <th>Centro de custo</th>
+                  <th>Débito</th>
+                  <th>Crédito</th>
+                  <th>Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${records.map((record) => {
+                  const costCenter = getCostCenterById(record.costCenterId);
+                  const debit = getChartAccountById(record.debitAccountId);
+                  const credit = getChartAccountById(record.creditAccountId);
+                  const invoice = state.data.invoices.find((item) => item.id === record.sourceInvoiceId);
+                  return `
+                    <tr>
+                      <td>${escapeHtml(formatDate(record.entryDate))}</td>
+                      <td class="mono">${escapeHtml(invoice?.documentNumber || invoice?.code || "-")}</td>
+                      <td>
+                        <strong>${escapeHtml(record.description || "Sem descrição")}</strong>
+                        <div class="table-muted">${escapeHtml(invoice?.type || "")}</div>
+                      </td>
+                      <td>${escapeHtml(costCenter?.name || "-")}</td>
+                      <td>
+                        <strong>${escapeHtml(debit?.code || "-")}</strong>
+                        <div class="table-muted">${escapeHtml(debit?.name || "Conta removida")}</div>
+                      </td>
+                      <td>
+                        <strong>${escapeHtml(credit?.code || "-")}</strong>
+                        <div class="table-muted">${escapeHtml(credit?.name || "Conta removida")}</div>
+                      </td>
+                      <td class="mono">${escapeHtml(formatCurrency(record.amount))}</td>
+                    </tr>
+                  `;
+                }).join("")}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      function renderEventEntriesModal() {
+        const records = state.data.accountingEntries
+          .filter((entry) => entry.origin === "accounting-event")
+          .slice()
+          .sort((a, b) => (b.entryDate || "").localeCompare(a.entryDate || ""));
+
+        return `
+          <div class="modal-overlay">
+            <button class="modal-backdrop" type="button" data-action="close-event-entries-modal" aria-label="Fechar modal"></button>
+            <div class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="event-entries-modal-title">
+              <div class="modal-header">
+                <div>
+                  <h3 class="modal-title" id="event-entries-modal-title">Lançamentos</h3>
+                  <p class="modal-subtitle">Lançamentos contábeis gerados automaticamente pelos eventos contábeis ao lançar notas fiscais e outros documentos.</p>
+                </div>
+                <div class="inline-actions">
+                  <button class="ghost-button" type="button" data-action="close-event-entries-modal">Fechar</button>
+                </div>
+              </div>
+              <div class="modal-body">
+                <section class="table-card">
+                  <div class="table-toolbar">
+                    <div>
+                      <h4>Lançamentos gerados por eventos contábeis</h4>
+                      <p class="page-subtitle">${escapeHtml(String(records.length))} lançamento(s) encontrado(s).</p>
+                    </div>
+                  </div>
+                  ${renderAutoEntriesTable(records, "Cadastre um evento contábil em Configurações e lance um documento vinculado ao tipo configurado.")}
+                </section>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderPayableEntriesModal() {
+        const records = state.data.accountingEntries
+          .filter((entry) => entry.origin === "settlement-event")
+          .slice()
+          .sort((a, b) => (b.entryDate || "").localeCompare(a.entryDate || ""));
+
+        return `
+          <div class="modal-overlay">
+            <button class="modal-backdrop" type="button" data-action="close-payable-entries-modal" aria-label="Fechar modal"></button>
+            <div class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="payable-entries-modal-title">
+              <div class="modal-header">
+                <div>
+                  <h3 class="modal-title" id="payable-entries-modal-title">Lançamentos a Pagar</h3>
+                  <p class="modal-subtitle">Lançamentos contábeis gerados automaticamente pelos eventos de baixa ao dar baixa nas parcelas no módulo financeiro.</p>
+                </div>
+                <div class="inline-actions">
+                  <button class="ghost-button" type="button" data-action="close-payable-entries-modal">Fechar</button>
+                </div>
+              </div>
+              <div class="modal-body">
+                <section class="table-card">
+                  <div class="table-toolbar">
+                    <div>
+                      <h4>Lançamentos gerados por eventos de baixa</h4>
+                      <p class="page-subtitle">${escapeHtml(String(records.length))} lançamento(s) encontrado(s).</p>
+                    </div>
+                  </div>
+                  ${renderAutoEntriesTable(records, "Cadastre um evento de baixa em Configurações e dê baixa em uma parcela no módulo financeiro.")}
+                </section>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function getAccountingEntryOriginLabel(entry) {
+        if (entry.origin === "accounting-event") {
+          return "Evento contábil";
+        }
+        if (entry.origin === "settlement-event") {
+          return "Evento de baixa";
+        }
+        return "Lançamento manual";
       }
 
       function renderAccountingEntriesModal() {
@@ -5332,7 +6642,7 @@
                                 <td>${escapeHtml(formatDate(record.entryDate))}</td>
                                 <td>
                                   <strong>${escapeHtml(record.description || "Sem descrição")}</strong>
-                                  <div class="table-muted">Lançamento manual</div>
+                                  <div class="table-muted">${escapeHtml(getAccountingEntryOriginLabel(record))}</div>
                                 </td>
                                 <td>
                                   <strong>${escapeHtml(costCenter?.name || "Centro de custo indisponível")}</strong>
@@ -5349,8 +6659,10 @@
                                 <td class="mono">${escapeHtml(formatCurrency(record.amount))}</td>
                                 <td>
                                   <div class="table-actions">
-                                    <button class="action-chip" type="button" data-action="edit-accounting-entry" data-id="${escapeHtml(record.id)}">Editar</button>
-                                    <button class="action-chip danger" type="button" data-action="delete-accounting-entry" data-id="${escapeHtml(record.id)}">Excluir</button>
+                                    ${record.origin ? `<span class="badge">Automático</span>` : `
+                                      <button class="action-chip" type="button" data-action="edit-accounting-entry" data-id="${escapeHtml(record.id)}">Editar</button>
+                                      <button class="action-chip danger" type="button" data-action="delete-accounting-entry" data-id="${escapeHtml(record.id)}">Excluir</button>
+                                    `}
                                   </div>
                                 </td>
                               </tr>
@@ -5488,11 +6800,87 @@
         `;
       }
 
+      function renderSettlementModal() {
+        const target = state.ui.settlementTarget;
+        const draft = state.ui.settlementFormDraft;
+        const invoice = target ? state.data.invoices.find((record) => record.id === target.invoiceId) : null;
+        const installment = invoice ? invoice.installments.find((item) => item.id === target.installmentId) : null;
+        const alreadySettled = target ? getInstallmentSettledAmount(target.invoiceId, target.installmentId) : 0;
+        const remaining = installment ? roundCurrency(installment.amount - alreadySettled) : 0;
+        const accounts = getSelectableChartAccounts();
+
+        return `
+          <div class="modal-overlay">
+            <button class="modal-backdrop" type="button" data-action="close-settlement-modal" aria-label="Fechar modal"></button>
+            <div class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="settlement-modal-title" style="width:min(560px, 100%); height:auto;">
+              <div class="modal-header">
+                <div>
+                  <h3 class="modal-title" id="settlement-modal-title">Dar baixa</h3>
+                  <p class="modal-subtitle">${invoice ? `${escapeHtml(invoice.type)} ${escapeHtml(invoice.documentNumber || invoice.code)}${installment ? ` - Parcela ${escapeHtml(String(installment.installmentNumber))}` : ""}` : "Parcela"}</p>
+                </div>
+                <div class="inline-actions">
+                  <button class="ghost-button" type="button" data-action="close-settlement-modal">Fechar</button>
+                </div>
+              </div>
+              <div class="modal-body">
+                ${!invoice || !installment ? `
+                  <div class="empty-card"><strong>Parcela não encontrada.</strong></div>
+                ` : `
+                  <div class="subtle-panel" style="margin-bottom:16px;">
+                    <div class="account-preview-grid">
+                      <div>
+                        <span class="table-muted">Valor da parcela</span>
+                        <div class="field-readonly compact mono">${escapeHtml(formatCurrency(installment.amount))}</div>
+                      </div>
+                      <div>
+                        <span class="table-muted">Já baixado</span>
+                        <div class="field-readonly compact mono">${escapeHtml(formatCurrency(alreadySettled))}</div>
+                      </div>
+                      <div>
+                        <span class="table-muted">Saldo em aberto</span>
+                        <div class="field-readonly compact mono">${escapeHtml(formatCurrency(remaining))}</div>
+                      </div>
+                      <div>
+                        <span class="table-muted">Vencimento</span>
+                        <div class="field-readonly compact">${escapeHtml(formatDate(installment.dueDate))}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <form data-form="settlement" autocomplete="off">
+                    <div class="form-grid">
+                      <div class="field">
+                        <label for="settlement-date">Data da baixa</label>
+                        <input id="settlement-date" type="date" name="settlementDate" value="${escapeHtml(draft.settlementDate || "")}" required>
+                      </div>
+                      <div class="field">
+                        <label for="settlement-amount">Valor da baixa</label>
+                        <input id="settlement-amount" type="number" step="0.01" min="0.01" name="amount" value="${escapeHtml(draft.amount || "")}" required>
+                      </div>
+                      <div class="field full">
+                        <label for="settlement-account">Conta que pagou</label>
+                        <select id="settlement-account" name="payingAccountId" required>
+                          <option value="">Selecione a conta contábil</option>
+                          ${accounts.map((account) => `
+                            <option value="${escapeHtml(account.id)}" ${draft.payingAccountId === account.id ? "selected" : ""}>
+                              ${escapeHtml(account.code)} - ${escapeHtml(account.name)}
+                            </option>
+                          `).join("")}
+                        </select>
+                      </div>
+                    </div>
+                    <div class="form-actions">
+                      <button class="primary-button" type="submit">Confirmar baixa</button>
+                    </div>
+                  </form>
+                `}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
       function renderTrialBalanceModal() {
         const filters = state.ui.trialBalanceFilters;
-        const visibleColumns = getTrialBalanceVisibleColumns(filters);
-        const selectedCostCenter = filters.costCenterId === "all" ? null : getCostCenterById(filters.costCenterId);
-        const report = filters.submitted ? getTrialBalanceReport(filters) : { rows: [], totals: {}, entries: [] };
 
         return `
           <div class="modal-overlay">
@@ -5501,10 +6889,9 @@
               <div class="modal-header">
                 <div>
                   <h3 class="modal-title" id="trial-balance-modal-title">Balancete</h3>
-                  <p class="modal-subtitle">Informe os parâmetros de emissão, configure as colunas e depois emita ou exporte o relatório em PDF.</p>
+                  <p class="modal-subtitle">Informe os parâmetros de emissão e configure as colunas. Ao emitir, o balancete abre em uma nova janela.</p>
                 </div>
                 <div class="inline-actions">
-                  ${filters.submitted ? `<button class="secondary-button" type="button" data-action="export-trial-balance-pdf">Exportar PDF</button>` : ""}
                   <button class="ghost-button" type="button" data-action="close-trial-balance-modal">Fechar</button>
                 </div>
               </div>
@@ -5568,12 +6955,138 @@
                     </div>
                   </form>
                 </section>
-                ${filters.submitted ? `
+                <section class="empty-card">
+                  <strong>Balancete com razão contábil integrado.</strong>
+                  <p>Ao emitir, uma nova janela mostra o balancete e, ao clicar em uma conta, a movimentação (razão contábil) daquela conta aparece ao lado.</p>
+                </section>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function getAccountLedgerEntries(accountId, filters) {
+        return getTrialBalanceEntries(filters)
+          .filter((entry) => entry.debitAccountId === accountId || entry.creditAccountId === accountId)
+          .slice()
+          .sort((a, b) => (a.entryDate || "").localeCompare(b.entryDate || ""));
+      }
+
+      function renderTrialBalanceLedgerPanel(filters, report) {
+        const selectedId = state.ui.trialBalanceSelectedAccountId;
+
+        if (!selectedId) {
+          return `
+            <div class="subtle-panel ledger-panel">
+              <h4>Razão contábil</h4>
+              <div class="empty-card">
+                <strong>Selecione uma conta</strong>
+                <p>Clique em uma conta do balancete ao lado para ver a movimentação do período.</p>
+              </div>
+            </div>
+          `;
+        }
+
+        const account = getChartAccountById(selectedId);
+        const row = report.rows.find((item) => item.account.id === selectedId);
+
+        if (!account || !row) {
+          return `
+            <div class="subtle-panel ledger-panel">
+              <h4>Razão contábil</h4>
+              <div class="empty-card">
+                <strong>Conta não encontrada no balancete emitido.</strong>
+              </div>
+            </div>
+          `;
+        }
+
+        const isDebitNature = account.balanceNature === "Devedora";
+        const ledgerEntries = getAccountLedgerEntries(selectedId, filters);
+        let runningBalance = row.previousBalance;
+
+        const entriesHtml = ledgerEntries.map((entry) => {
+          const amount = roundCurrency(Number(entry.amount || 0));
+          const isDebit = entry.debitAccountId === selectedId;
+          const signedEffect = isDebit ? amount : -amount;
+          runningBalance = roundCurrency(runningBalance + (isDebitNature ? signedEffect : -signedEffect));
+          const counterpartAccount = getChartAccountById(isDebit ? entry.creditAccountId : entry.debitAccountId);
+          const costCenter = getCostCenterById(entry.costCenterId);
+
+          return `
+            <div class="ledger-entry">
+              <div class="ledger-entry-head">
+                <span class="mono">${escapeHtml(formatDate(entry.entryDate))}</span>
+                <span class="badge ${isDebit ? "positive" : "danger"}">${isDebit ? "Débito" : "Crédito"}</span>
+              </div>
+              <div>${escapeHtml(entry.description || "-")}</div>
+              <div class="table-muted">
+                ${counterpartAccount ? `Contrapartida: ${escapeHtml(counterpartAccount.code)} - ${escapeHtml(counterpartAccount.name)}` : "Contrapartida não encontrada"}
+                ${costCenter ? ` | ${escapeHtml(costCenter.code)} - ${escapeHtml(costCenter.name)}` : ""}
+              </div>
+              <div class="ledger-entry-amounts">
+                <span class="mono">${escapeHtml(formatCurrency(amount))}</span>
+                <span class="mono table-muted">Saldo: ${escapeHtml(formatSignedCurrency(runningBalance))}</span>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        return `
+          <div class="subtle-panel ledger-panel">
+            <h4>Razão contábil</h4>
+            <p class="table-muted mono">${escapeHtml(account.code)} - ${escapeHtml(account.name)}</p>
+            <div class="ledger-summary">
+              <div>
+                <span class="table-muted">Saldo anterior</span>
+                <strong>${escapeHtml(formatSignedCurrency(row.previousBalance))}</strong>
+              </div>
+              <div>
+                <span class="table-muted">Saldo final</span>
+                <strong>${escapeHtml(formatSignedCurrency(row.balance))}</strong>
+              </div>
+            </div>
+            ${ledgerEntries.length ? `
+              <div class="ledger-entries-list">${entriesHtml}</div>
+            ` : `
+              <div class="empty-card">
+                <strong>Nenhum lançamento direto no período.</strong>
+                <p>O saldo desta conta pode vir apenas de contas filhas.</p>
+              </div>
+            `}
+          </div>
+        `;
+      }
+
+      function renderTrialBalanceReportModal() {
+        const filters = state.ui.trialBalanceFilters;
+        const visibleColumns = getTrialBalanceVisibleColumns(filters);
+        const selectedCostCenter = filters.costCenterId === "all" ? null : getCostCenterById(filters.costCenterId);
+        const report = filters.submitted ? getTrialBalanceReport(filters) : { rows: [], totals: {}, entries: [] };
+        const selectedId = state.ui.trialBalanceSelectedAccountId;
+
+        return `
+          <div class="modal-overlay">
+            <button class="modal-backdrop" type="button" data-action="close-trial-balance-report-modal" aria-label="Fechar modal"></button>
+            <div class="modal-shell fullscreen" role="dialog" aria-modal="true" aria-labelledby="trial-balance-report-modal-title">
+              <div class="modal-header">
+                <div>
+                  <h3 class="modal-title" id="trial-balance-report-modal-title">Balancete emitido</h3>
+                  <p class="modal-subtitle">Período de ${escapeHtml(formatDate(filters.startDate))} até ${escapeHtml(formatDate(filters.endDate))}${selectedCostCenter ? ` | Centro de custo: ${escapeHtml(selectedCostCenter.code)} - ${escapeHtml(selectedCostCenter.name)}` : " | Centro de custo: todos"}</p>
+                </div>
+                <div class="inline-actions">
+                  <button class="secondary-button" type="button" data-action="export-trial-balance-pdf">Exportar PDF</button>
+                  <button class="ghost-button" type="button" data-action="edit-trial-balance-filters">Ajustar filtros</button>
+                  <button class="ghost-button" type="button" data-action="close-trial-balance-report-modal">Fechar</button>
+                </div>
+              </div>
+              <div class="modal-body">
+                <div class="trial-balance-split">
                   <section class="table-card">
                     <div class="table-toolbar">
                       <div>
-                        <h4>Balancete emitido</h4>
-                        <p class="page-subtitle">Período de ${escapeHtml(formatDate(filters.startDate))} até ${escapeHtml(formatDate(filters.endDate))}${selectedCostCenter ? ` | Centro de custo: ${escapeHtml(selectedCostCenter.code)} - ${escapeHtml(selectedCostCenter.name)}` : " | Centro de custo: todos"}</p>
+                        <h4>Contas do balancete</h4>
+                        <p class="page-subtitle">Clique em uma conta para ver a movimentação (razão contábil) ao lado.</p>
                       </div>
                       <div class="badge-row">
                         <span class="badge">${escapeHtml(String(report.entries.length))} lançamento(s)</span>
@@ -5592,7 +7105,7 @@
                           </thead>
                           <tbody>
                             ${report.rows.map((row) => `
-                              <tr>
+                              <tr class="selectable-row ${row.account.id === selectedId ? "selected" : ""}" data-action="select-trial-balance-account" data-id="${escapeHtml(row.account.id)}">
                                 <td class="mono">${escapeHtml(row.account.code)}</td>
                                 <td>
                                   <strong>${escapeHtml(row.account.name)}</strong>
@@ -5616,15 +7129,123 @@
                       </div>
                     `}
                   </section>
-                ` : `
-                  <section class="empty-card">
-                    <strong>Balancete ainda não emitido.</strong>
-                    <p>Informe os parâmetros desejados, configure as colunas e clique em emitir para visualizar o relatório.</p>
-                  </section>
-                `}
+                  ${renderTrialBalanceLedgerPanel(filters, report)}
+                </div>
               </div>
             </div>
           </div>
+        `;
+      }
+
+      function getAllInstallmentsWithStatus(searchTerm) {
+        const rows = [];
+        state.data.invoices.forEach((invoice) => {
+          invoice.installments.forEach((installment) => {
+            const settled = getInstallmentSettledAmount(invoice.id, installment.id);
+            const remaining = roundCurrency(installment.amount - settled);
+            const status = remaining <= 0.009 ? "Quitada" : (settled > 0 ? "Parcial" : "Em aberto");
+            rows.push({ invoice, installment, settled, remaining, status });
+          });
+        });
+
+        rows.sort((a, b) => (a.installment.dueDate || "").localeCompare(b.installment.dueDate || ""));
+
+        const term = (searchTerm || "").toLowerCase().trim();
+        if (!term) {
+          return rows;
+        }
+
+        return rows.filter((row) => {
+          const supplier = getSupplierById(row.invoice.supplierId);
+          const haystack = `${row.invoice.code} ${row.invoice.documentNumber || ""} ${row.invoice.type} ${supplier?.legalName || ""} ${row.installment.paymentMethod || ""}`.toLowerCase();
+          return haystack.includes(term);
+        });
+      }
+
+      function renderFinanceiroView() {
+        const searchTerm = state.ui.search.financeiro;
+        const rows = getAllInstallmentsWithStatus(searchTerm);
+        const openCount = rows.filter((row) => row.status !== "Quitada").length;
+        const totalOpen = roundCurrency(rows.reduce((sum, row) => sum + (row.status !== "Quitada" ? row.remaining : 0), 0));
+
+        return `
+          <section class="card">
+            <div class="section-head">
+              <div>
+                <h3>Módulo financeiro</h3>
+                <p>Acompanhe as parcelas geradas por notas fiscais e lançamentos e dê baixa informando data, conta e valor.</p>
+              </div>
+            </div>
+            <div class="summary-grid">
+              <article class="stats-card">
+                <span class="table-muted">Parcelas em aberto</span>
+                <strong>${escapeHtml(String(openCount))}</strong>
+              </article>
+              <article class="stats-card">
+                <span class="table-muted">Saldo total em aberto</span>
+                <strong>${escapeHtml(formatCurrency(totalOpen))}</strong>
+              </article>
+            </div>
+          </section>
+          <section class="table-card">
+            <div class="table-toolbar">
+              <div>
+                <h4>Parcelas lançadas</h4>
+                <p class="page-subtitle">Pesquise por documento, número, tipo ou fornecedor.</p>
+              </div>
+              <input class="search-input" data-search="financeiro" placeholder="Pesquisar parcelas" value="${escapeHtml(searchTerm)}">
+            </div>
+            ${rows.length ? `
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Documento</th>
+                      <th>Fornecedor</th>
+                      <th>Parcela</th>
+                      <th>Vencimento</th>
+                      <th>Valor</th>
+                      <th>Baixado</th>
+                      <th>Saldo</th>
+                      <th>Situação</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${rows.map((row) => {
+                      const supplier = getSupplierById(row.invoice.supplierId);
+                      const statusClass = row.status === "Quitada" ? "positive" : (row.status === "Parcial" ? "warning" : "");
+                      return `
+                        <tr>
+                          <td>
+                            <strong class="mono">${escapeHtml(row.invoice.documentNumber || row.invoice.code)}</strong>
+                            <div class="table-muted">${escapeHtml(row.invoice.type)}</div>
+                          </td>
+                          <td class="table-muted">${escapeHtml(supplier?.legalName || "Sem fornecedor")}</td>
+                          <td class="mono">${escapeHtml(String(row.installment.installmentNumber))}</td>
+                          <td>${escapeHtml(formatDate(row.installment.dueDate))}</td>
+                          <td class="mono">${escapeHtml(formatCurrency(row.installment.amount))}</td>
+                          <td class="mono">${escapeHtml(formatCurrency(row.settled))}</td>
+                          <td class="mono">${escapeHtml(formatCurrency(row.remaining))}</td>
+                          <td><span class="badge ${statusClass}">${escapeHtml(row.status)}</span></td>
+                          <td>
+                            <div class="table-actions">
+                              <button class="action-chip" type="button" data-action="open-settlement-modal" data-invoice-id="${escapeHtml(row.invoice.id)}" data-installment-id="${escapeHtml(row.installment.id)}" ${row.status === "Quitada" ? "disabled" : ""}>Dar baixa</button>
+                            </div>
+                          </td>
+                        </tr>
+                      `;
+                    }).join("")}
+                  </tbody>
+                </table>
+              </div>
+            ` : `
+              <div class="empty-card">
+                <strong>Nenhuma parcela encontrada.</strong>
+                <p>Lance uma nota fiscal ou um lançamento no módulo fiscal para que as parcelas apareçam aqui.</p>
+              </div>
+            `}
+          </section>
         `;
       }
 
@@ -5657,26 +7278,29 @@
           <section class="card">
             <div class="section-head">
               <div>
-                <h3>Notas fiscais lançadas</h3>
+                <h3>Notas fiscais e lançamentos</h3>
                 <p>Ao entrar no módulo fiscal, a tela mostra primeiro a listagem. O cadastro ou a edição abrem em modal, separados por abas.</p>
               </div>
-              <button class="primary-button" type="button" data-action="new-invoice" ${canLaunch ? "" : "disabled"}>Nova nota fiscal</button>
+              <div class="inline-actions">
+                <button class="secondary-button" type="button" data-action="new-lancamento" ${canLaunch ? "" : "disabled"}>Novo lançamento</button>
+                <button class="primary-button" type="button" data-action="new-invoice" ${canLaunch ? "" : "disabled"}>Nova nota fiscal</button>
+              </div>
             </div>
             <div class="subtle-panel">
               <ul class="subtle-list">
-                <li>Use a listagem para pesquisar, editar e excluir notas já lançadas.</li>
-                <li>Abra o modal para preencher dados, itens, financeiro e resumo sem poluir a tela principal.</li>
-                <li>O salvamento da nota continua validando a conciliação entre itens e parcelas.</li>
+                <li>Use a listagem para pesquisar, editar e excluir notas e lançamentos já registrados.</li>
+                <li>"Nova nota fiscal" lança notas de serviço ou produto. "Novo lançamento" registra outros documentos cadastrados em Configurações.</li>
+                <li>O salvamento continua validando a conciliação entre itens e parcelas.</li>
               </ul>
             </div>
           </section>
           <section class="table-card">
             <div class="table-toolbar">
               <div>
-                <h4>Notas fiscais lançadas</h4>
-                <p class="page-subtitle">Pesquise, edite ou exclua notas fiscais já registradas localmente.</p>
+                <h4>Notas fiscais e lançamentos</h4>
+                <p class="page-subtitle">Pesquise, edite ou exclua registros já lançados localmente.</p>
               </div>
-              <input class="search-input" data-search="invoices" placeholder="Pesquisar notas fiscais" value="${escapeHtml(searchTerm)}">
+              <input class="search-input" data-search="invoices" placeholder="Pesquisar notas e lançamentos" value="${escapeHtml(searchTerm)}">
             </div>
             ${records.length ? `
               <div class="table-scroll">
@@ -5684,6 +7308,7 @@
                   <thead>
                     <tr>
                       <th>Código</th>
+                      <th>Número</th>
                       <th>Tipo / fornecedor</th>
                       <th>Emissão</th>
                       <th>Descrição</th>
@@ -5700,9 +7325,11 @@
                       return `
                         <tr>
                           <td class="mono">${escapeHtml(record.code)}</td>
+                          <td class="mono">${escapeHtml(record.documentNumber || "-")}</td>
                           <td>
                             <strong>${escapeHtml(record.type)}</strong>
-                            <div class="table-muted">${escapeHtml(supplierRecord?.legalName || "Fornecedor indisponível")}</div>
+                            <div class="table-muted">${supplierRecord ? escapeHtml(supplierRecord.legalName) : (record.kind === "lancamento" ? "Sem fornecedor" : "Fornecedor indisponível")}</div>
+                            ${record.kind === "lancamento" ? `<span class="badge">Lançamento</span>` : ""}
                           </td>
                           <td>${escapeHtml(formatDate(record.issueDate))}</td>
                           <td class="table-muted">${escapeHtml(record.description || "Sem descrição")}</td>
@@ -5728,10 +7355,11 @@
               </div>
             ` : `
               <div class="empty-card">
-                <strong>Nenhuma nota fiscal encontrada.</strong>
-                <p>${searchTerm ? "Nenhuma nota fiscal corresponde ao termo pesquisado." : "Depois de cadastrar fornecedores e itens, use o botão de nova nota para abrir o modal de lançamento."}</p>
+                <strong>Nenhuma nota fiscal ou lançamento encontrado.</strong>
+                <p>${searchTerm ? "Nenhum registro corresponde ao termo pesquisado." : "Depois de cadastrar fornecedores e itens, use os botões acima para lançar uma nota ou um lançamento avulso."}</p>
                 <div class="inline-actions">
                   <button class="primary-button" type="button" data-action="new-invoice" ${canLaunch ? "" : "disabled"}>Nova nota fiscal</button>
+                  <button class="secondary-button" type="button" data-action="new-lancamento" ${canLaunch ? "" : "disabled"}>Novo lançamento</button>
                 </div>
               </div>
             `}
