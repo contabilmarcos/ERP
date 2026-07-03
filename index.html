@@ -6,28 +6,38 @@
   <title>ERP Local - Fiscal e Cadastros</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #eef3f7;
-      --surface: rgba(255, 255, 255, 0.96);
-      --surface-strong: #ffffff;
-      --surface-muted: #f6f8fb;
-      --sidebar: #0f1e2f;
-      --sidebar-alt: #15283d;
-      --primary: #176087;
-      --primary-strong: #0f4e6f;
-      --accent: #11a47f;
-      --warning: #d97706;
-      --danger: #c24141;
-      --text: #1f2937;
-      --text-soft: #5b6474;
-      --border: #d8e1ea;
-      --shadow: 0 24px 64px rgba(15, 30, 47, 0.12);
-      --radius-xl: 24px;
-      --radius-lg: 18px;
-      --radius-md: 14px;
-      --radius-sm: 10px;
+      --canvas: #f6f7f9;
+      --surface: #ffffff;
+      --surface-2: #fbfbfc;
+      --surface-3: #f3f4f6;
+      --sidebar: #fbfbfc;
+      --ink: #1c1e22;
+      --ink-2: #5b616b;
+      --ink-3: #888e98;
+      --border: #e9ebef;
+      --border-2: #dfe2e7;
+      --accent: #4f46e5;
+      --accent-hover: #4338ca;
+      --accent-soft: #eef0fe;
+      --accent-soft-2: #e4e6fd;
+      --accent-ink: #3f37c9;
+      --success: #0f9d76;
+      --success-soft: #e6f6f0;
+      --warning: #b4780a;
+      --warning-soft: #fbf3e2;
+      --danger: #d4494b;
+      --danger-soft: #fbecec;
+      --shadow-xs: 0 1px 2px rgba(20, 23, 28, 0.04);
+      --shadow-sm: 0 1px 2px rgba(20, 23, 28, 0.04), 0 1px 3px rgba(20, 23, 28, 0.05);
+      --shadow-md: 0 8px 24px rgba(20, 23, 28, 0.10);
+      --radius-xl: 14px;
+      --radius-lg: 12px;
+      --radius-md: 10px;
+      --radius-sm: 8px;
+      --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
     }
 
     * {
@@ -37,12 +47,12 @@
     html, body {
       margin: 0;
       min-height: 100%;
-      background:
-        radial-gradient(circle at top right, rgba(23, 96, 135, 0.10), transparent 28%),
-        radial-gradient(circle at left bottom, rgba(17, 164, 127, 0.12), transparent 30%),
-        var(--bg);
-      color: var(--text);
-      font-family: "Manrope", sans-serif;
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
     }
 
     button, input, select, textarea {
@@ -53,211 +63,242 @@
       cursor: pointer;
     }
 
+    ::selection {
+      background: var(--accent-soft-2);
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
     .app-shell {
       min-height: 100vh;
       display: grid;
-      grid-template-columns: 300px 1fr;
+      grid-template-columns: 258px 1fr;
     }
 
     .sidebar {
       position: sticky;
       top: 0;
       height: 100vh;
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 30%),
-        linear-gradient(180deg, var(--sidebar) 0%, var(--sidebar-alt) 100%);
-      color: #f5f8fb;
-      padding: 28px 22px;
+      background: var(--sidebar);
+      border-right: 1px solid var(--border);
+      padding: 18px 12px;
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 20px;
       z-index: 20;
-      box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.05);
     }
 
     .brand {
       display: flex;
-      gap: 16px;
+      gap: 11px;
       align-items: center;
-      padding: 18px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: var(--radius-lg);
-      backdrop-filter: blur(14px);
+      padding: 8px 8px 2px;
     }
 
     .brand-mark {
-      width: 52px;
-      height: 52px;
-      border-radius: 16px;
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
       display: grid;
       place-items: center;
-      background: linear-gradient(135deg, rgba(23, 96, 135, 0.95), rgba(17, 164, 127, 0.9));
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      box-shadow: 0 20px 42px rgba(17, 164, 127, 0.18);
+      background: var(--accent);
+      color: #ffffff;
+      font-family: var(--mono);
+      font-weight: 600;
+      font-size: 0.68rem;
+      letter-spacing: 0.03em;
+      box-shadow: var(--shadow-xs);
     }
 
     .brand h1 {
       margin: 0;
-      font-family: "Fraunces", serif;
-      font-size: 1.15rem;
+      font-size: 0.92rem;
       font-weight: 600;
+      letter-spacing: -0.01em;
       line-height: 1.2;
+      color: var(--ink);
     }
 
     .brand p {
-      margin: 4px 0 0;
-      color: rgba(255, 255, 255, 0.72);
-      font-size: 0.9rem;
+      margin: 2px 0 0;
+      color: var(--ink-3);
+      font-size: 0.75rem;
     }
 
     .menu-section-label {
-      margin: 0 0 10px;
-      color: rgba(255, 255, 255, 0.55);
+      margin: 0 8px 4px;
+      color: var(--ink-3);
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-size: 0.76rem;
-      font-weight: 700;
+      letter-spacing: 0.06em;
+      font-size: 0.68rem;
+      font-weight: 600;
     }
 
     .menu {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 2px;
     }
 
     .nav-button {
       width: 100%;
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 10px;
       border: 1px solid transparent;
-      padding: 14px 16px;
-      border-radius: 16px;
+      padding: 8px 10px;
+      border-radius: 8px;
       background: transparent;
-      color: rgba(255, 255, 255, 0.9);
+      color: var(--ink-2);
       text-align: left;
-      transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+      transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
     }
 
     .nav-button:hover,
     .nav-button:focus-visible {
-      transform: translateX(4px);
-      background: rgba(255, 255, 255, 0.07);
-      border-color: rgba(255, 255, 255, 0.08);
+      background: var(--surface-3);
+      color: var(--ink);
       outline: none;
     }
 
     .nav-button.active {
-      background: linear-gradient(135deg, rgba(23, 96, 135, 0.35), rgba(17, 164, 127, 0.22));
-      border-color: rgba(255, 255, 255, 0.12);
-      box-shadow: 0 18px 42px rgba(7, 17, 30, 0.22);
+      background: var(--surface);
+      color: var(--ink);
+      border-color: var(--border);
+      box-shadow: var(--shadow-xs);
     }
 
     .nav-icon {
-      width: 16px;
-      height: 16px;
-      border-radius: 999px;
-      background: linear-gradient(135deg, #9cd0ea, #e8fff7);
-      box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.05);
+      width: 7px;
+      height: 7px;
+      border-radius: 2px;
+      background: var(--ink-3);
       flex-shrink: 0;
+      transition: background 0.14s ease;
+    }
+
+    .nav-button:hover .nav-icon {
+      background: var(--ink-2);
+    }
+
+    .nav-button.active .nav-icon {
+      background: var(--accent);
     }
 
     .nav-title {
-      font-weight: 700;
-      font-size: 0.96rem;
+      font-weight: 500;
+      font-size: 0.86rem;
     }
 
     .nav-subtitle {
       display: block;
-      margin-top: 2px;
-      color: rgba(255, 255, 255, 0.6);
-      font-size: 0.78rem;
-      font-weight: 500;
+      margin-top: 1px;
+      color: var(--ink-3);
+      font-size: 0.72rem;
+      font-weight: 400;
     }
 
     .sidebar-foot {
       margin-top: auto;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: var(--radius-lg);
-      padding: 18px;
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 13px;
     }
 
     .sidebar-foot strong {
       display: block;
-      margin-bottom: 8px;
-      font-size: 0.94rem;
+      margin-bottom: 5px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--ink);
     }
 
     .sidebar-foot p {
       margin: 0;
-      color: rgba(255, 255, 255, 0.68);
-      font-size: 0.84rem;
-      line-height: 1.6;
+      color: var(--ink-3);
+      font-size: 0.75rem;
+      line-height: 1.55;
+    }
+
+    .sidebar-foot code,
+    .subtle-panel code {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      background: var(--surface);
+      padding: 1px 5px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
     }
 
     .content-area {
-      padding: 28px;
+      padding: 22px;
       min-width: 0;
     }
 
     .page-frame {
-      min-height: calc(100vh - 56px);
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0.88));
-      border: 1px solid rgba(255, 255, 255, 0.55);
-      border-radius: 28px;
-      box-shadow: var(--shadow);
+      min-height: calc(100vh - 44px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-sm);
       overflow: hidden;
-      backdrop-filter: blur(18px);
     }
 
     .topbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 20px;
-      padding: 28px 32px 20px;
-      border-bottom: 1px solid rgba(216, 225, 234, 0.85);
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(247, 250, 252, 0.78));
+      gap: 18px;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
     }
 
     .title-wrap {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
       min-width: 0;
     }
 
     .title-mark {
-      width: 52px;
-      height: 52px;
+      width: 38px;
+      height: 38px;
       display: grid;
       place-items: center;
-      border-radius: 18px;
-      background: linear-gradient(135deg, rgba(23, 96, 135, 0.12), rgba(17, 164, 127, 0.16));
-      color: var(--primary-strong);
-      font-weight: 800;
-      box-shadow: inset 0 0 0 1px rgba(23, 96, 135, 0.08);
+      border-radius: var(--radius-md);
+      background: var(--surface-3);
+      color: var(--ink-2);
+      border: 1px solid var(--border);
+      font-family: var(--mono);
+      font-weight: 600;
+      font-size: 0.7rem;
+      letter-spacing: 0.02em;
     }
 
     .page-title {
       margin: 0;
-      font-size: 1.65rem;
-      line-height: 1.2;
-      font-weight: 800;
+      font-size: 1.15rem;
+      line-height: 1.25;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+      color: var(--ink);
     }
 
     .page-subtitle {
-      margin: 6px 0 0;
-      color: var(--text-soft);
-      font-size: 0.94rem;
+      margin: 3px 0 0;
+      color: var(--ink-2);
+      font-size: 0.82rem;
+      line-height: 1.45;
     }
 
     .topbar-actions {
       display: flex;
-      gap: 12px;
+      gap: 8px;
       flex-wrap: wrap;
       justify-content: flex-end;
     }
@@ -268,74 +309,92 @@
     .danger-button,
     .secondary-button {
       border: 1px solid transparent;
-      border-radius: 14px;
-      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+      border-radius: var(--radius-sm);
+      transition: background 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease, transform 0.06s ease;
     }
 
     .icon-button {
-      width: 46px;
-      height: 46px;
-      background: var(--surface-strong);
-      border-color: var(--border);
-      color: var(--text);
+      width: 38px;
+      height: 38px;
+      background: var(--surface);
+      border-color: var(--border-2);
+      color: var(--ink);
       display: none;
       align-items: center;
       justify-content: center;
-      font-size: 1.1rem;
+      font-size: 1rem;
     }
 
     .ghost-button,
     .primary-button,
     .danger-button,
     .secondary-button {
-      padding: 12px 16px;
-      font-weight: 700;
+      padding: 8px 13px;
+      font-weight: 500;
+      font-size: 0.83rem;
     }
 
     .ghost-button {
-      background: var(--surface-strong);
-      border-color: var(--border);
-      color: var(--text);
+      background: var(--surface);
+      border-color: var(--border-2);
+      color: var(--ink);
+    }
+
+    .ghost-button:hover {
+      background: var(--surface-3);
     }
 
     .secondary-button {
-      background: rgba(23, 96, 135, 0.08);
-      color: var(--primary-strong);
-      border-color: rgba(23, 96, 135, 0.10);
+      background: var(--accent-soft);
+      color: var(--accent-ink);
+      border-color: transparent;
+    }
+
+    .secondary-button:hover {
+      background: var(--accent-soft-2);
     }
 
     .primary-button {
-      background: linear-gradient(135deg, var(--primary), var(--accent));
+      background: var(--accent);
       color: #ffffff;
-      box-shadow: 0 18px 34px rgba(23, 96, 135, 0.18);
+      border-color: var(--accent);
+      box-shadow: var(--shadow-xs);
+    }
+
+    .primary-button:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
     }
 
     .danger-button {
-      background: rgba(194, 65, 65, 0.10);
+      background: var(--danger-soft);
       color: var(--danger);
-      border-color: rgba(194, 65, 65, 0.12);
+      border-color: transparent;
     }
 
-    .ghost-button:hover,
-    .primary-button:hover,
-    .danger-button:hover,
-    .secondary-button:hover,
-    .icon-button:hover,
-    .ghost-button:focus-visible,
-    .primary-button:focus-visible,
-    .danger-button:focus-visible,
-    .secondary-button:focus-visible,
-    .icon-button:focus-visible {
-      transform: translateY(-1px);
-      outline: none;
-      box-shadow: 0 14px 26px rgba(15, 30, 47, 0.12);
+    .danger-button:hover {
+      background: #f7dede;
+    }
+
+    .ghost-button:active,
+    .primary-button:active,
+    .danger-button:active,
+    .secondary-button:active,
+    .icon-button:active {
+      transform: translateY(1px);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
     }
 
     .page-content {
-      padding: 24px 32px 32px;
+      padding: 22px 24px 26px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 16px;
     }
 
     .hero-panel,
@@ -345,167 +404,180 @@
     .stats-card,
     .notice-card {
       background: var(--surface);
-      border: 1px solid rgba(216, 225, 234, 0.82);
-      border-radius: var(--radius-xl);
-      box-shadow: 0 16px 36px rgba(15, 30, 47, 0.06);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-xs);
     }
 
     .hero-panel {
-      padding: 28px;
+      padding: 26px;
       display: grid;
-      grid-template-columns: 1.4fr 1fr;
-      gap: 18px;
-      background:
-        radial-gradient(circle at top right, rgba(17, 164, 127, 0.12), transparent 25%),
-        linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(246, 249, 252, 0.96));
+      grid-template-columns: 1.5fr 1fr;
+      gap: 22px;
     }
 
     .hero-eyebrow {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
+      gap: 7px;
+      padding: 5px 11px;
       border-radius: 999px;
-      background: rgba(23, 96, 135, 0.08);
-      color: var(--primary-strong);
-      font-size: 0.8rem;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
+      background: var(--accent-soft);
+      color: var(--accent-ink);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .hero-eyebrow::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
     }
 
     .hero-panel h2 {
-      margin: 16px 0 10px;
-      font-size: 2rem;
-      line-height: 1.15;
-      font-weight: 800;
-      letter-spacing: -0.03em;
+      margin: 14px 0 8px;
+      font-size: 1.5rem;
+      line-height: 1.2;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      color: var(--ink);
     }
 
     .hero-panel p {
       margin: 0;
-      color: var(--text-soft);
-      line-height: 1.7;
-      font-size: 0.97rem;
+      color: var(--ink-2);
+      line-height: 1.6;
+      font-size: 0.88rem;
     }
 
     .hero-actions {
-      margin-top: 22px;
+      margin-top: 18px;
       display: flex;
-      gap: 12px;
+      gap: 10px;
       flex-wrap: wrap;
     }
 
     .hero-stack {
       display: grid;
-      gap: 14px;
+      gap: 12px;
+      align-content: start;
     }
 
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(158px, 1fr));
+      gap: 12px;
     }
 
     .stats-card {
-      padding: 18px;
+      padding: 16px;
     }
 
     .stats-card small {
-      color: var(--text-soft);
-      font-weight: 700;
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-      font-size: 0.73rem;
+      color: var(--ink-3);
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      font-size: 0.76rem;
     }
 
     .stats-card strong {
       display: block;
-      margin-top: 12px;
-      font-size: 2rem;
+      margin-top: 8px;
+      font-size: 1.65rem;
       line-height: 1;
-      font-weight: 800;
-      color: #101928;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--ink);
     }
 
     .stats-card span {
       display: block;
-      margin-top: 10px;
-      color: var(--text-soft);
-      font-size: 0.88rem;
+      margin-top: 8px;
+      color: var(--ink-3);
+      font-size: 0.78rem;
+      line-height: 1.4;
     }
 
     .card {
-      padding: 24px;
+      padding: 20px;
     }
 
     .notice-card {
-      padding: 20px;
+      padding: 16px;
       display: flex;
-      gap: 14px;
+      gap: 12px;
       align-items: flex-start;
-      background: linear-gradient(135deg, rgba(23, 96, 135, 0.08), rgba(17, 164, 127, 0.08));
     }
 
     .notice-icon {
-      width: 42px;
-      height: 42px;
-      border-radius: 14px;
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
       display: grid;
       place-items: center;
-      background: rgba(255, 255, 255, 0.85);
-      font-weight: 800;
-      color: var(--primary-strong);
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      font-family: var(--mono);
+      font-weight: 600;
+      font-size: 0.68rem;
+      color: var(--ink-2);
       flex-shrink: 0;
     }
 
     .notice-card strong {
       display: block;
-      margin-bottom: 6px;
-      font-size: 1rem;
+      margin-bottom: 3px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--ink);
     }
 
     .notice-card p {
       margin: 0;
-      color: var(--text-soft);
-      line-height: 1.65;
+      color: var(--ink-2);
+      line-height: 1.55;
+      font-size: 0.83rem;
     }
 
     .section-head {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 18px;
+      gap: 14px;
+      margin-bottom: 16px;
       flex-wrap: wrap;
     }
 
     .section-head h3,
     .section-head h4 {
       margin: 0;
-      font-size: 1.08rem;
-      font-weight: 800;
+      font-size: 0.98rem;
+      font-weight: 600;
       letter-spacing: -0.01em;
+      color: var(--ink);
     }
 
     .section-head p {
-      margin: 6px 0 0;
-      color: var(--text-soft);
-      font-size: 0.92rem;
-      line-height: 1.6;
+      margin: 4px 0 0;
+      color: var(--ink-2);
+      font-size: 0.82rem;
+      line-height: 1.5;
     }
 
     .layout-grid {
       display: grid;
-      grid-template-columns: 1fr 1.2fr;
-      gap: 20px;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+      gap: 16px;
       align-items: start;
     }
 
     .form-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
+      gap: 14px;
     }
 
     .form-grid.single-column {
@@ -515,7 +587,7 @@
     .field {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
     }
 
     .field.full {
@@ -523,69 +595,75 @@
     }
 
     .field label {
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: #132333;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--ink);
     }
 
     .field-hint {
-      margin: -2px 0 0;
-      color: var(--text-soft);
-      font-size: 0.76rem;
+      margin: -1px 0 0;
+      color: var(--ink-3);
+      font-size: 0.73rem;
     }
 
     .field input,
     .field select,
     .field textarea {
       width: 100%;
-      border: 1px solid var(--border);
-      background: #ffffff;
-      color: var(--text);
-      border-radius: 14px;
-      padding: 12px 14px;
-      min-height: 48px;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      border: 1px solid var(--border-2);
+      background: var(--surface);
+      color: var(--ink);
+      border-radius: var(--radius-sm);
+      padding: 9px 11px;
+      min-height: 38px;
+      font-size: 0.86rem;
+      transition: border-color 0.14s ease, box-shadow 0.14s ease;
+    }
+
+    .field input::placeholder,
+    .field textarea::placeholder {
+      color: var(--ink-3);
     }
 
     .field textarea {
       resize: vertical;
-      min-height: 112px;
+      min-height: 92px;
+      line-height: 1.5;
     }
 
     .field input:focus,
     .field select:focus,
     .field textarea:focus {
       outline: none;
-      border-color: rgba(23, 96, 135, 0.55);
-      box-shadow: 0 0 0 4px rgba(23, 96, 135, 0.12);
-      background: #ffffff;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
     }
 
     .field-readonly {
       display: flex;
       align-items: center;
-      min-height: 48px;
-      padding: 12px 14px;
-      border-radius: 14px;
-      border: 1px dashed rgba(23, 96, 135, 0.22);
-      background: rgba(23, 96, 135, 0.05);
-      color: var(--primary-strong);
-      font-weight: 700;
+      min-height: 38px;
+      padding: 9px 11px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface-3);
+      color: var(--ink-2);
+      font-weight: 500;
+      font-size: 0.84rem;
     }
 
     .field-readonly.compact {
-      min-height: 42px;
-      padding-top: 10px;
-      padding-bottom: 10px;
-      font-size: 0.9rem;
+      min-height: 34px;
+      padding: 7px 10px;
+      font-size: 0.82rem;
     }
 
     .form-actions,
     .inline-actions {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       flex-wrap: wrap;
-      margin-top: 20px;
+      margin-top: 16px;
     }
 
     .inline-actions {
@@ -598,22 +676,43 @@
     }
 
     .table-toolbar {
-      padding: 22px 22px 18px;
+      padding: 16px 18px;
       display: flex;
-      gap: 14px;
+      gap: 12px;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      border-bottom: 1px solid rgba(216, 225, 234, 0.7);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .table-toolbar h4 {
+      margin: 0;
+      font-size: 0.92rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--ink);
     }
 
     .search-input {
-      width: min(100%, 360px);
-      min-height: 46px;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      background: #ffffff;
-      padding: 0 14px;
+      width: min(100%, 320px);
+      min-height: 38px;
+      border: 1px solid var(--border-2);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      padding: 0 12px;
+      font-size: 0.85rem;
+      color: var(--ink);
+      transition: border-color 0.14s ease, box-shadow 0.14s ease;
+    }
+
+    .search-input::placeholder {
+      color: var(--ink-3);
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
     }
 
     .table-scroll {
@@ -623,375 +722,588 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 720px;
+      min-width: 680px;
     }
 
     th,
     td {
-      padding: 16px 18px;
+      padding: 11px 16px;
       text-align: left;
-      border-bottom: 1px solid rgba(216, 225, 234, 0.72);
+      border-bottom: 1px solid var(--border);
       vertical-align: top;
     }
 
     th {
-      font-size: 0.76rem;
-      color: var(--text-soft);
+      font-size: 0.7rem;
+      color: var(--ink-3);
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      font-weight: 800;
-      background: rgba(246, 248, 251, 0.88);
+      font-weight: 600;
+      background: var(--surface-2);
       white-space: nowrap;
     }
 
     td {
-      font-size: 0.93rem;
-      color: var(--text);
+      font-size: 0.85rem;
+      color: var(--ink);
+    }
+
+    td strong {
+      font-weight: 600;
+    }
+
+    tbody tr {
+      transition: background 0.12s ease;
     }
 
     tbody tr:hover {
-      background: rgba(23, 96, 135, 0.04);
+      background: var(--surface-2);
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
     }
 
     .table-muted {
-      color: var(--text-soft);
-      font-size: 0.84rem;
-      line-height: 1.5;
+      color: var(--ink-3);
+      font-size: 0.78rem;
+      line-height: 1.45;
     }
 
     .table-actions {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
     }
 
     .action-chip {
-      border: 1px solid rgba(216, 225, 234, 0.9);
-      background: #ffffff;
-      color: var(--text);
-      border-radius: 999px;
-      padding: 8px 12px;
-      font-size: 0.82rem;
-      font-weight: 700;
+      border: 1px solid var(--border-2);
+      background: var(--surface);
+      color: var(--ink-2);
+      border-radius: 7px;
+      padding: 5px 10px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+    }
+
+    .action-chip:hover {
+      background: var(--surface-3);
+      color: var(--ink);
     }
 
     .action-chip.danger {
       color: var(--danger);
-      border-color: rgba(194, 65, 65, 0.22);
-      background: rgba(194, 65, 65, 0.06);
+    }
+
+    .action-chip.danger:hover {
+      background: var(--danger-soft);
+      border-color: transparent;
     }
 
     .badge-row {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
     }
 
     .badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      border-radius: 999px;
-      padding: 7px 10px;
-      font-size: 0.76rem;
-      font-weight: 800;
-      letter-spacing: 0.02em;
-      background: rgba(23, 96, 135, 0.08);
-      color: var(--primary-strong);
+      gap: 5px;
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      background: var(--surface-3);
+      color: var(--ink-2);
+      border: 1px solid var(--border);
     }
 
     .badge.positive {
-      background: rgba(17, 164, 127, 0.12);
-      color: #0f7a61;
+      background: var(--success-soft);
+      color: var(--success);
+      border-color: transparent;
     }
 
     .badge.warning {
-      background: rgba(217, 119, 6, 0.14);
-      color: #9a5a06;
+      background: var(--warning-soft);
+      color: var(--warning);
+      border-color: transparent;
     }
 
     .badge.danger {
-      background: rgba(194, 65, 65, 0.14);
-      color: #9b2e2e;
+      background: var(--danger-soft);
+      color: var(--danger);
+      border-color: transparent;
     }
 
     .account-preview-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
-      margin-top: 14px;
+      gap: 12px;
+      margin-top: 12px;
     }
 
     .account-tree-preview {
-      margin-top: 16px;
+      margin-top: 14px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 6px;
     }
 
     .account-tree-item {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 12px 14px;
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.74);
-      border: 1px solid rgba(216, 225, 234, 0.9);
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      border: 1px solid var(--border);
     }
 
     .account-tree-item.current {
-      background: rgba(23, 96, 135, 0.08);
-      border-color: rgba(23, 96, 135, 0.18);
+      background: var(--accent-soft);
+      border-color: transparent;
+    }
+
+    .account-tree-item .mono {
+      color: var(--ink-3);
+      font-size: 0.8rem;
+    }
+
+    .account-tree-item.current .mono {
+      color: var(--accent-ink);
+    }
+
+    .account-tree-item strong {
+      font-size: 0.83rem;
+      font-weight: 500;
     }
 
     .inline-note {
-      margin-top: 12px;
-      padding: 12px 14px;
-      border-radius: 14px;
-      font-size: 0.86rem;
-      font-weight: 700;
+      margin-top: 10px;
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 500;
     }
 
     .inline-note.warning {
-      background: rgba(217, 119, 6, 0.12);
-      color: #9a5a06;
+      background: var(--warning-soft);
+      color: var(--warning);
     }
 
     .inline-note.danger {
-      background: rgba(194, 65, 65, 0.12);
-      color: #962f2f;
+      background: var(--danger-soft);
+      color: var(--danger);
     }
 
     .chart-account-row.synthetic {
-      background: rgba(23, 96, 135, 0.035);
+      background: var(--surface-2);
+    }
+
+    .chart-account-row.synthetic:hover {
+      background: var(--surface-3);
     }
 
     .chart-account-name {
       display: flex;
       align-items: center;
-      gap: 10px;
-      min-height: 24px;
+      gap: 8px;
+      min-height: 22px;
     }
 
     .chart-account-name strong {
-      font-size: 0.93rem;
+      font-size: 0.85rem;
+      font-weight: 600;
     }
 
     .account-indent-guide {
       display: inline-block;
-      width: 18px;
+      width: 14px;
       height: 2px;
-      border-radius: 999px;
-      background: rgba(23, 96, 135, 0.22);
+      border-radius: 2px;
+      background: var(--border-2);
       flex-shrink: 0;
     }
 
     .account-meta {
-      margin-top: 8px;
+      margin-top: 7px;
       display: flex;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
     }
 
     .empty-card {
-      padding: 30px;
+      padding: 28px;
       text-align: center;
     }
 
     .empty-card strong {
       display: block;
-      font-size: 1.02rem;
-      margin-bottom: 8px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--ink);
     }
 
     .empty-card p {
       margin: 0 auto;
-      max-width: 600px;
-      color: var(--text-soft);
-      line-height: 1.7;
+      max-width: 520px;
+      color: var(--ink-2);
+      line-height: 1.6;
+      font-size: 0.84rem;
     }
 
     .empty-card .inline-actions {
       justify-content: center;
-      margin-top: 18px;
+      margin-top: 16px;
     }
 
     .split-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 20px;
+      gap: 16px;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(20, 23, 28, 0.45);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 20px;
+      z-index: 100;
+      overflow-y: auto;
+    }
+
+    .modal-box {
+      background: var(--surface);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border);
+      width: 100%;
+      max-width: 960px;
+      max-height: calc(100vh - 80px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 1.02rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+    }
+
+    .modal-header p {
+      margin: 4px 0 0;
+      color: var(--ink-2);
+      font-size: 0.83rem;
+    }
+
+    .modal-close {
+      border: 1px solid var(--border-2);
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      color: var(--ink-2);
+      flex-shrink: 0;
+      font-size: 0.9rem;
+      line-height: 1;
+    }
+
+    .modal-close:hover {
+      background: var(--surface-3);
+      color: var(--ink);
+    }
+
+    .modal-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 8px 22px 0;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      overflow-x: auto;
+    }
+
+    .modal-tab {
+      border: none;
+      background: transparent;
+      padding: 9px 12px 11px;
+      font-size: 0.83rem;
+      font-weight: 500;
+      color: var(--ink-3);
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+    }
+
+    .modal-tab:hover {
+      color: var(--ink);
+    }
+
+    .modal-tab.active {
+      color: var(--accent-ink);
+      border-bottom-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .modal-tab .tab-count {
+      margin-left: 6px;
+      background: var(--surface-3);
+      color: var(--ink-2);
+      border-radius: 999px;
+      padding: 1px 7px;
+      font-size: 0.7rem;
+      font-family: var(--mono);
+    }
+
+    .modal-tab.active .tab-count {
+      background: var(--accent-soft);
+      color: var(--accent-ink);
+    }
+
+    .modal-body {
+      padding: 20px 22px 22px;
+      overflow-y: auto;
+    }
+
+    .modal-footer {
+      padding: 14px 22px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    .modal-footer .modal-footer-info {
+      font-size: 0.78rem;
+      color: var(--ink-2);
     }
 
     .subtle-panel {
-      padding: 18px;
-      border-radius: 18px;
-      border: 1px solid rgba(216, 225, 234, 0.86);
-      background: rgba(246, 248, 251, 0.9);
+      padding: 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--surface-2);
     }
 
     .subtle-panel h4 {
-      margin: 0 0 10px;
-      font-size: 0.98rem;
-      font-weight: 800;
+      margin: 0 0 8px;
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: var(--ink);
     }
 
     .subtle-panel p,
     .subtle-panel li {
-      color: var(--text-soft);
-      font-size: 0.9rem;
-      line-height: 1.6;
+      color: var(--ink-2);
+      font-size: 0.83rem;
+      line-height: 1.55;
     }
 
     .subtle-list {
       margin: 0;
       padding-left: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
     .totals-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
+      gap: 14px;
     }
 
     .total-card {
-      padding: 18px;
-      border-radius: 18px;
-      border: 1px solid rgba(216, 225, 234, 0.86);
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(246, 248, 251, 0.92));
+      padding: 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--surface-2);
     }
 
     .total-card span {
-      color: var(--text-soft);
-      font-size: 0.82rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
+      color: var(--ink-3);
+      font-size: 0.76rem;
+      font-weight: 500;
+      letter-spacing: 0;
     }
 
     .total-card strong {
       display: block;
-      margin-top: 12px;
-      font-size: 1.42rem;
-      font-weight: 800;
-      color: #0f1724;
+      margin-top: 8px;
+      font-size: 1.3rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--ink);
     }
 
     .total-card small {
       display: block;
-      margin-top: 10px;
-      color: var(--text-soft);
-      line-height: 1.5;
+      margin-top: 8px;
+      color: var(--ink-3);
+      line-height: 1.45;
+      font-size: 0.76rem;
     }
 
     .status-highlight {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 14px;
-      border-radius: 14px;
-      font-size: 0.88rem;
-      font-weight: 800;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .status-highlight::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
     }
 
     .status-highlight.ok {
-      background: rgba(17, 164, 127, 0.12);
-      color: #0f7a61;
+      background: var(--success-soft);
+      color: var(--success);
     }
 
     .status-highlight.warn {
-      background: rgba(217, 119, 6, 0.14);
-      color: #9a5a06;
+      background: var(--warning-soft);
+      color: var(--warning);
     }
 
     .toast-stack {
       position: fixed;
-      top: 20px;
-      right: 20px;
+      top: 16px;
+      right: 16px;
       z-index: 60;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
       pointer-events: none;
     }
 
     .toast {
-      min-width: 280px;
-      max-width: 360px;
-      padding: 14px 16px;
-      border-radius: 18px;
-      border: 1px solid rgba(216, 225, 234, 0.82);
-      background: rgba(255, 255, 255, 0.96);
-      box-shadow: 0 22px 42px rgba(15, 30, 47, 0.16);
+      min-width: 262px;
+      max-width: 342px;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      box-shadow: var(--shadow-md);
       display: flex;
-      gap: 12px;
+      gap: 10px;
       align-items: flex-start;
       pointer-events: auto;
+      animation: toast-in 0.18s ease;
+    }
+
+    .toast .notice-icon {
+      width: 28px;
+      height: 28px;
+      font-size: 0.62rem;
     }
 
     .toast strong {
       display: block;
-      margin-bottom: 4px;
-      font-size: 0.92rem;
+      margin-bottom: 2px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: var(--ink);
     }
 
     .toast p {
       margin: 0;
-      color: var(--text-soft);
-      font-size: 0.84rem;
-      line-height: 1.5;
+      color: var(--ink-2);
+      font-size: 0.79rem;
+      line-height: 1.45;
     }
 
-    .toast.success {
-      border-color: rgba(17, 164, 127, 0.18);
+    .toast.success .notice-icon {
+      background: var(--success-soft);
+      color: var(--success);
+      border-color: transparent;
     }
 
-    .toast.error {
-      border-color: rgba(194, 65, 65, 0.18);
+    .toast.error .notice-icon {
+      background: var(--danger-soft);
+      color: var(--danger);
+      border-color: transparent;
+    }
+
+    @keyframes toast-in {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: none; }
     }
 
     .cloud-chip {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 10px 14px;
+      gap: 6px;
+      padding: 6px 11px;
       border-radius: 999px;
-      border: 1px solid rgba(216, 225, 234, 0.92);
-      background: rgba(255, 255, 255, 0.94);
-      font-size: 0.82rem;
-      font-weight: 800;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 0.76rem;
+      font-weight: 600;
       white-space: nowrap;
+      color: var(--ink-2);
     }
 
     .cloud-chip.ok {
-      color: #0f7a61;
-      background: rgba(17, 164, 127, 0.10);
-      border-color: rgba(17, 164, 127, 0.16);
+      color: var(--success);
+      background: var(--success-soft);
+      border-color: transparent;
     }
 
     .cloud-chip.syncing {
-      color: #9a5a06;
-      background: rgba(217, 119, 6, 0.10);
-      border-color: rgba(217, 119, 6, 0.16);
+      color: var(--warning);
+      background: var(--warning-soft);
+      border-color: transparent;
     }
 
     .cloud-chip.error {
-      color: #9b2e2e;
-      background: rgba(194, 65, 65, 0.10);
-      border-color: rgba(194, 65, 65, 0.16);
+      color: var(--danger);
+      background: var(--danger-soft);
+      border-color: transparent;
     }
 
     .cloud-chip.offline {
-      color: var(--text-soft);
-      background: rgba(91, 100, 116, 0.08);
-      border-color: rgba(91, 100, 116, 0.12);
+      color: var(--ink-3);
+      background: var(--surface-3);
+      border-color: transparent;
     }
 
     .overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(8, 16, 28, 0.36);
-      backdrop-filter: blur(3px);
+      background: rgba(20, 23, 28, 0.32);
+      backdrop-filter: blur(2px);
       z-index: 18;
     }
 
@@ -1000,11 +1312,13 @@
     }
 
     .mono {
+      font-family: var(--mono);
       font-variant-numeric: tabular-nums;
       font-feature-settings: "tnum";
+      letter-spacing: -0.01em;
     }
 
-    @media (max-width: 1200px) {
+    @media (max-width: 1180px) {
       .layout-grid,
       .hero-panel,
       .split-grid,
@@ -1013,7 +1327,7 @@
       }
     }
 
-    @media (max-width: 980px) {
+    @media (max-width: 960px) {
       .app-shell {
         grid-template-columns: 1fr;
       }
@@ -1023,8 +1337,9 @@
         left: 0;
         top: 0;
         transform: translateX(-102%);
-        transition: transform 0.24s ease;
-        width: min(86vw, 320px);
+        transition: transform 0.22s ease;
+        width: min(84vw, 300px);
+        box-shadow: var(--shadow-md);
       }
 
       .sidebar.open {
@@ -1036,7 +1351,7 @@
       }
 
       .content-area {
-        padding: 16px;
+        padding: 12px;
       }
 
       .icon-button {
@@ -1045,12 +1360,12 @@
 
       .topbar,
       .page-content {
-        padding-left: 20px;
-        padding-right: 20px;
+        padding-left: 18px;
+        padding-right: 18px;
       }
     }
 
-    @media (max-width: 720px) {
+    @media (max-width: 680px) {
       .topbar {
         align-items: flex-start;
         flex-direction: column;
@@ -1070,15 +1385,22 @@
       }
 
       .page-title {
-        font-size: 1.35rem;
+        font-size: 1.05rem;
       }
 
       .hero-panel h2 {
-        font-size: 1.6rem;
+        font-size: 1.3rem;
       }
 
       table {
-        min-width: 640px;
+        min-width: 600px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.001ms !important;
+        transition-duration: 0.001ms !important;
       }
     }
   </style>
@@ -1205,6 +1527,10 @@
             itemId: null
           },
           invoiceDraft: createEmptyInvoiceDraft(),
+          invoiceModal: {
+            open: false,
+            activeTab: "dados"
+          },
           toasts: []
         }
       };
@@ -1542,6 +1868,13 @@
       }
 
       function handleClick(event) {
+        if (event.target.classList && event.target.classList.contains("modal-overlay")) {
+          state.ui.invoiceModal.open = false;
+          state.ui.invoiceDraft = createEmptyInvoiceDraft();
+          renderApp();
+          return;
+        }
+
         const target = event.target.closest("[data-action], [data-nav]");
         if (!target) {
           return;
@@ -1590,7 +1923,17 @@
             break;
           case "new-invoice":
             state.ui.invoiceDraft = createEmptyInvoiceDraft();
-            navigate("fiscal");
+            state.ui.invoiceModal = { open: true, activeTab: "dados" };
+            renderApp();
+            break;
+          case "close-invoice-modal":
+            state.ui.invoiceModal.open = false;
+            state.ui.invoiceDraft = createEmptyInvoiceDraft();
+            renderApp();
+            break;
+          case "switch-invoice-tab":
+            state.ui.invoiceModal.activeTab = target.dataset.tab;
+            renderApp();
             break;
           case "edit-cost-center":
             state.ui.editing.costCenterId = id;
@@ -2061,6 +2404,7 @@
 
         upsertRecord("invoices", record);
         state.ui.invoiceDraft = createEmptyInvoiceDraft();
+        state.ui.invoiceModal = { open: false, activeTab: "dados" };
         notify("success", "Nota fiscal", existing ? "Nota fiscal atualizada com sucesso." : "Nota fiscal lançada com sucesso.");
         renderApp();
       }
@@ -2164,7 +2508,8 @@
         }
 
         state.ui.invoiceDraft = createEmptyInvoiceDraft(invoice);
-        navigate("fiscal");
+        state.ui.invoiceModal = { open: true, activeTab: "dados" };
+        renderApp();
       }
 
       function deleteCostCenter(id) {
@@ -3457,54 +3802,16 @@
               </div>
             </section>
           ` : ""}
-          <section class="layout-grid">
-            <article class="card">
-              <div class="section-head">
-                <div>
-                  <h3>${editing ? "Editar natureza financeira" : "Nova natureza financeira"}</h3>
-                  <p>Cada natureza deve estar vinculada apenas a contas contábeis analíticas e ativas.</p>
-                </div>
-              </div>
-              <form data-form="financial-nature" autocomplete="off">
-                <input type="hidden" name="id" value="${escapeHtml(natureDraft.id || editing?.id || "")}">
-                <div class="form-grid">
-                  <div class="field">
-                    <label for="financial-nature-name">Nome da natureza financeira</label>
-                    <input id="financial-nature-name" name="name" maxlength="160" value="${escapeHtml(natureDraft.name || "")}" placeholder="Ex.: Serviços terceirizados" ${canCreate ? "required" : "disabled"}>
-                  </div>
-                  <div class="field">
-                    <label for="financial-nature-account">Conta contábil vinculada</label>
-                    <select id="financial-nature-account" name="chartAccountId" ${canCreate ? "required" : "disabled"}>
-                      <option value="">Selecione uma conta contábil</option>
-                      ${selectableAccounts.map((account) => `
-                        <option value="${escapeHtml(account.id)}" ${natureDraft.chartAccountId === account.id ? "selected" : ""}>
-                          ${escapeHtml(account.code)} - ${escapeHtml(account.name)} | ${escapeHtml(account.group)}
-                        </option>
-                      `).join("")}
-                    </select>
-                  </div>
-                  <div class="field full">
-                    <label>Conta selecionada</label>
-                    <div class="field-readonly">
-                      ${selectedAccount
-                        ? `${escapeHtml(selectedAccount.code)} - ${escapeHtml(selectedAccount.name)} | ${escapeHtml(selectedAccount.group)} | ${escapeHtml(selectedAccount.balanceNature)}`
-                        : "Selecione uma conta analítica ativa para visualizar seus dados."}
-                    </div>
-                  </div>
-                </div>
-                <div class="form-actions">
-                  <button class="primary-button" type="submit" ${canCreate ? "" : "disabled"}>${editing ? "Salvar alterações" : "Cadastrar natureza financeira"}</button>
-                  ${editing ? `<button class="ghost-button" type="button" data-action="reset-financial-nature">Cancelar edição</button>` : ""}
-                </div>
-              </form>
-            </article>
-            <article class="table-card">
+          <section class="table-card">
               <div class="table-toolbar">
                 <div>
                   <h4>Lista de naturezas financeiras</h4>
                   <p class="page-subtitle">Pesquisa por código, nome ou conta contábil vinculada.</p>
                 </div>
-                <input class="search-input" data-search="financialNatures" placeholder="Pesquisar naturezas financeiras" value="${escapeHtml(searchTerm)}">
+                <div class="toolbar-actions">
+                  <input class="search-input" data-search="financialNatures" placeholder="Pesquisar naturezas financeiras" value="${escapeHtml(searchTerm)}">
+                  <button class="primary-button" type="button" data-action="new-financial-nature" ${canCreate ? "" : "disabled"}>Nova natureza financeira</button>
+                </div>
               </div>
               ${records.length ? `
                 <div class="table-scroll">
@@ -3551,7 +3858,6 @@
                   <p>${searchTerm ? "Nenhum registro combina com a pesquisa atual." : "Cadastre a primeira natureza financeira para liberar o cadastro de itens."}</p>
                 </div>
               `}
-            </article>
           </section>
         `;
       }
@@ -3586,58 +3892,16 @@
               </div>
             </section>
           ` : ""}
-          <section class="layout-grid">
-            <article class="card">
-              <div class="section-head">
-                <div>
-                  <h3>${editing ? "Editar item" : "Novo item"}</h3>
-                  <p>Cada item deve estar obrigatoriamente associado a uma natureza financeira, que por sua vez define a conta contábil vinculada.</p>
-                </div>
-              </div>
-              <form data-form="item" autocomplete="off">
-                <input type="hidden" name="id" value="${escapeHtml(itemDraft.id || editing?.id || "")}">
-                <div class="form-grid">
-                  <div class="field">
-                    <label for="item-name">Nome do item</label>
-                    <input id="item-name" name="name" maxlength="160" value="${escapeHtml(itemDraft.name || "")}" ${canCreate ? "required" : "disabled"}>
-                  </div>
-                  <div class="field">
-                    <label for="item-nature">Natureza financeira vinculada</label>
-                    <select id="item-nature" name="financialNatureId" ${canCreate ? "required" : "disabled"}>
-                      <option value="">Selecione uma natureza financeira</option>
-                      ${selectableNatures.map((nature) => {
-                        const account = getChartAccountById(nature.chartAccountId);
-                        return `
-                          <option value="${escapeHtml(nature.id)}" ${selectedNatureId === nature.id ? "selected" : ""}>
-                            ${escapeHtml(nature.code)} - ${escapeHtml(nature.name)}${account ? ` | ${escapeHtml(account.code)}` : ""}
-                          </option>
-                        `;
-                      }).join("")}
-                    </select>
-                  </div>
-                  <div class="field full">
-                    <label for="item-description">Descrição</label>
-                    <textarea id="item-description" name="description" maxlength="260" ${canCreate ? "" : "disabled"} placeholder="Detalhes adicionais do item">${escapeHtml(itemDraft.description || "")}</textarea>
-                  </div>
-                  <div class="field full">
-                    <label>Conta contábil derivada</label>
-                    <div class="field-readonly">${selectedAccount ? `${escapeHtml(selectedAccount.code)} - ${escapeHtml(selectedAccount.name)} | ${escapeHtml(selectedAccount.group)} | ${escapeHtml(selectedAccount.balanceNature)}` : "A conta contábil será exibida conforme a natureza selecionada."}</div>
-                    ${selectedNature && !linkedAccountIsValid ? `<div class="inline-note warning">A natureza selecionada não está mais vinculada a uma conta analítica ativa.</div>` : ""}
-                  </div>
-                </div>
-                <div class="form-actions">
-                  <button class="primary-button" type="submit" ${canCreate ? "" : "disabled"}>${editing ? "Salvar alterações" : "Cadastrar item"}</button>
-                  ${editing ? `<button class="ghost-button" type="button" data-action="reset-item">Cancelar edição</button>` : ""}
-                </div>
-              </form>
-            </article>
-            <article class="table-card">
+          <section class="table-card">
               <div class="table-toolbar">
                 <div>
                   <h4>Lista de itens</h4>
                   <p class="page-subtitle">Pesquisa por código, nome, descrição, natureza financeira ou conta contábil.</p>
                 </div>
-                <input class="search-input" data-search="items" placeholder="Pesquisar itens" value="${escapeHtml(searchTerm)}">
+                <div class="toolbar-actions">
+                  <input class="search-input" data-search="items" placeholder="Pesquisar itens" value="${escapeHtml(searchTerm)}">
+                  <button class="primary-button" type="button" data-action="new-item" ${canCreate ? "" : "disabled"}>Novo item</button>
+                </div>
               </div>
               ${records.length ? `
                 <div class="table-scroll">
@@ -3689,15 +3953,11 @@
                   <p>${searchTerm ? "Nenhum item foi localizado com os filtros atuais." : "Cadastre o primeiro item para utilizá-lo nas notas fiscais."}</p>
                 </div>
               `}
-            </article>
           </section>
         `;
       }
 
       function renderFiscalView() {
-        const draft = state.ui.invoiceDraft;
-        const totals = getInvoiceTotals(draft);
-        const supplier = getSupplierById(draft.supplierId);
         const searchTerm = state.ui.search.invoices;
         const selectableItems = getSelectableItems();
         const records = filterRecords(
@@ -3709,9 +3969,6 @@
           }
         );
         const canLaunch = state.data.suppliers.length > 0 && selectableItems.length > 0;
-        const lineItem = getItemById(draft.lineForm.itemId);
-        const lineNature = lineItem ? getFinancialNatureById(lineItem.financialNatureId) : null;
-        const lineAccount = lineNature ? getChartAccountById(lineNature.chartAccountId) : null;
 
         return `
           ${!state.data.suppliers.length || !selectableItems.length ? `
@@ -3723,258 +3980,6 @@
               </div>
             </section>
           ` : ""}
-          <section class="card">
-            <div class="section-head">
-              <div>
-                <h3>${draft.id ? `Editar nota fiscal ${escapeHtml(draft.code)}` : "Nova nota fiscal"}</h3>
-                <p>Registre notas de serviço ou produto com itens vinculados à estrutura contábil e parcelas da parte financeira.</p>
-              </div>
-              ${draft.id ? `<button class="ghost-button" type="button" data-action="new-invoice">Limpar rascunho</button>` : ""}
-            </div>
-            <form data-form="invoice" autocomplete="off">
-              <div class="form-grid">
-                <div class="field">
-                  <label for="invoice-type">Tipo da nota</label>
-                  <select id="invoice-type" name="type" ${canLaunch ? "" : "disabled"}>
-                    <option value="Nota de serviço" ${draft.type === "Nota de serviço" ? "selected" : ""}>Nota de serviço</option>
-                    <option value="Nota de produto" ${draft.type === "Nota de produto" ? "selected" : ""}>Nota de produto</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="invoice-supplier">Fornecedor</label>
-                  <select id="invoice-supplier" name="supplierId" ${canLaunch ? "required" : "disabled"}>
-                    <option value="">Selecione um fornecedor</option>
-                    ${state.data.suppliers.map((record) => `
-                      <option value="${escapeHtml(record.id)}" ${draft.supplierId === record.id ? "selected" : ""}>
-                        ${escapeHtml(record.code)} - ${escapeHtml(record.legalName)}
-                      </option>
-                    `).join("")}
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="invoice-date">Data de emissão</label>
-                  <input id="invoice-date" type="date" name="issueDate" value="${escapeHtml(draft.issueDate || "")}" ${canLaunch ? "required" : "disabled"}>
-                </div>
-                <div class="field">
-                  <label>Fornecedor selecionado</label>
-                  <div class="field-readonly">${supplier ? `${escapeHtml(supplier.code)} - ${escapeHtml(supplier.legalName)}` : "Selecione um fornecedor cadastrado."}</div>
-                </div>
-                <div class="field full">
-                  <label for="invoice-description">Descrição da nota</label>
-                  <textarea id="invoice-description" name="description" maxlength="300" ${canLaunch ? "" : "disabled"} placeholder="Descreva o conteúdo ou finalidade da nota">${escapeHtml(draft.description || "")}</textarea>
-                </div>
-              </div>
-              <div class="form-actions">
-                <button class="primary-button" type="submit" ${canLaunch ? "" : "disabled"}>${draft.id ? "Salvar alterações da nota" : "Salvar nota fiscal"}</button>
-              </div>
-            </form>
-          </section>
-
-          <section class="split-grid">
-            <article class="card">
-              <div class="section-head">
-                <div>
-                  <h3>Itens da nota</h3>
-                  <p>Selecione um item cadastrado para carregar automaticamente sua natureza financeira e conta contábil vinculadas.</p>
-                </div>
-              </div>
-              <form data-form="invoice-line" autocomplete="off">
-                <div class="form-grid">
-                  <div class="field full">
-                    <label for="invoice-line-item">Item</label>
-                    <select id="invoice-line-item" name="itemId" ${canLaunch ? "required" : "disabled"}>
-                      <option value="">Selecione um item</option>
-                      ${selectableItems.map((item) => {
-                        const nature = getFinancialNatureById(item.financialNatureId);
-                        const account = nature ? getChartAccountById(nature.chartAccountId) : null;
-                        return `
-                          <option value="${escapeHtml(item.id)}" ${draft.lineForm.itemId === item.id ? "selected" : ""}>
-                            ${escapeHtml(item.code)} - ${escapeHtml(item.name)}${nature ? ` | ${escapeHtml(nature.name)}` : ""}${account ? ` | ${escapeHtml(account.code)}` : ""}
-                          </option>
-                        `;
-                      }).join("")}
-                    </select>
-                  </div>
-                  <div class="field">
-                    <label for="invoice-line-quantity">Quantidade</label>
-                    <input id="invoice-line-quantity" type="number" name="quantity" min="0.01" step="0.01" value="${escapeHtml(String(draft.lineForm.quantity || 1))}" ${canLaunch ? "required" : "disabled"}>
-                  </div>
-                  <div class="field">
-                    <label for="invoice-line-unit-price">Valor unitário</label>
-                    <input id="invoice-line-unit-price" type="number" name="unitPrice" min="0.01" step="0.01" value="${escapeHtml(String(draft.lineForm.unitPrice || ""))}" ${canLaunch ? "required" : "disabled"}>
-                  </div>
-                  <div class="field full">
-                    <label>Natureza financeira e conta contábil</label>
-                    <div class="field-readonly">
-                      ${lineItem && lineNature && lineAccount
-                        ? `${escapeHtml(lineNature.code)} - ${escapeHtml(lineNature.name)} | ${escapeHtml(lineAccount.code)} - ${escapeHtml(lineAccount.name)} | ${escapeHtml(lineAccount.group)} | ${escapeHtml(lineAccount.balanceNature)}`
-                        : "Selecione um item para visualizar os vínculos automáticos."}
-                    </div>
-                  </div>
-                </div>
-                <div class="form-actions">
-                  <button class="secondary-button" type="submit" ${canLaunch ? "" : "disabled"}>Adicionar item</button>
-                </div>
-              </form>
-              ${draft.items.length ? `
-                <div class="table-card" style="margin-top:20px;">
-                  <div class="table-scroll">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Item</th>
-                          <th>Natureza</th>
-                          <th>Conta</th>
-                          <th>Qtd.</th>
-                          <th>Vlr. unitário</th>
-                          <th>Vlr. total</th>
-                          <th>Ações</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        ${draft.items.map((item) => `
-                          <tr>
-                            <td>
-                              <strong>${escapeHtml(item.itemName)}</strong>
-                              <div class="table-muted">${escapeHtml(item.itemCode || item.itemId)}</div>
-                            </td>
-                            <td>${escapeHtml(item.financialNatureName)}</td>
-                            <td>
-                              <div class="badge-row">
-                                <span class="badge">${escapeHtml(item.chartAccountCode)}</span>
-                                ${item.chartAccountType ? `<span class="badge positive">${escapeHtml(item.chartAccountType)}</span>` : ""}
-                              </div>
-                              <div class="table-muted">${escapeHtml(item.chartAccountName)}</div>
-                              <div class="table-muted">${escapeHtml([item.chartAccountGroup, item.chartAccountBalanceNature].filter(Boolean).join(" | ") || "Metadados não informados")}</div>
-                            </td>
-                            <td class="mono">${escapeHtml(String(item.quantity))}</td>
-                            <td class="mono">${escapeHtml(formatCurrency(item.unitPrice))}</td>
-                            <td class="mono">${escapeHtml(formatCurrency(item.totalPrice))}</td>
-                            <td>
-                              <button class="action-chip danger" type="button" data-action="remove-invoice-line" data-id="${escapeHtml(item.id)}">Remover</button>
-                            </td>
-                          </tr>
-                        `).join("")}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              ` : `
-                <div class="empty-card" style="margin-top:20px;">
-                  <strong>Nenhum item adicionado à nota.</strong>
-                  <p>Inclua os itens do lançamento para compor o valor total e carregar automaticamente a classificação financeira e contábil.</p>
-                </div>
-              `}
-            </article>
-
-            <article class="card">
-              <div class="section-head">
-                <div>
-                  <h3>Financeiro da nota</h3>
-                  <p>Adicione uma ou mais parcelas com status, forma de pagamento, vencimento e valor.</p>
-                </div>
-              </div>
-              <form data-form="invoice-installment" autocomplete="off">
-                <div class="form-grid">
-                  <div class="field">
-                    <label for="installment-number">Número da parcela</label>
-                    <input id="installment-number" type="number" name="installmentNumber" min="1" step="1" value="${escapeHtml(String(draft.installmentForm.installmentNumber || 1))}" ${canLaunch ? "required" : "disabled"}>
-                  </div>
-                  <div class="field">
-                    <label for="installment-due-date">Data de vencimento</label>
-                    <input id="installment-due-date" type="date" name="dueDate" value="${escapeHtml(draft.installmentForm.dueDate || "")}" ${canLaunch ? "required" : "disabled"}>
-                  </div>
-                  <div class="field">
-                    <label for="installment-amount">Valor da parcela</label>
-                    <input id="installment-amount" type="number" name="amount" min="0.01" step="0.01" value="${escapeHtml(String(draft.installmentForm.amount || ""))}" ${canLaunch ? "required" : "disabled"}>
-                  </div>
-                  <div class="field">
-                    <label for="installment-method">Forma de pagamento</label>
-                    <input id="installment-method" name="paymentMethod" maxlength="60" value="${escapeHtml(draft.installmentForm.paymentMethod || "")}" placeholder="Boleto, PIX, TED..." ${canLaunch ? "required" : "disabled"}>
-                  </div>
-                  <div class="field full">
-                    <label for="installment-status">Status da parcela</label>
-                    <select id="installment-status" name="status" ${canLaunch ? "" : "disabled"}>
-                      <option value="Em aberto" ${draft.installmentForm.status === "Em aberto" ? "selected" : ""}>Em aberto</option>
-                      <option value="Pago" ${draft.installmentForm.status === "Pago" ? "selected" : ""}>Pago</option>
-                      <option value="Cancelado" ${draft.installmentForm.status === "Cancelado" ? "selected" : ""}>Cancelado</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="form-actions">
-                  <button class="secondary-button" type="submit" ${canLaunch ? "" : "disabled"}>Adicionar parcela</button>
-                </div>
-              </form>
-              ${draft.installments.length ? `
-                <div class="table-card" style="margin-top:20px;">
-                  <div class="table-scroll">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Parcela</th>
-                          <th>Vencimento</th>
-                          <th>Valor</th>
-                          <th>Forma de pagamento</th>
-                          <th>Status</th>
-                          <th>Ações</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        ${draft.installments.map((installment) => `
-                          <tr>
-                            <td class="mono">${escapeHtml(String(installment.installmentNumber))}</td>
-                            <td>${escapeHtml(formatDate(installment.dueDate))}</td>
-                            <td class="mono">${escapeHtml(formatCurrency(installment.amount))}</td>
-                            <td>${escapeHtml(installment.paymentMethod)}</td>
-                            <td>
-                              <span class="badge ${installment.status === "Pago" ? "positive" : installment.status === "Cancelado" ? "danger" : "warning"}">${escapeHtml(installment.status)}</span>
-                            </td>
-                            <td>
-                              <button class="action-chip danger" type="button" data-action="remove-installment" data-id="${escapeHtml(installment.id)}">Remover</button>
-                            </td>
-                          </tr>
-                        `).join("")}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              ` : `
-                <div class="empty-card" style="margin-top:20px;">
-                  <strong>Nenhuma parcela adicionada.</strong>
-                  <p>Inclua uma ou mais parcelas para registrar a parte financeira da nota fiscal.</p>
-                </div>
-              `}
-            </article>
-          </section>
-
-          <section class="card">
-            <div class="section-head">
-              <div>
-                <h3>Resumo financeiro e consistência</h3>
-                <p>O sistema compara automaticamente o total dos itens com o total das parcelas antes do salvamento da nota.</p>
-              </div>
-              <div class="status-highlight ${getInvoiceStatusClass(totals.difference)}">
-                ${Math.abs(totals.difference) <= 0.009 ? "Totais conciliados" : "Diferença entre itens e parcelas"}
-              </div>
-            </div>
-            <div class="totals-grid">
-              <article class="total-card">
-                <span>Total dos itens</span>
-                <strong class="mono">${escapeHtml(formatCurrency(totals.totalItemsAmount))}</strong>
-                <small>Soma de quantidade x valor unitário de todos os itens adicionados à nota.</small>
-              </article>
-              <article class="total-card">
-                <span>Total das parcelas</span>
-                <strong class="mono">${escapeHtml(formatCurrency(totals.totalInstallmentsAmount))}</strong>
-                <small>Soma de todas as parcelas registradas na seção financeira da nota.</small>
-              </article>
-              <article class="total-card">
-                <span>Diferença</span>
-                <strong class="mono">${escapeHtml(formatCurrency(totals.difference))}</strong>
-                <small>${Math.abs(totals.difference) <= 0.009 ? "A nota pode ser salva normalmente." : "Ajuste itens ou parcelas para permitir o salvamento da nota."}</small>
-              </article>
-            </div>
-          </section>
 
           <section class="table-card">
             <div class="table-toolbar">
@@ -3983,6 +3988,7 @@
                 <p class="page-subtitle">Pesquise, edite ou exclua notas fiscais já registradas localmente.</p>
               </div>
               <input class="search-input" data-search="invoices" placeholder="Pesquisar notas fiscais" value="${escapeHtml(searchTerm)}">
+              <button class="primary-button" type="button" data-action="new-invoice" ${canLaunch ? "" : "disabled"}>Nova nota fiscal</button>
             </div>
             ${records.length ? `
               <div class="table-scroll">
@@ -4035,10 +4041,313 @@
             ` : `
               <div class="empty-card">
                 <strong>Nenhuma nota fiscal encontrada.</strong>
-                <p>${searchTerm ? "Nenhuma nota fiscal corresponde ao termo pesquisado." : "Depois de cadastrar fornecedores e itens, use esta área para registrar as notas fiscais."}</p>
+                <p>${searchTerm ? "Nenhuma nota fiscal corresponde ao termo pesquisado." : "Depois de cadastrar fornecedores e itens, clique em \"Nova nota fiscal\" para registrar o primeiro lançamento."}</p>
               </div>
             `}
           </section>
+
+          ${state.ui.invoiceModal.open ? renderInvoiceModal() : ""}
+        `;
+      }
+
+      function renderInvoiceModal() {
+        const draft = state.ui.invoiceDraft;
+        const totals = getInvoiceTotals(draft);
+        const activeTab = state.ui.invoiceModal.activeTab;
+        const isReconciled = Math.abs(totals.difference) <= 0.009;
+
+        const tabs = [
+          { key: "dados", label: "Dados da nota" },
+          { key: "itens", label: "Itens da nota", count: draft.items.length },
+          { key: "financeiro", label: "Financeiro", count: draft.installments.length },
+          { key: "resumo", label: "Resumo", badge: isReconciled ? "ok" : "warn" }
+        ];
+
+        const tabContent = {
+          dados: renderInvoiceTabDados(draft),
+          itens: renderInvoiceTabItens(draft),
+          financeiro: renderInvoiceTabFinanceiro(draft),
+          resumo: renderInvoiceTabResumo(draft, totals)
+        };
+
+        return `
+          <div class="modal-overlay">
+            <div class="modal-box">
+              <div class="modal-header">
+                <div>
+                  <h3>${draft.id ? `Editar nota fiscal ${escapeHtml(draft.code)}` : "Nova nota fiscal"}</h3>
+                  <p>Registre notas de serviço ou produto com itens vinculados à estrutura contábil e parcelas da parte financeira.</p>
+                </div>
+                <button class="modal-close" type="button" data-action="close-invoice-modal" aria-label="Fechar">&times;</button>
+              </div>
+              <div class="modal-tabs">
+                ${tabs.map((tab) => `
+                  <button class="modal-tab ${activeTab === tab.key ? "active" : ""}" type="button" data-action="switch-invoice-tab" data-tab="${tab.key}">
+                    ${escapeHtml(tab.label)}
+                    ${typeof tab.count === "number" ? `<span class="tab-count">${tab.count}</span>` : ""}
+                    ${tab.badge ? `<span class="tab-count">${tab.badge === "ok" ? "OK" : "!"}</span>` : ""}
+                  </button>
+                `).join("")}
+              </div>
+              <div class="modal-body">
+                ${tabContent[activeTab] || tabContent.dados}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderInvoiceTabDados(draft) {
+        const supplier = getSupplierById(draft.supplierId);
+        const selectableItems = getSelectableItems();
+        const canLaunch = state.data.suppliers.length > 0 && selectableItems.length > 0;
+
+        return `
+          <form data-form="invoice" autocomplete="off">
+            <div class="form-grid">
+              <div class="field">
+                <label for="invoice-type">Tipo da nota</label>
+                <select id="invoice-type" name="type" ${canLaunch ? "" : "disabled"}>
+                  <option value="Nota de serviço" ${draft.type === "Nota de serviço" ? "selected" : ""}>Nota de serviço</option>
+                  <option value="Nota de produto" ${draft.type === "Nota de produto" ? "selected" : ""}>Nota de produto</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="invoice-supplier">Fornecedor</label>
+                <select id="invoice-supplier" name="supplierId" ${canLaunch ? "required" : "disabled"}>
+                  <option value="">Selecione um fornecedor</option>
+                  ${state.data.suppliers.map((record) => `
+                    <option value="${escapeHtml(record.id)}" ${draft.supplierId === record.id ? "selected" : ""}>
+                      ${escapeHtml(record.code)} - ${escapeHtml(record.legalName)}
+                    </option>
+                  `).join("")}
+                </select>
+              </div>
+              <div class="field">
+                <label for="invoice-date">Data de emissão</label>
+                <input id="invoice-date" type="date" name="issueDate" value="${escapeHtml(draft.issueDate || "")}" ${canLaunch ? "required" : "disabled"}>
+              </div>
+              <div class="field">
+                <label>Fornecedor selecionado</label>
+                <div class="field-readonly">${supplier ? `${escapeHtml(supplier.code)} - ${escapeHtml(supplier.legalName)}` : "Selecione um fornecedor cadastrado."}</div>
+              </div>
+              <div class="field full">
+                <label for="invoice-description">Descrição da nota</label>
+                <textarea id="invoice-description" name="description" maxlength="300" ${canLaunch ? "" : "disabled"} placeholder="Descreva o conteúdo ou finalidade da nota">${escapeHtml(draft.description || "")}</textarea>
+              </div>
+            </div>
+            <div class="form-actions">
+              ${draft.id ? `<button class="ghost-button" type="button" data-action="new-invoice">Limpar rascunho</button>` : ""}
+              <button class="primary-button" type="submit" ${canLaunch ? "" : "disabled"}>${draft.id ? "Salvar alterações da nota" : "Salvar nota fiscal"}</button>
+            </div>
+          </form>
+        `;
+      }
+
+      function renderInvoiceTabItens(draft) {
+        const selectableItems = getSelectableItems();
+        const canLaunch = state.data.suppliers.length > 0 && selectableItems.length > 0;
+        const lineItem = getItemById(draft.lineForm.itemId);
+        const lineNature = lineItem ? getFinancialNatureById(lineItem.financialNatureId) : null;
+        const lineAccount = lineNature ? getChartAccountById(lineNature.chartAccountId) : null;
+
+        return `
+          <form data-form="invoice-line" autocomplete="off">
+            <div class="form-grid">
+              <div class="field full">
+                <label for="invoice-line-item">Item</label>
+                <select id="invoice-line-item" name="itemId" ${canLaunch ? "required" : "disabled"}>
+                  <option value="">Selecione um item</option>
+                  ${selectableItems.map((item) => {
+                    const nature = getFinancialNatureById(item.financialNatureId);
+                    const account = nature ? getChartAccountById(nature.chartAccountId) : null;
+                    return `
+                      <option value="${escapeHtml(item.id)}" ${draft.lineForm.itemId === item.id ? "selected" : ""}>
+                        ${escapeHtml(item.code)} - ${escapeHtml(item.name)}${nature ? ` | ${escapeHtml(nature.name)}` : ""}${account ? ` | ${escapeHtml(account.code)}` : ""}
+                      </option>
+                    `;
+                  }).join("")}
+                </select>
+              </div>
+              <div class="field">
+                <label for="invoice-line-quantity">Quantidade</label>
+                <input id="invoice-line-quantity" type="number" name="quantity" min="0.01" step="0.01" value="${escapeHtml(String(draft.lineForm.quantity || 1))}" ${canLaunch ? "required" : "disabled"}>
+              </div>
+              <div class="field">
+                <label for="invoice-line-unit-price">Valor unitário</label>
+                <input id="invoice-line-unit-price" type="number" name="unitPrice" min="0.01" step="0.01" value="${escapeHtml(String(draft.lineForm.unitPrice || ""))}" ${canLaunch ? "required" : "disabled"}>
+              </div>
+              <div class="field full">
+                <label>Natureza financeira e conta contábil</label>
+                <div class="field-readonly">
+                  ${lineItem && lineNature && lineAccount
+                    ? `${escapeHtml(lineNature.code)} - ${escapeHtml(lineNature.name)} | ${escapeHtml(lineAccount.code)} - ${escapeHtml(lineAccount.name)} | ${escapeHtml(lineAccount.group)} | ${escapeHtml(lineAccount.balanceNature)}`
+                    : "Selecione um item para visualizar os vínculos automáticos."}
+                </div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="secondary-button" type="submit" ${canLaunch ? "" : "disabled"}>Adicionar item</button>
+            </div>
+          </form>
+          ${draft.items.length ? `
+            <div class="table-card" style="margin-top:20px;">
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Natureza</th>
+                      <th>Conta</th>
+                      <th>Qtd.</th>
+                      <th>Vlr. unitário</th>
+                      <th>Vlr. total</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${draft.items.map((item) => `
+                      <tr>
+                        <td>
+                          <strong>${escapeHtml(item.itemName)}</strong>
+                          <div class="table-muted">${escapeHtml(item.itemCode || item.itemId)}</div>
+                        </td>
+                        <td>${escapeHtml(item.financialNatureName)}</td>
+                        <td>
+                          <div class="badge-row">
+                            <span class="badge">${escapeHtml(item.chartAccountCode)}</span>
+                            ${item.chartAccountType ? `<span class="badge positive">${escapeHtml(item.chartAccountType)}</span>` : ""}
+                          </div>
+                          <div class="table-muted">${escapeHtml(item.chartAccountName)}</div>
+                          <div class="table-muted">${escapeHtml([item.chartAccountGroup, item.chartAccountBalanceNature].filter(Boolean).join(" | ") || "Metadados não informados")}</div>
+                        </td>
+                        <td class="mono">${escapeHtml(String(item.quantity))}</td>
+                        <td class="mono">${escapeHtml(formatCurrency(item.unitPrice))}</td>
+                        <td class="mono">${escapeHtml(formatCurrency(item.totalPrice))}</td>
+                        <td>
+                          <button class="action-chip danger" type="button" data-action="remove-invoice-line" data-id="${escapeHtml(item.id)}">Remover</button>
+                        </td>
+                      </tr>
+                    `).join("")}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ` : `
+            <div class="empty-card" style="margin-top:20px;">
+              <strong>Nenhum item adicionado à nota.</strong>
+              <p>Inclua os itens do lançamento para compor o valor total e carregar automaticamente a classificação financeira e contábil.</p>
+            </div>
+          `}
+        `;
+      }
+
+      function renderInvoiceTabFinanceiro(draft) {
+        const selectableItems = getSelectableItems();
+        const canLaunch = state.data.suppliers.length > 0 && selectableItems.length > 0;
+
+        return `
+          <form data-form="invoice-installment" autocomplete="off">
+            <div class="form-grid">
+              <div class="field">
+                <label for="installment-number">Número da parcela</label>
+                <input id="installment-number" type="number" name="installmentNumber" min="1" step="1" value="${escapeHtml(String(draft.installmentForm.installmentNumber || 1))}" ${canLaunch ? "required" : "disabled"}>
+              </div>
+              <div class="field">
+                <label for="installment-due-date">Data de vencimento</label>
+                <input id="installment-due-date" type="date" name="dueDate" value="${escapeHtml(draft.installmentForm.dueDate || "")}" ${canLaunch ? "required" : "disabled"}>
+              </div>
+              <div class="field">
+                <label for="installment-amount">Valor da parcela</label>
+                <input id="installment-amount" type="number" name="amount" min="0.01" step="0.01" value="${escapeHtml(String(draft.installmentForm.amount || ""))}" ${canLaunch ? "required" : "disabled"}>
+              </div>
+              <div class="field">
+                <label for="installment-method">Forma de pagamento</label>
+                <input id="installment-method" name="paymentMethod" maxlength="60" value="${escapeHtml(draft.installmentForm.paymentMethod || "")}" placeholder="Boleto, PIX, TED..." ${canLaunch ? "required" : "disabled"}>
+              </div>
+              <div class="field full">
+                <label for="installment-status">Status da parcela</label>
+                <select id="installment-status" name="status" ${canLaunch ? "" : "disabled"}>
+                  <option value="Em aberto" ${draft.installmentForm.status === "Em aberto" ? "selected" : ""}>Em aberto</option>
+                  <option value="Pago" ${draft.installmentForm.status === "Pago" ? "selected" : ""}>Pago</option>
+                  <option value="Cancelado" ${draft.installmentForm.status === "Cancelado" ? "selected" : ""}>Cancelado</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="secondary-button" type="submit" ${canLaunch ? "" : "disabled"}>Adicionar parcela</button>
+            </div>
+          </form>
+          ${draft.installments.length ? `
+            <div class="table-card" style="margin-top:20px;">
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Parcela</th>
+                      <th>Vencimento</th>
+                      <th>Valor</th>
+                      <th>Forma de pagamento</th>
+                      <th>Status</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${draft.installments.map((installment) => `
+                      <tr>
+                        <td class="mono">${escapeHtml(String(installment.installmentNumber))}</td>
+                        <td>${escapeHtml(formatDate(installment.dueDate))}</td>
+                        <td class="mono">${escapeHtml(formatCurrency(installment.amount))}</td>
+                        <td>${escapeHtml(installment.paymentMethod)}</td>
+                        <td>
+                          <span class="badge ${installment.status === "Pago" ? "positive" : installment.status === "Cancelado" ? "danger" : "warning"}">${escapeHtml(installment.status)}</span>
+                        </td>
+                        <td>
+                          <button class="action-chip danger" type="button" data-action="remove-installment" data-id="${escapeHtml(installment.id)}">Remover</button>
+                        </td>
+                      </tr>
+                    `).join("")}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ` : `
+            <div class="empty-card" style="margin-top:20px;">
+              <strong>Nenhuma parcela adicionada.</strong>
+              <p>Inclua uma ou mais parcelas para registrar a parte financeira da nota fiscal.</p>
+            </div>
+          `}
+        `;
+      }
+
+      function renderInvoiceTabResumo(draft, totals) {
+        return `
+          <div class="section-head">
+            <div>
+              <h3>Resumo financeiro e consistência</h3>
+              <p>O sistema compara automaticamente o total dos itens com o total das parcelas antes do salvamento da nota.</p>
+            </div>
+            <div class="status-highlight ${getInvoiceStatusClass(totals.difference)}">
+              ${Math.abs(totals.difference) <= 0.009 ? "Totais conciliados" : "Diferença entre itens e parcelas"}
+            </div>
+          </div>
+          <div class="totals-grid">
+            <article class="total-card">
+              <span>Total dos itens</span>
+              <strong class="mono">${escapeHtml(formatCurrency(totals.totalItemsAmount))}</strong>
+              <small>Soma de quantidade x valor unitário de todos os itens adicionados à nota.</small>
+            </article>
+            <article class="total-card">
+              <span>Total das parcelas</span>
+              <strong class="mono">${escapeHtml(formatCurrency(totals.totalInstallmentsAmount))}</strong>
+              <small>Soma de todas as parcelas registradas na seção financeira da nota.</small>
+            </article>
+            <article class="total-card">
+              <span>Diferença</span>
+              <strong class="mono">${escapeHtml(formatCurrency(totals.difference))}</strong>
+              <small>${Math.abs(totals.difference) <= 0.009 ? "A nota pode ser salva normalmente." : "Ajuste itens ou parcelas para permitir o salvamento da nota."}</small>
+            </article>
+          </div>
         `;
       }
 
