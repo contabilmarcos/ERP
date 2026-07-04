@@ -924,35 +924,40 @@
       border: 1px solid #d2dcea;
       background: #ffffff;
       border-radius: 16px;
-      padding: 18px;
+      padding: 14px;
+      max-height: 62vh;
+      overflow: auto;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
     }
 
     .chart-blueprint-title {
       width: min(540px, 100%);
-      margin: 0 auto 18px;
-      padding: 8px 16px;
+      margin: 0 auto 14px;
+      padding: 7px 14px;
       border: 1px solid #8b98a8;
       text-align: center;
       font-weight: 700;
       letter-spacing: 0.02em;
-      font-size: 1rem;
+      font-size: 0.9rem;
       background: #ffffff;
       color: #0f1720;
+      position: sticky;
+      top: 0;
+      z-index: 1;
     }
 
     .chart-blueprint-list {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
     }
 
     .chart-blueprint-row {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
-      gap: 16px;
+      gap: 12px;
       align-items: center;
-      padding: 7px 10px;
+      padding: 5px 8px;
       border-radius: 10px;
       border: 1px solid transparent;
     }
@@ -975,13 +980,13 @@
       min-width: 0;
       display: grid;
       grid-template-columns: minmax(132px, 180px) minmax(0, 1fr);
-      gap: 12px;
+      gap: 10px;
       align-items: center;
     }
 
     .chart-blueprint-code {
       color: #18324a;
-      font-size: 0.98rem;
+      font-size: 0.84rem;
       font-weight: 600;
       white-space: nowrap;
     }
@@ -996,16 +1001,17 @@
     }
 
     .chart-blueprint-row .tree-account-line {
-      min-height: 30px;
+      min-height: 24px;
     }
 
     .chart-blueprint-row .tree-toggle {
-      width: 24px;
-      height: 24px;
-      margin-right: 6px;
+      width: 20px;
+      height: 20px;
+      margin-right: 5px;
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.88);
       border-color: rgba(46, 73, 97, 0.18);
+      font-size: 0.76rem;
     }
 
     .chart-blueprint-row.analytical .tree-toggle {
@@ -1019,9 +1025,9 @@
     .chart-blueprint-name {
       display: block;
       color: #0f1720;
-      font-size: 1rem;
+      font-size: 0.88rem;
       font-weight: 600;
-      line-height: 1.2;
+      line-height: 1.15;
     }
 
     .chart-blueprint-row.synthetic .chart-blueprint-name {
@@ -1029,21 +1035,27 @@
     }
 
     .chart-blueprint-row .table-muted {
-      margin-top: 5px;
+      margin-top: 3px;
+      font-size: 0.72rem;
     }
 
     .chart-blueprint-actions {
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
       padding-left: 8px;
     }
 
+    .chart-blueprint-actions .action-chip {
+      padding: 5px 8px;
+      font-size: 0.74rem;
+    }
+
     .blueprint-icon-button {
-      width: 31px;
-      height: 31px;
+      width: 27px;
+      height: 27px;
       border-radius: 999px;
       border: 1px solid rgba(26, 43, 60, 0.14);
       background: #ffffff;
@@ -1051,7 +1063,7 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.15rem;
+      font-size: 1rem;
       font-weight: 600;
       line-height: 1;
       padding: 0;
