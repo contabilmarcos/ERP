@@ -925,8 +925,9 @@
       background: #ffffff;
       border-radius: 16px;
       padding: 14px;
-      max-height: 62vh;
-      overflow: auto;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
     }
 
@@ -938,7 +939,7 @@
       text-align: center;
       font-weight: 700;
       letter-spacing: 0.02em;
-      font-size: 0.9rem;
+      font-size: 0.78rem;
       background: #ffffff;
       color: #0f1720;
       position: sticky;
@@ -979,14 +980,14 @@
     .chart-blueprint-main {
       min-width: 0;
       display: grid;
-      grid-template-columns: minmax(132px, 180px) minmax(0, 1fr);
+      grid-template-columns: minmax(110px, 150px) minmax(0, 1fr);
       gap: 10px;
       align-items: center;
     }
 
     .chart-blueprint-code {
       color: #18324a;
-      font-size: 0.84rem;
+      font-size: 0.74rem;
       font-weight: 600;
       white-space: nowrap;
     }
@@ -1001,17 +1002,17 @@
     }
 
     .chart-blueprint-row .tree-account-line {
-      min-height: 24px;
+      min-height: 22px;
     }
 
     .chart-blueprint-row .tree-toggle {
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       margin-right: 5px;
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.88);
       border-color: rgba(46, 73, 97, 0.18);
-      font-size: 0.76rem;
+      font-size: 0.66rem;
     }
 
     .chart-blueprint-row.analytical .tree-toggle {
@@ -1025,7 +1026,7 @@
     .chart-blueprint-name {
       display: block;
       color: #0f1720;
-      font-size: 0.88rem;
+      font-size: 0.78rem;
       font-weight: 600;
       line-height: 1.15;
     }
@@ -1036,7 +1037,7 @@
 
     .chart-blueprint-row .table-muted {
       margin-top: 3px;
-      font-size: 0.72rem;
+      font-size: 0.66rem;
     }
 
     .chart-blueprint-actions {
@@ -1049,13 +1050,13 @@
     }
 
     .chart-blueprint-actions .action-chip {
-      padding: 5px 8px;
-      font-size: 0.74rem;
+      padding: 4px 7px;
+      font-size: 0.68rem;
     }
 
     .blueprint-icon-button {
-      width: 27px;
-      height: 27px;
+      width: 24px;
+      height: 24px;
       border-radius: 999px;
       border: 1px solid rgba(26, 43, 60, 0.14);
       background: #ffffff;
@@ -1063,7 +1064,7 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 1rem;
+      font-size: 0.86rem;
       font-weight: 600;
       line-height: 1;
       padding: 0;
@@ -4060,6 +4061,9 @@
       function getFilteredAccountingEntries() {
         const filters = state.ui.accountingEntryFilters;
         return state.data.accountingEntries.filter((record) => {
+          if (record.origin === "accounting-event" || record.origin === "settlement-event") {
+            return false;
+          }
           const matchesStartDate = !filters.startDate || record.entryDate >= filters.startDate;
           const matchesEndDate = !filters.endDate || record.entryDate <= filters.endDate;
           const matchesAmount = !filters.amount || roundCurrency(record.amount) === roundCurrency(filters.amount);
@@ -6747,7 +6751,7 @@
 
 
       function renderAccountingEntriesView() {
-        const reportCount = state.data.accountingEntries.length;
+        const reportCount = state.data.accountingEntries.filter((entry) => entry.origin !== "accounting-event" && entry.origin !== "settlement-event").length;
         const costCenterCount = state.data.costCenters.length;
         const accountCount = getSelectableChartAccounts().length;
         const eventEntriesCount = state.data.accountingEntries.filter((entry) => entry.origin === "accounting-event").length;
