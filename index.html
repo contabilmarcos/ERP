@@ -909,6 +909,97 @@
       background: var(--surface-3);
     }
 
+    /* Estilo classico do plano de contas, inspirado em planilhas contabeis tradicionais */
+    .plano-contas-classic {
+      border: 1px solid #7fa8c9;
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 560px;
+    }
+
+    .plano-contas-classic thead th {
+      background: #ffffff;
+      color: var(--ink);
+      border: 1px solid #7fa8c9;
+      padding: 7px 12px;
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .plano-contas-classic tbody td {
+      border: 1px solid #bcd6ea;
+      padding: 5px 12px;
+      font-size: 0.83rem;
+      vertical-align: middle;
+    }
+
+    .plano-contas-classic tbody tr:hover td {
+      filter: brightness(0.98);
+    }
+
+    .plano-contas-classic tr.plano-row-group td {
+      background: #bcd9ee;
+      font-weight: 700;
+      color: #16324a;
+    }
+
+    .plano-contas-classic tr.plano-row-leaf td {
+      background: #ffffff;
+      font-weight: 400;
+      color: var(--ink);
+    }
+
+    .plano-contas-classic tr.plano-row-inactive td {
+      opacity: 0.55;
+      text-decoration: line-through;
+    }
+
+    .plano-contas-classic td.plano-code {
+      font-family: var(--mono);
+      white-space: nowrap;
+      width: 1%;
+    }
+
+    .plano-contas-classic td.plano-actions {
+      white-space: nowrap;
+      width: 1%;
+    }
+
+    .plano-contas-legend {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      font-size: 0.78rem;
+      color: var(--ink-2);
+    }
+
+    .plano-contas-legend-swatch {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .plano-contas-legend-swatch i {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      border: 1px solid #bcd6ea;
+    }
+
+    .plano-contas-legend-swatch.group i {
+      background: #bcd9ee;
+    }
+
+    .plano-contas-legend-swatch.leaf i {
+      background: #ffffff;
+    }
+
     .chart-account-name {
       display: flex;
       align-items: center;
@@ -5487,7 +5578,7 @@
               <div class="modal-header">
                 <div>
                   <h3 class="modal-title" id="chart-accounts-modal-title">Plano de Contas</h3>
-                  <p class="modal-subtitle">Visualize somente a estrutura das contas e controle a árvore hierárquica com expandir e recolher.</p>
+                  <p class="modal-subtitle">Visualize a estrutura das contas no estilo clássico de planilha contábil: níveis sintéticos em azul e contas analíticas em branco.</p>
                 </div>
                 <div class="inline-actions">
                   <button class="secondary-button" type="button" data-action="expand-all-chart-accounts">Expandir tudo</button>
@@ -5506,54 +5597,51 @@
                   </div>
                   ${rows.length ? `
                     <div class="table-scroll">
-                      <table>
+                      <table class="plano-contas-classic">
                         <thead>
                           <tr>
                             <th>Código</th>
-                            <th>Cód. reduzido</th>
-                            <th>Conta contábil</th>
-                            <th>Tipo</th>
-                            <th>Grupo</th>
-                            <th>Natureza</th>
-                            <th>Status</th>
+                            <th>Descrição</th>
                             <th>Ações</th>
                           </tr>
                         </thead>
                         <tbody>
-                          ${rows.map((record) => `
-                            <tr class="chart-account-row ${isSyntheticAccount(record) ? "synthetic" : ""}">
-                              <td class="mono">${escapeHtml(record.code)}</td>
-                              <td class="mono">${escapeHtml(record.reducedCode || "-")}</td>
+                          ${rows.map((record) => {
+                            const isGroup = isSyntheticAccount(record);
+                            const rowClasses = [
+                              "chart-account-row",
+                              isGroup ? "plano-row-group" : "plano-row-leaf",
+                              record.isActive === false ? "plano-row-inactive" : ""
+                            ].filter(Boolean).join(" ");
+                            return `
+                            <tr class="${rowClasses}">
+                              <td class="plano-code">${escapeHtml(record.code)}</td>
                               <td>
                                 <div class="tree-account-line">
                                   ${Array.from({ length: Math.max(record.treeDepth || 0, 0) }).map(() => `<span class="tree-account-indent" aria-hidden="true"></span>`).join("")}
                                   ${record.treeHasChildren
                                     ? `<button class="tree-toggle" type="button" data-action="toggle-chart-account-node" data-id="${escapeHtml(record.id)}" aria-label="${state.ui.chartAccountTreeCollapsed[record.id] ? "Expandir" : "Recolher"} conta">${state.ui.chartAccountTreeCollapsed[record.id] ? "▸" : "▾"}</button>`
                                     : `<span class="tree-toggle placeholder" aria-hidden="true">•</span>`}
-                                  <div>
-                                    <strong>${escapeHtml(record.name)}</strong>
-                                    <div class="account-meta">
-                                      ${record.requiresCodeAdjustment ? `<span class="badge warning">Pendente de ajuste</span>` : ""}
-                                      ${isSyntheticAccount(record) ? `<span class="badge">Conta sintética</span>` : ""}
-                                    </div>
-                                    ${record.adjustmentMessage ? `<div class="table-muted">${escapeHtml(record.adjustmentMessage)}</div>` : ""}
-                                  </div>
+                                  <span>${escapeHtml(record.name)}</span>
+                                  ${record.requiresCodeAdjustment ? `<span class="badge warning" style="margin-left:8px;">Pendente de ajuste</span>` : ""}
+                                  ${record.isActive === false ? `<span class="badge danger" style="margin-left:8px;">Inativa</span>` : ""}
                                 </div>
                               </td>
-                              <td><span class="badge ${isAnalyticalAccount(record) ? "positive" : ""}">${escapeHtml(record.type)}</span></td>
-                              <td>${escapeHtml(record.group || "-")}</td>
-                              <td>${escapeHtml(record.balanceNature || "-")}</td>
-                              <td><span class="badge ${record.isActive !== false ? "positive" : "danger"}">${record.isActive !== false ? "Ativa" : "Inativa"}</span></td>
-                              <td>
+                              <td class="plano-actions">
                                 <div class="table-actions">
                                   <button class="action-chip" type="button" data-action="edit-chart-account" data-id="${escapeHtml(record.id)}">Editar</button>
                                   <button class="action-chip danger" type="button" data-action="delete-chart-account" data-id="${escapeHtml(record.id)}">Excluir</button>
                                 </div>
                               </td>
                             </tr>
-                          `).join("")}
+                          `;
+                          }).join("")}
                         </tbody>
                       </table>
+                    </div>
+                    <div class="plano-contas-legend">
+                      <span class="plano-contas-legend-swatch group"><i></i> Conta sintética (grupo/soma)</span>
+                      <span class="plano-contas-legend-swatch leaf"><i></i> Conta analítica (lançamento)</span>
                     </div>
                   ` : `
                     <div class="empty-card">
@@ -7370,6 +7458,7 @@
       initialize();
 
     })();
+
   </script>
 </body>
 </html>
