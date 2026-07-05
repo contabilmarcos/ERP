@@ -1846,7 +1846,10 @@
         documentTypes: "erp_document_types",
         accountingEvents: "erp_accounting_events",
         settlementEvents: "erp_settlement_events",
-        settlements: "erp_settlements"
+        settlements: "erp_settlements",
+        employees: "erp_employees",
+        payrollEvents: "erp_payroll_events",
+        payrollRuns: "erp_payroll_runs"
       };
       const CLOUD_CONFIG_STORAGE_KEY = "erp_cloud_sync_config";
       const CLOUD_LAST_MODIFIED_STORAGE_KEY = "erp_cloud_last_modified";
@@ -1862,7 +1865,10 @@
         documentTypes: { prefix: "DOC", digits: 4 },
         accountingEvents: { prefix: "EVC", digits: 4 },
         settlementEvents: { prefix: "EVB", digits: 4 },
-        settlements: { prefix: "BX", digits: 6 }
+        settlements: { prefix: "BX", digits: 6 },
+        employees: { prefix: "FUN", digits: 4 },
+        payrollEvents: { prefix: "RUB", digits: 4 },
+        payrollRuns: { prefix: "FOL", digits: 6 }
       };
 
       const CHART_ACCOUNT_GROUP_LABELS = {
@@ -1929,6 +1935,11 @@
           title: "Módulo contábil",
           subtitle: "Registre lançamentos contábeis e emita balancete por período e centro de custo."
         },
+        payroll: {
+          icon: "FP",
+          title: "Folha de pagamento",
+          subtitle: "Cadastre funcionários, configure rubricas e processe a folha mensal."
+        },
         fiscal: {
           icon: "FI",
           title: "Módulo fiscal",
@@ -1954,7 +1965,10 @@
           documentTypes: [],
           accountingEvents: [],
           settlementEvents: [],
-          settlements: []
+          settlements: [],
+          employees: [],
+          payrollEvents: [],
+          payrollRuns: []
         },
         ui: {
           activeView: "dashboard",
@@ -1971,6 +1985,9 @@
             documentTypes: "",
             accountingEvents: "",
             settlementEvents: "",
+            employees: "",
+            payrollEvents: "",
+            payrollRuns: "",
             financeiro: ""
           },
           cloudDraft: createEmptyCloudDraft(),
@@ -2002,6 +2019,10 @@
           settlementModalOpen: false,
           settlementTarget: null,
           settlementFormDraft: createEmptySettlementDraft(),
+          employeeFormDraft: createEmptyEmployeeDraft(),
+          payrollEventFormDraft: createEmptyPayrollEventDraft(),
+          payrollRunDraft: createEmptyPayrollRunDraft(),
+          payrollPanel: "employees",
           editing: {
             costCenterId: null,
             costCenterClassificationId: null,
@@ -2012,7 +2033,10 @@
             accountingEntryId: null,
             documentTypeId: null,
             accountingEventId: null,
-            settlementEventId: null
+            settlementEventId: null,
+            employeeId: null,
+            payrollEventId: null,
+            payrollRunId: null
           },
           invoiceDraft: createEmptyInvoiceDraft(),
           invoiceModalOpen: false,
@@ -2214,6 +2238,1670 @@
         };
       }
 
+
+      const EMPLOYEE_STATUS_META = {
+        active: { label: "Ativo", className: "positive" },
+        inactive: { label: "Inativo", className: "warning" },
+        terminated: { label: "Desligado", className: "danger" }
+      };
+
+      const PAYROLL_EVENT_TYPE_META = {
+        earning: "Vencimento",
+        deduction: "Desconto",
+        employer_charge: "Encargo da empresa",
+        provision: "Provisão",
+        informational: "Informativo"
+      };
+
+      const PAYROLL_CALCULATION_TYPE_META = {
+        manual: "Valor manual",
+        fixed: "Valor fixo",
+        percentage: "Percentual",
+        employee_salary: "Salário do funcionário",
+        informational: "Informativo"
+      };
+
+      const PAYROLL_BASE_TYPE_META = {
+        employee_salary: "Salário-base",
+        total_earnings: "Total de vencimentos",
+        manual: "Valor manual",
+        none: "Nenhuma"
+      };
+
+      const PAYROLL_RUN_STATUS_META = {
+        draft: { label: "Rascunho", className: "warning" },
+        calculated: { label: "Calculada", className: "positive" },
+        posted: { label: "Contabilizada", className: "positive" },
+        closed: { label: "Fechada", className: "danger" }
+      };
+
+      function createEmptyEmployeeDraft(record) {
+        return {
+          id: record?.id || "",
+          code: record?.code || "",
+          name: record?.name || "",
+          cpf: record?.cpf || "",
+          admissionDate: record?.admissionDate || getToday(),
+          resignationDate: record?.resignationDate || "",
+          status: record?.status || "active",
+          salary: record?.salary != null ? String(record.salary) : "",
+          jobTitle: record?.jobTitle || "",
+          department: record?.department || "",
+          costCenterId: record?.costCenterId || "",
+          paymentAccountId: record?.paymentAccountId || "",
+          notes: record?.notes || ""
+        };
+      }
+
+      function createEmptyPayrollEventDraft(record) {
+        return {
+          id: record?.id || "",
+          code: record?.code || "",
+          name: record?.name || "",
+          type: record?.type || "earning",
+          calculationType: record?.calculationType || "manual",
+          defaultValue: record?.defaultValue != null ? String(record.defaultValue) : "",
+          percentage: record?.percentage != null ? String(record.percentage) : "",
+          baseType: record?.baseType || "none",
+          incidence: {
+            inss: record?.incidence?.inss === true,
+            irrf: record?.incidence?.irrf === true,
+            fgts: record?.incidence?.fgts === true,
+            netSalary: record?.incidence?.netSalary !== false
+          },
+          debitAccountId: record?.debitAccountId || "",
+          creditAccountId: record?.creditAccountId || "",
+          generateAccountingEntry: record?.generateAccountingEntry === true,
+          historyTemplate: record?.historyTemplate || "",
+          isActive: record?.isActive !== false,
+          order: record?.order != null ? String(record.order) : ""
+        };
+      }
+
+      function createEmptyPayrollRunDraft(record) {
+        return {
+          id: record?.id || "",
+          code: record?.code || "",
+          period: record?.period || "",
+          description: record?.description || "",
+          paymentDate: record?.paymentDate || getToday(),
+          status: record?.status || "draft",
+          employeeIds: Array.isArray(record?.employeeIds) ? [...record.employeeIds] : [],
+          lines: Array.isArray(record?.lines) ? record.lines.map((line) => ({ ...line })) : [],
+          totals: record?.totals
+            ? {
+                employeesCount: Number(record.totals.employeesCount || 0),
+                earnings: Number(record.totals.earnings || 0),
+                deductions: Number(record.totals.deductions || 0),
+                employerCharges: Number(record.totals.employerCharges || 0),
+                provisions: Number(record.totals.provisions || 0),
+                informational: Number(record.totals.informational || 0),
+                netPay: Number(record.totals.netPay || 0),
+                totalCompanyCost: Number(record.totals.totalCompanyCost || 0)
+              }
+            : {
+                employeesCount: 0,
+                earnings: 0,
+                deductions: 0,
+                employerCharges: 0,
+                provisions: 0,
+                informational: 0,
+                netPay: 0,
+                totalCompanyCost: 0
+              },
+          accountingGenerated: record?.accountingGenerated === true,
+          accountingEntryIds: Array.isArray(record?.accountingEntryIds) ? [...record.accountingEntryIds] : []
+        };
+      }
+
+      function migratePayrollCollections() {
+        ["employees", "payrollEvents", "payrollRuns"].forEach((key) => {
+          if (!Array.isArray(state.data[key])) {
+            state.data[key] = [];
+            persistCollection(key);
+          }
+        });
+      }
+
+      function getEmployeeById(id) {
+        return state.data.employees.find((record) => record.id === id) || null;
+      }
+
+      function getPayrollEventById(id) {
+        return state.data.payrollEvents.find((record) => record.id === id) || null;
+      }
+
+      function getPayrollRunById(id) {
+        return state.data.payrollRuns.find((record) => record.id === id) || null;
+      }
+
+      function getActiveEmployees() {
+        return state.data.employees.filter((record) => record.status === "active");
+      }
+
+      function getActivePayrollEvents() {
+        return state.data.payrollEvents
+          .filter((record) => record.isActive !== false)
+          .slice()
+          .sort((left, right) => {
+            const orderDiff = Number(left.order || 0) - Number(right.order || 0);
+            if (orderDiff !== 0) {
+              return orderDiff;
+            }
+            return (left.name || "").localeCompare(right.name || "");
+          });
+      }
+
+      function normalizeCpf(value) {
+        return clean(value).replace(/\D/g, "");
+      }
+
+      function getEmployeeStatusMeta(status) {
+        return EMPLOYEE_STATUS_META[status] || EMPLOYEE_STATUS_META.inactive;
+      }
+
+      function getPayrollEventTypeLabel(type) {
+        return PAYROLL_EVENT_TYPE_META[type] || "Evento";
+      }
+
+      function getPayrollCalculationTypeLabel(type) {
+        return PAYROLL_CALCULATION_TYPE_META[type] || "Cálculo";
+      }
+
+      function getPayrollBaseTypeLabel(type) {
+        return PAYROLL_BASE_TYPE_META[type] || "Nenhuma";
+      }
+
+      function getPayrollRunStatusMeta(status) {
+        return PAYROLL_RUN_STATUS_META[status] || PAYROLL_RUN_STATUS_META.draft;
+      }
+
+      function getLatestPayrollRun() {
+        return state.data.payrollRuns
+          .slice()
+          .sort((left, right) => {
+            const periodCompare = (right.period || "").localeCompare(left.period || "");
+            if (periodCompare !== 0) {
+              return periodCompare;
+            }
+            return (right.paymentDate || "").localeCompare(left.paymentDate || "");
+          })[0] || null;
+      }
+
+      function getPayrollEventAccountsText(event) {
+        const debit = event?.debitAccountId ? getChartAccountById(event.debitAccountId) : null;
+        const credit = event?.creditAccountId ? getChartAccountById(event.creditAccountId) : null;
+        return `${event?.code || ""} ${event?.name || ""} ${getPayrollEventTypeLabel(event?.type)} ${debit?.code || ""} ${debit?.name || ""} ${credit?.code || ""} ${credit?.name || ""}`;
+      }
+
+      function buildPayrollRunLines(payrollRun) {
+        const employeeIds = Array.from(new Set((Array.isArray(payrollRun.employeeIds) ? payrollRun.employeeIds : []).filter(Boolean)));
+        const selectedEmployees = employeeIds.map((id) => getEmployeeById(id)).filter(Boolean);
+        const existingLines = Array.isArray(payrollRun.lines) ? payrollRun.lines : [];
+        const existingEventIds = existingLines.map((line) => line.payrollEventId).filter(Boolean);
+        const eventMap = new Map();
+        getActivePayrollEvents().forEach((event) => {
+          eventMap.set(event.id, event);
+        });
+        existingEventIds.forEach((eventId) => {
+          const event = getPayrollEventById(eventId);
+          if (event) {
+            eventMap.set(event.id, event);
+          }
+        });
+        const events = Array.from(eventMap.values()).sort((left, right) => {
+          const orderDiff = Number(left.order || 0) - Number(right.order || 0);
+          if (orderDiff !== 0) {
+            return orderDiff;
+          }
+          return (left.name || "").localeCompare(right.name || "");
+        });
+        const existingMap = new Map(existingLines.map((line) => [`${line.employeeId}::${line.payrollEventId}`, line]));
+        const lines = [];
+        selectedEmployees.forEach((employee) => {
+          events.forEach((event) => {
+            const existing = existingMap.get(`${employee.id}::${event.id}`);
+            const defaultHistory = event.historyTemplate
+              ? formatPayrollHistory(event.historyTemplate, payrollRun, employee, event)
+              : "";
+            lines.push({
+              id: existing?.id || generateId(),
+              employeeId: employee.id,
+              payrollEventId: event.id,
+              eventName: event.name,
+              eventType: event.type,
+              calculationType: event.calculationType,
+              reference: existing?.reference != null ? existing.reference : "",
+              amount: existing?.amount != null ? Number(existing.amount) : 0,
+              costCenterId: employee.costCenterId || "",
+              debitAccountId: event.debitAccountId || "",
+              creditAccountId: event.creditAccountId || "",
+              generateAccountingEntry: event.generateAccountingEntry === true,
+              history: existing?.history != null ? existing.history : defaultHistory
+            });
+          });
+        });
+        return lines;
+      }
+
+      function calculatePayrollEventAmount(event, employee, line, totalEarningsBase) {
+        if (!event || !employee) {
+          return 0;
+        }
+        if (event.type === "informational" || event.calculationType === "informational") {
+          return Number(line.amount || 0);
+        }
+        if (event.calculationType === "employee_salary") {
+          return Number(employee.salary || 0);
+        }
+        if (event.calculationType === "fixed") {
+          return Number(event.defaultValue || 0);
+        }
+        if (event.calculationType === "manual") {
+          return Number(line.amount || 0);
+        }
+        if (event.calculationType === "percentage") {
+          const percentage = Number(event.percentage || 0);
+          let baseValue = 0;
+          if (event.baseType === "employee_salary") {
+            baseValue = Number(employee.salary || 0);
+          } else if (event.baseType === "total_earnings") {
+            baseValue = Number(totalEarningsBase || 0);
+          } else if (event.baseType === "manual") {
+            baseValue = Number(line.reference || 0);
+          } else {
+            baseValue = 0;
+          }
+          return roundCurrency(baseValue * percentage / 100);
+        }
+        return Number(line.amount || 0);
+      }
+
+      function calculateEmployeePayrollTotals(lines, employeeId) {
+        const employeeLines = lines.filter((line) => line.employeeId === employeeId);
+        const totals = {
+          earnings: 0,
+          deductions: 0,
+          employerCharges: 0,
+          provisions: 0,
+          informational: 0,
+          netPay: 0
+        };
+        employeeLines.forEach((line) => {
+          const amount = Number(line.amount || 0);
+          if (line.eventType === "earning") {
+            totals.earnings += amount;
+          } else if (line.eventType === "deduction") {
+            totals.deductions += amount;
+          } else if (line.eventType === "employer_charge") {
+            totals.employerCharges += amount;
+          } else if (line.eventType === "provision") {
+            totals.provisions += amount;
+          } else if (line.eventType === "informational") {
+            totals.informational += amount;
+          }
+        });
+        totals.earnings = roundCurrency(totals.earnings);
+        totals.deductions = roundCurrency(totals.deductions);
+        totals.employerCharges = roundCurrency(totals.employerCharges);
+        totals.provisions = roundCurrency(totals.provisions);
+        totals.informational = roundCurrency(totals.informational);
+        totals.netPay = roundCurrency(totals.earnings - totals.deductions);
+        return totals;
+      }
+
+      function calculatePayrollTotals(lines, employeeIds = []) {
+        const uniqueEmployeeIds = Array.from(new Set(employeeIds.filter(Boolean)));
+        const totals = {
+          employeesCount: uniqueEmployeeIds.length,
+          earnings: 0,
+          deductions: 0,
+          employerCharges: 0,
+          provisions: 0,
+          informational: 0,
+          netPay: 0,
+          totalCompanyCost: 0
+        };
+        uniqueEmployeeIds.forEach((employeeId) => {
+          const employeeTotals = calculateEmployeePayrollTotals(lines, employeeId);
+          totals.earnings += employeeTotals.earnings;
+          totals.deductions += employeeTotals.deductions;
+          totals.employerCharges += employeeTotals.employerCharges;
+          totals.provisions += employeeTotals.provisions;
+          totals.informational += employeeTotals.informational;
+          totals.netPay += employeeTotals.netPay;
+        });
+        totals.earnings = roundCurrency(totals.earnings);
+        totals.deductions = roundCurrency(totals.deductions);
+        totals.employerCharges = roundCurrency(totals.employerCharges);
+        totals.provisions = roundCurrency(totals.provisions);
+        totals.informational = roundCurrency(totals.informational);
+        totals.netPay = roundCurrency(totals.netPay);
+        totals.totalCompanyCost = roundCurrency(totals.earnings + totals.employerCharges + totals.provisions);
+        return totals;
+      }
+
+      function calculatePayrollRun(payrollRun) {
+        const normalized = {
+          ...payrollRun,
+          employeeIds: Array.from(new Set((Array.isArray(payrollRun.employeeIds) ? payrollRun.employeeIds : []).filter(Boolean))),
+          lines: buildPayrollRunLines(payrollRun).map((line) => ({ ...line }))
+        };
+        normalized.employeeIds.forEach((employeeId) => {
+          const employee = getEmployeeById(employeeId);
+          const employeeLines = normalized.lines.filter((line) => line.employeeId === employeeId);
+          employeeLines.forEach((line) => {
+            const event = getPayrollEventById(line.payrollEventId);
+            if (!event) {
+              return;
+            }
+            line.eventName = event.name;
+            line.eventType = event.type;
+            line.calculationType = event.calculationType;
+            line.costCenterId = employee?.costCenterId || line.costCenterId || "";
+            line.debitAccountId = event.debitAccountId || "";
+            line.creditAccountId = event.creditAccountId || "";
+            line.generateAccountingEntry = event.generateAccountingEntry === true;
+            if (!line.history) {
+              line.history = event.historyTemplate
+                ? formatPayrollHistory(event.historyTemplate, normalized, employee, event)
+                : "";
+            }
+            if (event.calculationType !== "percentage" || event.baseType !== "total_earnings") {
+              line.amount = roundCurrency(calculatePayrollEventAmount(event, employee, line, 0));
+            }
+          });
+          const baseEarnings = roundCurrency(employeeLines.reduce((sum, line) => {
+            if (line.eventType !== "earning") {
+              return sum;
+            }
+            const event = getPayrollEventById(line.payrollEventId);
+            if (event?.calculationType === "percentage" && event.baseType === "total_earnings") {
+              return sum;
+            }
+            return sum + Number(line.amount || 0);
+          }, 0));
+          employeeLines.forEach((line) => {
+            const event = getPayrollEventById(line.payrollEventId);
+            if (!event) {
+              return;
+            }
+            if (event.calculationType === "percentage" && event.baseType === "total_earnings") {
+              line.amount = roundCurrency(calculatePayrollEventAmount(event, employee, line, baseEarnings));
+            }
+            if (!line.history) {
+              line.history = event.historyTemplate
+                ? formatPayrollHistory(event.historyTemplate, normalized, employee, event)
+                : "";
+            }
+          });
+        });
+        normalized.lines = normalized.lines.map((line) => ({
+          ...line,
+          amount: roundCurrency(Number(line.amount || 0))
+        }));
+        normalized.totals = calculatePayrollTotals(normalized.lines, normalized.employeeIds);
+        normalized.updatedAt = new Date().toISOString();
+        if (normalized.accountingGenerated === true) {
+          normalized.status = normalized.status === "closed" ? "closed" : "posted";
+        } else if (normalized.status !== "closed") {
+          normalized.status = "calculated";
+        }
+        return normalized;
+      }
+
+      function formatPayrollHistory(template, payrollRun, employee, payrollEvent) {
+        const fallback = `Folha ${payrollRun?.period || ""} - ${employee?.name || ""} - ${payrollEvent?.name || ""}`.trim();
+        if (!template) {
+          return fallback;
+        }
+        return String(template)
+          .replace(/\{period\}/g, payrollRun?.period || "")
+          .replace(/\{employee\}/g, employee?.name || "")
+          .replace(/\{event\}/g, payrollEvent?.name || "")
+          .replace(/\{code\}/g, payrollRun?.code || "")
+          .trim() || fallback;
+      }
+
+      function persistPayrollRunRecord(record) {
+        const existingIndex = state.data.payrollRuns.findIndex((item) => item.id === record.id);
+        const nextRuns = [...state.data.payrollRuns];
+        if (existingIndex >= 0) {
+          nextRuns[existingIndex] = record;
+        } else {
+          nextRuns.unshift(record);
+        }
+        saveCollection("payrollRuns", nextRuns);
+      }
+
+      function validatePayrollRunEmployees(employeeIds) {
+        for (const employeeId of employeeIds) {
+          const employee = getEmployeeById(employeeId);
+          if (!employee) {
+            notify("error", "Folha de pagamento", "Selecione apenas funcionários válidos na folha.");
+            return false;
+          }
+          if (employee.status !== "active") {
+            notify("error", "Folha de pagamento", `O funcionário ${employee.name} não está ativo e não pode ser incluído na folha.`);
+            return false;
+          }
+          if (Number(employee.salary || 0) < 0 || !employee.costCenterId) {
+            notify("error", "Folha de pagamento", `O funcionário ${employee.name} precisa ter salário-base e centro de custo válidos.`);
+            return false;
+          }
+        }
+        return true;
+      }
+
+      function removePayrollGeneratedEntries(payrollRunId) {
+        const remainingEntries = state.data.accountingEntries.filter((entry) => {
+          return !(entry.origin === "payroll-event" && entry.sourcePayrollRunId === payrollRunId);
+        });
+        const removedCount = state.data.accountingEntries.length - remainingEntries.length;
+        saveCollection("accountingEntries", remainingEntries);
+        return removedCount;
+      }
+
+      function syncPayrollAccountingEntries(payrollRun) {
+        if (!payrollRun || !payrollRun.id) {
+          notify("error", "Folha de pagamento", "Salve a folha antes de gerar lançamentos contábeis.");
+          return;
+        }
+        if (payrollRun.status === "closed") {
+          notify("error", "Folha de pagamento", "Não é permitido contabilizar uma folha fechada.");
+          return;
+        }
+        const calculatedRun = calculatePayrollRun(payrollRun);
+        const invalidLine = calculatedRun.lines.find((line) => {
+          if (!line.generateAccountingEntry || Number(line.amount || 0) === 0) {
+            return false;
+          }
+          if (!line.costCenterId || !line.debitAccountId || !line.creditAccountId) {
+            return true;
+          }
+          const debit = getChartAccountById(line.debitAccountId);
+          const credit = getChartAccountById(line.creditAccountId);
+          return !isChartAccountAvailableForLinks(debit) || !isChartAccountAvailableForLinks(credit);
+        });
+        if (invalidLine) {
+          notify("error", "Folha de pagamento", "Existe linha contábil incompleta ou com contas inválidas. Revise os eventos antes de contabilizar.");
+          return;
+        }
+        let entries = state.data.accountingEntries.filter((entry) => !(entry.origin === "payroll-event" && entry.sourcePayrollRunId === calculatedRun.id));
+        const generatedIds = [];
+        calculatedRun.lines.forEach((line) => {
+          if (!line.generateAccountingEntry || Number(line.amount || 0) === 0) {
+            return;
+          }
+          const employee = getEmployeeById(line.employeeId);
+          const event = getPayrollEventById(line.payrollEventId);
+          const id = `auto-payroll-${calculatedRun.id}-${line.id}`;
+          generatedIds.push(id);
+          entries.push({
+            id,
+            code: id,
+            entryDate: calculatedRun.paymentDate,
+            description: line.history || formatPayrollHistory(event?.historyTemplate, calculatedRun, employee, event),
+            costCenterId: employee?.costCenterId || line.costCenterId || "",
+            debitAccountId: line.debitAccountId,
+            creditAccountId: line.creditAccountId,
+            amount: roundCurrency(line.amount),
+            origin: "payroll-event",
+            sourcePayrollRunId: calculatedRun.id,
+            sourcePayrollLineId: line.id,
+            sourceEmployeeId: line.employeeId,
+            sourcePayrollEventId: line.payrollEventId,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+        });
+        saveCollection("accountingEntries", entries);
+        const postedRun = {
+          ...calculatedRun,
+          accountingGenerated: true,
+          accountingEntryIds: generatedIds,
+          status: "posted",
+          updatedAt: new Date().toISOString()
+        };
+        persistPayrollRunRecord(postedRun);
+        if (state.ui.payrollRunDraft.id === postedRun.id) {
+          state.ui.payrollRunDraft = createEmptyPayrollRunDraft(postedRun);
+        }
+        notify("success", "Folha de pagamento", "Lançamentos contábeis da folha gerados com sucesso.");
+        renderApp();
+      }
+
+      function submitEmployee(formData) {
+        const id = clean(formData.get("id"));
+        const name = clean(formData.get("name"));
+        const cpf = clean(formData.get("cpf"));
+        const normalizedCpf = normalizeCpf(cpf);
+        const admissionDate = clean(formData.get("admissionDate"));
+        const resignationDate = clean(formData.get("resignationDate"));
+        const status = clean(formData.get("status")) || "active";
+        const salary = Number(clean(formData.get("salary")) || 0);
+        const jobTitle = clean(formData.get("jobTitle"));
+        const department = clean(formData.get("department"));
+        const costCenterId = clean(formData.get("costCenterId"));
+        const paymentAccountId = clean(formData.get("paymentAccountId"));
+        const notes = clean(formData.get("notes"));
+
+        if (!name || !admissionDate || salary < 0 || !costCenterId) {
+          notify("error", "Funcionário", "Informe nome, data de admissão, salário-base válido e centro de custo.");
+          return;
+        }
+        if (status === "active" && (!name || !admissionDate || salary < 0 || !costCenterId)) {
+          notify("error", "Funcionário", "Funcionários ativos exigem nome, admissão, salário e centro de custo.");
+          return;
+        }
+        if (!getCostCenterById(costCenterId)) {
+          notify("error", "Funcionário", "Selecione um centro de custo válido.");
+          return;
+        }
+        if (paymentAccountId) {
+          const paymentAccount = getChartAccountById(paymentAccountId);
+          if (!isChartAccountAvailableForLinks(paymentAccount)) {
+            notify("error", "Funcionário", "A conta de pagamento precisa ser analítica, ativa e válida.");
+            return;
+          }
+        }
+        if (normalizedCpf) {
+          const duplicate = state.data.employees.find((record) => record.id !== id && normalizeCpf(record.cpf) === normalizedCpf);
+          if (duplicate) {
+            notify("error", "Funcionário", "Já existe um funcionário cadastrado com esse CPF.");
+            return;
+          }
+        }
+        const existing = state.data.employees.find((record) => record.id === id);
+        const record = {
+          id: existing?.id || generateId(),
+          code: existing?.code || generateCode("employees"),
+          name,
+          cpf,
+          admissionDate,
+          resignationDate,
+          status,
+          salary: roundCurrency(salary),
+          jobTitle,
+          department,
+          costCenterId,
+          paymentAccountId,
+          notes,
+          createdAt: existing?.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        upsertRecord("employees", record);
+        state.ui.editing.employeeId = null;
+        state.ui.employeeFormDraft = createEmptyEmployeeDraft();
+        notify("success", "Funcionário", existing ? "Funcionário atualizado com sucesso." : "Funcionário cadastrado com sucesso.");
+        renderApp();
+      }
+
+      function submitPayrollEvent(formData) {
+        const id = clean(formData.get("id"));
+        const name = clean(formData.get("name"));
+        const type = clean(formData.get("type")) || "earning";
+        const calculationType = clean(formData.get("calculationType")) || "manual";
+        const defaultValue = clean(formData.get("defaultValue"));
+        const percentage = clean(formData.get("percentage"));
+        const baseType = clean(formData.get("baseType")) || "none";
+        const debitAccountId = clean(formData.get("debitAccountId"));
+        const creditAccountId = clean(formData.get("creditAccountId"));
+        const generateAccountingEntry = formData.get("generateAccountingEntry") === "on";
+        const historyTemplate = clean(formData.get("historyTemplate"));
+        const isActive = formData.get("isActive") === "on";
+        const order = clean(formData.get("order"));
+        const incidence = {
+          inss: formData.get("incidence_inss") === "on",
+          irrf: formData.get("incidence_irrf") === "on",
+          fgts: formData.get("incidence_fgts") === "on",
+          netSalary: formData.get("incidence_netSalary") === "on"
+        };
+
+        if (!name || !type || !calculationType) {
+          notify("error", "Evento da folha", "Informe nome, tipo do evento e tipo de cálculo.");
+          return;
+        }
+        if (generateAccountingEntry && (!debitAccountId || !creditAccountId)) {
+          notify("error", "Evento da folha", "Eventos com lançamento contábil exigem conta de débito e conta de crédito.");
+          return;
+        }
+        if (debitAccountId) {
+          const debit = getChartAccountById(debitAccountId);
+          if (!isChartAccountAvailableForLinks(debit)) {
+            notify("error", "Evento da folha", "Selecione uma conta de débito analítica, ativa e disponível.");
+            return;
+          }
+        }
+        if (creditAccountId) {
+          const credit = getChartAccountById(creditAccountId);
+          if (!isChartAccountAvailableForLinks(credit)) {
+            notify("error", "Evento da folha", "Selecione uma conta de crédito analítica, ativa e disponível.");
+            return;
+          }
+        }
+        const existing = state.data.payrollEvents.find((record) => record.id === id);
+        const record = {
+          id: existing?.id || generateId(),
+          code: existing?.code || generateCode("payrollEvents"),
+          name,
+          type,
+          calculationType,
+          defaultValue: defaultValue ? roundCurrency(defaultValue) : 0,
+          percentage: percentage ? Number(percentage) : 0,
+          baseType,
+          incidence,
+          debitAccountId,
+          creditAccountId,
+          generateAccountingEntry,
+          historyTemplate,
+          isActive,
+          order: order ? Number(order) : 0,
+          createdAt: existing?.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        upsertRecord("payrollEvents", record);
+        state.ui.editing.payrollEventId = null;
+        state.ui.payrollEventFormDraft = createEmptyPayrollEventDraft();
+        notify("success", "Evento da folha", existing ? "Evento atualizado com sucesso." : "Evento da folha cadastrado com sucesso.");
+        renderApp();
+      }
+
+      function submitPayrollRun(formData) {
+        const draft = state.ui.payrollRunDraft;
+        const id = clean(formData.get("id")) || draft.id;
+        const period = clean(formData.get("period"));
+        const description = clean(formData.get("description"));
+        const paymentDate = clean(formData.get("paymentDate"));
+        const employeeIds = Array.from(new Set((Array.isArray(draft.employeeIds) ? draft.employeeIds : []).filter(Boolean)));
+        const existing = state.data.payrollRuns.find((record) => record.id === id);
+
+        if (existing?.status === "closed") {
+          notify("error", "Folha de pagamento", "Não é permitido alterar uma folha fechada.");
+          return;
+        }
+        if (!/^\d{4}-\d{2}$/.test(period)) {
+          notify("error", "Folha de pagamento", "Informe a competência no formato YYYY-MM.");
+          return;
+        }
+        if (!paymentDate) {
+          notify("error", "Folha de pagamento", "Informe a data de pagamento da folha.");
+          return;
+        }
+        if (!employeeIds.length) {
+          notify("error", "Folha de pagamento", "Selecione pelo menos um funcionário para a folha.");
+          return;
+        }
+        if (!validatePayrollRunEmployees(employeeIds)) {
+          return;
+        }
+
+        const duplicate = state.data.payrollRuns.find((record) => {
+          if (record.id === existing?.id || record.status === "closed" || record.period !== period) {
+            return false;
+          }
+          return Array.isArray(record.employeeIds) && record.employeeIds.some((employeeId) => employeeIds.includes(employeeId));
+        });
+        if (duplicate) {
+          notify("warning", "Folha de pagamento", "Já existe outra folha aberta para a mesma competência com ao menos um funcionário coincidente. Revise para evitar duplicidade.");
+        }
+
+        const baseRecord = {
+          id: existing?.id || generateId(),
+          code: existing?.code || generateCode("payrollRuns"),
+          period,
+          description,
+          paymentDate,
+          status: existing?.status || draft.status || "draft",
+          employeeIds,
+          lines: Array.isArray(draft.lines) ? draft.lines.map((line) => ({ ...line })) : [],
+          totals: draft.totals,
+          accountingGenerated: existing?.accountingGenerated === true,
+          accountingEntryIds: Array.isArray(existing?.accountingEntryIds) ? [...existing.accountingEntryIds] : [],
+          createdAt: existing?.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        const calculated = calculatePayrollRun(baseRecord);
+        const finalRecord = {
+          ...calculated,
+          status: existing?.status === "draft" || draft.status === "draft" ? "draft" : calculated.status,
+          accountingGenerated: existing?.accountingGenerated === true,
+          accountingEntryIds: Array.isArray(existing?.accountingEntryIds) ? [...existing.accountingEntryIds] : []
+        };
+
+        persistPayrollRunRecord(finalRecord);
+        state.ui.editing.payrollRunId = finalRecord.id;
+        state.ui.payrollRunDraft = createEmptyPayrollRunDraft(finalRecord);
+        notify("success", "Folha de pagamento", existing ? "Folha atualizada com sucesso." : "Folha mensal criada com sucesso.");
+        renderApp();
+      }
+
+      function deleteEmployee(id) {
+        const used = state.data.payrollRuns.some((record) => {
+          return (Array.isArray(record.employeeIds) && record.employeeIds.includes(id))
+            || (Array.isArray(record.lines) && record.lines.some((line) => line.employeeId === id));
+        });
+        if (used) {
+          notify("error", "Funcionário", "Não é permitido excluir funcionário já utilizado em folha processada.");
+          return;
+        }
+        deleteRecord("employees", id, "Funcionário", "Funcionário excluído com sucesso.");
+        state.ui.employeeFormDraft = createEmptyEmployeeDraft();
+      }
+
+      function deletePayrollEvent(id) {
+        const used = state.data.payrollRuns.some((record) => Array.isArray(record.lines) && record.lines.some((line) => line.payrollEventId === id));
+        if (used) {
+          notify("error", "Evento da folha", "Não é permitido excluir evento já utilizado em folha processada.");
+          return;
+        }
+        deleteRecord("payrollEvents", id, "Evento da folha", "Evento da folha excluído com sucesso.");
+        state.ui.payrollEventFormDraft = createEmptyPayrollEventDraft();
+      }
+
+      function deletePayrollRun(id) {
+        const record = getPayrollRunById(id);
+        if (!record) {
+          notify("error", "Folha de pagamento", "Folha não encontrada.");
+          return;
+        }
+        if (record.status === "closed") {
+          notify("error", "Folha de pagamento", "Não é permitido excluir uma folha fechada.");
+          return;
+        }
+        removePayrollGeneratedEntries(record.id);
+        deleteRecord("payrollRuns", id, "Folha de pagamento", "Folha excluída com sucesso.");
+        if (state.ui.payrollRunDraft.id === id) {
+          state.ui.editing.payrollRunId = null;
+          state.ui.payrollRunDraft = createEmptyPayrollRunDraft();
+        }
+      }
+
+      function startPayrollRunEdit(id) {
+        const record = getPayrollRunById(id);
+        if (!record) {
+          notify("error", "Folha de pagamento", "Folha não encontrada.");
+          return;
+        }
+        state.ui.editing.payrollRunId = id;
+        state.ui.payrollRunDraft = createEmptyPayrollRunDraft(record);
+        state.ui.payrollPanel = "runs";
+        navigate("payroll");
+      }
+
+      function calculatePayrollRunAction(id = "") {
+        if (id) {
+          const record = getPayrollRunById(id);
+          if (!record) {
+            notify("error", "Folha de pagamento", "Folha não encontrada.");
+            return;
+          }
+          if (record.status === "closed") {
+            notify("error", "Folha de pagamento", "Não é permitido recalcular uma folha fechada.");
+            return;
+          }
+          if (!validatePayrollRunEmployees(Array.isArray(record.employeeIds) ? record.employeeIds : [])) {
+            return;
+          }
+          const calculated = calculatePayrollRun({ ...record, accountingGenerated: false, accountingEntryIds: [] });
+          persistPayrollRunRecord({
+            ...calculated,
+            accountingGenerated: false,
+            accountingEntryIds: [],
+            status: "calculated"
+          });
+          if (state.ui.payrollRunDraft.id === id) {
+            state.ui.payrollRunDraft = createEmptyPayrollRunDraft({
+              ...calculated,
+              accountingGenerated: false,
+              accountingEntryIds: [],
+              status: "calculated"
+            });
+          }
+          notify("success", "Folha de pagamento", "Folha recalculada com sucesso.");
+          renderApp();
+          return;
+        }
+
+        const draft = state.ui.payrollRunDraft;
+        if (!/^\d{4}-\d{2}$/.test(draft.period || "")) {
+          notify("error", "Folha de pagamento", "Informe a competência antes de calcular a folha.");
+          return;
+        }
+        if (!draft.paymentDate) {
+          notify("error", "Folha de pagamento", "Informe a data de pagamento antes de calcular a folha.");
+          return;
+        }
+        if (!draft.employeeIds.length) {
+          notify("error", "Folha de pagamento", "Selecione pelo menos um funcionário antes de calcular a folha.");
+          return;
+        }
+        if (!validatePayrollRunEmployees(draft.employeeIds)) {
+          return;
+        }
+        const calculatedDraft = calculatePayrollRun({
+          ...draft,
+          status: "calculated",
+          accountingGenerated: false,
+          accountingEntryIds: []
+        });
+        state.ui.payrollRunDraft = createEmptyPayrollRunDraft({
+          ...calculatedDraft,
+          status: "calculated",
+          accountingGenerated: false,
+          accountingEntryIds: []
+        });
+        notify("success", "Folha de pagamento", "Pré-cálculo da folha atualizado na tela.");
+        renderApp();
+      }
+
+      function removePayrollEntriesAction(id) {
+        const record = getPayrollRunById(id);
+        if (!record) {
+          notify("error", "Folha de pagamento", "Folha não encontrada.");
+          return;
+        }
+        if (record.status === "closed") {
+          notify("error", "Folha de pagamento", "Não é permitido remover lançamentos de uma folha fechada.");
+          return;
+        }
+        const removedCount = removePayrollGeneratedEntries(id);
+        const recalculated = calculatePayrollRun({
+          ...record,
+          accountingGenerated: false,
+          accountingEntryIds: [],
+          status: "calculated"
+        });
+        persistPayrollRunRecord({
+          ...recalculated,
+          accountingGenerated: false,
+          accountingEntryIds: [],
+          status: "calculated"
+        });
+        if (state.ui.payrollRunDraft.id === id) {
+          state.ui.payrollRunDraft = createEmptyPayrollRunDraft({
+            ...recalculated,
+            accountingGenerated: false,
+            accountingEntryIds: [],
+            status: "calculated"
+          });
+        }
+        notify("success", "Folha de pagamento", removedCount ? "Lançamentos automáticos da folha removidos com sucesso." : "A folha não possuía lançamentos automáticos para remover.");
+        renderApp();
+      }
+
+      function closePayrollRunAction(id) {
+        const record = getPayrollRunById(id);
+        if (!record) {
+          notify("error", "Folha de pagamento", "Folha não encontrada.");
+          return;
+        }
+        if (record.status === "closed") {
+          notify("warning", "Folha de pagamento", "Essa folha já está fechada.");
+          return;
+        }
+        const closedRecord = {
+          ...record,
+          status: "closed",
+          updatedAt: new Date().toISOString()
+        };
+        persistPayrollRunRecord(closedRecord);
+        if (state.ui.payrollRunDraft.id === id) {
+          state.ui.payrollRunDraft = createEmptyPayrollRunDraft(closedRecord);
+        }
+        notify("success", "Folha de pagamento", "Folha fechada com sucesso.");
+        renderApp();
+      }
+
+      function renderPayrollStatusBadge(status) {
+        const meta = getPayrollRunStatusMeta(status);
+        return `<span class="badge ${meta.className}">${escapeHtml(meta.label)}</span>`;
+      }
+
+      function renderEmployeeStatusBadge(status) {
+        const meta = getEmployeeStatusMeta(status);
+        return `<span class="badge ${meta.className}">${escapeHtml(meta.label)}</span>`;
+      }
+
+      function renderPayrollView() {
+        const latestRun = getLatestPayrollRun();
+        const activeEmployeesCount = getActiveEmployees().length;
+        const activeEventsCount = getActivePayrollEvents().length;
+        const payrollRunsCount = state.data.payrollRuns.length;
+        const panel = state.ui.payrollPanel || "employees";
+
+        return `
+          <section class="summary-grid">
+            <article class="stats-card">
+              <small>Funcionários ativos</small>
+              <strong>${escapeHtml(String(activeEmployeesCount))}</strong>
+              <span>Cadastro base pronto para processamento mensal.</span>
+            </article>
+            <article class="stats-card">
+              <small>Eventos ativos</small>
+              <strong>${escapeHtml(String(activeEventsCount))}</strong>
+              <span>Rubricas disponíveis para gerar linhas da folha.</span>
+            </article>
+            <article class="stats-card">
+              <small>Folhas processadas</small>
+              <strong>${escapeHtml(String(payrollRunsCount))}</strong>
+              <span>Competências salvas localmente no navegador.</span>
+            </article>
+            <article class="stats-card">
+              <small>Última folha</small>
+              <strong>${escapeHtml(latestRun?.period || "-")}</strong>
+              <span>${latestRun ? `${escapeHtml(formatDate(latestRun.paymentDate))} • ${escapeHtml(getPayrollRunStatusMeta(latestRun.status).label)}` : "Nenhuma folha processada ainda."}</span>
+            </article>
+          </section>
+
+          <section class="card">
+            <div class="section-head">
+              <div>
+                <h3>Folha de pagamento</h3>
+                <p>Cadastre funcionários, configure rubricas e processe a folha mensal com geração de lançamentos contábeis.</p>
+              </div>
+            </div>
+            <div class="option-grid">
+              <article class="option-card">
+                <h3>Funcionários</h3>
+                <p>Cadastre empregados, salário-base, cargo, situação e centro de custo.</p>
+                <div class="form-actions">
+                  <button class="primary-button" type="button" data-action="switch-payroll-panel" data-panel="employees">Gerenciar funcionários</button>
+                </div>
+              </article>
+              <article class="option-card">
+                <h3>Eventos da folha</h3>
+                <p>Configure vencimentos, descontos, encargos e contas contábeis.</p>
+                <div class="form-actions">
+                  <button class="secondary-button" type="button" data-action="switch-payroll-panel" data-panel="events">Configurar eventos</button>
+                </div>
+              </article>
+              <article class="option-card">
+                <h3>Processamento mensal</h3>
+                <p>Crie uma folha por competência, informe movimentos e gere lançamentos contábeis.</p>
+                <div class="form-actions">
+                  <button class="secondary-button" type="button" data-action="switch-payroll-panel" data-panel="runs">Processar folha</button>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="modal-tabs" aria-label="Abas da folha">
+              <button class="${panel === "employees" ? "active" : ""}" type="button" data-action="switch-payroll-panel" data-panel="employees">Funcionários</button>
+              <button class="${panel === "events" ? "active" : ""}" type="button" data-action="switch-payroll-panel" data-panel="events">Eventos da folha</button>
+              <button class="${panel === "runs" ? "active" : ""}" type="button" data-action="switch-payroll-panel" data-panel="runs">Processamentos</button>
+            </div>
+          </section>
+
+          ${panel === "employees"
+            ? renderPayrollEmployeesPanel()
+            : panel === "events"
+              ? renderPayrollEventsPanel()
+              : renderPayrollRunsPanel()}
+        `;
+      }
+
+      function renderPayrollEmployeesPanel() {
+        const draft = state.ui.employeeFormDraft;
+        const editing = getActiveEditRecord("employees", state.ui.editing.employeeId);
+        const searchTerm = state.ui.search.employees;
+        const selectableAccounts = getSelectableChartAccounts();
+        const records = filterRecords(
+          state.data.employees,
+          searchTerm,
+          (record) => `${record.code} ${record.name} ${record.cpf} ${record.jobTitle} ${record.department}`
+        );
+
+        return `
+          ${state.data.costCenters.length ? "" : `
+            <section class="notice-card">
+              <strong>Cadastre centros de custo antes de avançar.</strong>
+              <p>O cadastro de funcionários exige um centro de custo válido já cadastrado em Configurações.</p>
+            </section>
+          `}
+          <section class="layout-grid">
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h3>${editing ? "Editar funcionário" : "Novo funcionário"}</h3>
+                  <p>Cadastre os dados básicos do empregado e vincule o centro de custo que será usado na folha.</p>
+                </div>
+              </div>
+              <form data-form="employee" autocomplete="off">
+                <input type="hidden" name="id" value="${escapeHtml(draft.id || editing?.id || "")}">
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="employee-name">Nome completo</label>
+                    <input id="employee-name" name="name" maxlength="160" value="${escapeHtml(draft.name)}" required>
+                  </div>
+                  <div class="field">
+                    <label for="employee-cpf">CPF</label>
+                    <input id="employee-cpf" name="cpf" maxlength="18" value="${escapeHtml(draft.cpf)}" placeholder="Opcional">
+                  </div>
+                  <div class="field">
+                    <label for="employee-admission-date">Data de admissão</label>
+                    <input id="employee-admission-date" name="admissionDate" type="date" value="${escapeHtml(draft.admissionDate)}" required>
+                  </div>
+                  <div class="field">
+                    <label for="employee-resignation-date">Data de desligamento</label>
+                    <input id="employee-resignation-date" name="resignationDate" type="date" value="${escapeHtml(draft.resignationDate)}">
+                  </div>
+                  <div class="field">
+                    <label for="employee-status">Situação</label>
+                    <select id="employee-status" name="status">
+                      <option value="active" ${draft.status === "active" ? "selected" : ""}>Ativo</option>
+                      <option value="inactive" ${draft.status === "inactive" ? "selected" : ""}>Inativo</option>
+                      <option value="terminated" ${draft.status === "terminated" ? "selected" : ""}>Desligado</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="employee-salary">Salário-base</label>
+                    <input id="employee-salary" name="salary" type="number" step="0.01" min="0" value="${escapeHtml(draft.salary)}" required>
+                  </div>
+                  <div class="field">
+                    <label for="employee-job-title">Cargo</label>
+                    <input id="employee-job-title" name="jobTitle" maxlength="120" value="${escapeHtml(draft.jobTitle)}">
+                  </div>
+                  <div class="field">
+                    <label for="employee-department">Departamento</label>
+                    <input id="employee-department" name="department" maxlength="120" value="${escapeHtml(draft.department)}">
+                  </div>
+                  <div class="field">
+                    <label for="employee-cost-center">Centro de custo</label>
+                    <select id="employee-cost-center" name="costCenterId" required>
+                      <option value="">Selecione</option>
+                      ${state.data.costCenters.map((record) => `
+                        <option value="${escapeHtml(record.id)}" ${draft.costCenterId === record.id ? "selected" : ""}>${escapeHtml(record.code)} - ${escapeHtml(record.name)}</option>
+                      `).join("")}
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="employee-payment-account">Conta de pagamento</label>
+                    <select id="employee-payment-account" name="paymentAccountId">
+                      <option value="">Não vincular agora</option>
+                      ${selectableAccounts.map((record) => `
+                        <option value="${escapeHtml(record.id)}" ${draft.paymentAccountId === record.id ? "selected" : ""}>${escapeHtml(record.code)} - ${escapeHtml(record.name)}</option>
+                      `).join("")}
+                    </select>
+                  </div>
+                  <div class="field full">
+                    <label for="employee-notes">Observações</label>
+                    <textarea id="employee-notes" name="notes" maxlength="260">${escapeHtml(draft.notes)}</textarea>
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button class="primary-button" type="submit">${editing ? "Salvar alterações" : "Cadastrar funcionário"}</button>
+                  ${(editing || draft.id) ? `<button class="ghost-button" type="button" data-action="reset-employee">Cancelar edição</button>` : ""}
+                </div>
+              </form>
+            </article>
+
+            <article class="table-card">
+              <div class="table-toolbar">
+                <div>
+                  <h4>Funcionários cadastrados</h4>
+                  <p class="page-subtitle">Pesquisa por nome, CPF, código, cargo ou departamento.</p>
+                </div>
+                <input class="search-input" data-search="employees" placeholder="Pesquisar funcionários" value="${escapeHtml(searchTerm)}">
+              </div>
+              ${records.length ? `
+                <div class="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Código</th>
+                        <th>Funcionário</th>
+                        <th>Centro de custo</th>
+                        <th>Salário</th>
+                        <th>Situação</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${records.map((record) => {
+                        const costCenter = getCostCenterById(record.costCenterId);
+                        return `
+                          <tr>
+                            <td class="mono">${escapeHtml(record.code)}</td>
+                            <td>
+                              <strong>${escapeHtml(record.name)}</strong>
+                              <div class="table-muted">${escapeHtml(record.cpf || "CPF não informado")} • ${escapeHtml(record.jobTitle || "Cargo não informado")}</div>
+                            </td>
+                            <td>
+                              <strong>${escapeHtml(costCenter?.name || "-")}</strong>
+                              <div class="table-muted">${escapeHtml(record.department || "Departamento não informado")}</div>
+                            </td>
+                            <td class="mono">${escapeHtml(formatCurrency(record.salary))}</td>
+                            <td>${renderEmployeeStatusBadge(record.status)}</td>
+                            <td>
+                              <div class="table-actions">
+                                <button class="action-chip" type="button" data-action="edit-employee" data-id="${escapeHtml(record.id)}">Editar</button>
+                                <button class="action-chip danger" type="button" data-action="delete-employee" data-id="${escapeHtml(record.id)}">Excluir</button>
+                              </div>
+                            </td>
+                          </tr>
+                        `;
+                      }).join("")}
+                    </tbody>
+                  </table>
+                </div>
+              ` : `
+                <div class="empty-card">
+                  <strong>Nenhum funcionário encontrado.</strong>
+                  <p>${searchTerm ? "Nenhum funcionário corresponde ao termo pesquisado." : "Cadastre o primeiro funcionário para iniciar o processamento da folha."}</p>
+                </div>
+              `}
+            </article>
+          </section>
+        `;
+      }
+
+      function renderPayrollEventsPanel() {
+        const draft = state.ui.payrollEventFormDraft;
+        const editing = getActiveEditRecord("payrollEvents", state.ui.editing.payrollEventId);
+        const searchTerm = state.ui.search.payrollEvents;
+        const selectableAccounts = getSelectableChartAccounts();
+        const records = filterRecords(
+          state.data.payrollEvents,
+          searchTerm,
+          (record) => getPayrollEventAccountsText(record)
+        );
+        const showDefaultValue = draft.calculationType === "fixed";
+        const showPercentage = draft.calculationType === "percentage";
+        const showBaseType = draft.calculationType === "percentage";
+        const requireAccounts = draft.generateAccountingEntry === true;
+
+        return `
+          <section class="layout-grid">
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h3>${editing ? "Editar evento da folha" : "Novo evento da folha"}</h3>
+                  <p>Cadastre rubricas configuráveis para vencimentos, descontos, encargos, provisões e eventos informativos.</p>
+                </div>
+              </div>
+              <form data-form="payroll-event" autocomplete="off">
+                <input type="hidden" name="id" value="${escapeHtml(draft.id || editing?.id || "")}">
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="payroll-event-name">Nome do evento</label>
+                    <input id="payroll-event-name" name="name" maxlength="160" value="${escapeHtml(draft.name)}" required>
+                  </div>
+                  <div class="field">
+                    <label for="payroll-event-type">Tipo</label>
+                    <select id="payroll-event-type" name="type">
+                      <option value="earning" ${draft.type === "earning" ? "selected" : ""}>Vencimento</option>
+                      <option value="deduction" ${draft.type === "deduction" ? "selected" : ""}>Desconto</option>
+                      <option value="employer_charge" ${draft.type === "employer_charge" ? "selected" : ""}>Encargo da empresa</option>
+                      <option value="provision" ${draft.type === "provision" ? "selected" : ""}>Provisão</option>
+                      <option value="informational" ${draft.type === "informational" ? "selected" : ""}>Informativo</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="payroll-event-calculation-type">Tipo de cálculo</label>
+                    <select id="payroll-event-calculation-type" name="calculationType">
+                      <option value="manual" ${draft.calculationType === "manual" ? "selected" : ""}>Valor manual</option>
+                      <option value="fixed" ${draft.calculationType === "fixed" ? "selected" : ""}>Valor fixo</option>
+                      <option value="percentage" ${draft.calculationType === "percentage" ? "selected" : ""}>Percentual</option>
+                      <option value="employee_salary" ${draft.calculationType === "employee_salary" ? "selected" : ""}>Salário do funcionário</option>
+                      <option value="informational" ${draft.calculationType === "informational" ? "selected" : ""}>Informativo</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="payroll-event-order">Ordem</label>
+                    <input id="payroll-event-order" name="order" type="number" step="1" min="0" value="${escapeHtml(draft.order)}" placeholder="Opcional">
+                  </div>
+                  ${showDefaultValue ? `
+                    <div class="field">
+                      <label for="payroll-event-default-value">Valor padrão</label>
+                      <input id="payroll-event-default-value" name="defaultValue" type="number" step="0.01" min="0" value="${escapeHtml(draft.defaultValue)}">
+                    </div>
+                  ` : ""}
+                  ${showPercentage ? `
+                    <div class="field">
+                      <label for="payroll-event-percentage">Percentual</label>
+                      <input id="payroll-event-percentage" name="percentage" type="number" step="0.01" value="${escapeHtml(draft.percentage)}">
+                    </div>
+                  ` : ""}
+                  ${showBaseType ? `
+                    <div class="field">
+                      <label for="payroll-event-base-type">Base de cálculo</label>
+                      <select id="payroll-event-base-type" name="baseType">
+                        <option value="employee_salary" ${draft.baseType === "employee_salary" ? "selected" : ""}>Salário-base</option>
+                        <option value="total_earnings" ${draft.baseType === "total_earnings" ? "selected" : ""}>Total de vencimentos</option>
+                        <option value="manual" ${draft.baseType === "manual" ? "selected" : ""}>Valor manual</option>
+                        <option value="none" ${draft.baseType === "none" ? "selected" : ""}>Nenhuma</option>
+                      </select>
+                    </div>
+                  ` : ""}
+                  <div class="field full">
+                    <label>Incidências</label>
+                    <div class="checkbox-grid">
+                      <label class="checkbox-item">
+                        <input type="checkbox" name="incidence_inss" ${draft.incidence.inss ? "checked" : ""}>
+                        <span>Compõe base de INSS</span>
+                      </label>
+                      <label class="checkbox-item">
+                        <input type="checkbox" name="incidence_irrf" ${draft.incidence.irrf ? "checked" : ""}>
+                        <span>Compõe base de IRRF</span>
+                      </label>
+                      <label class="checkbox-item">
+                        <input type="checkbox" name="incidence_fgts" ${draft.incidence.fgts ? "checked" : ""}>
+                        <span>Compõe base de FGTS</span>
+                      </label>
+                      <label class="checkbox-item">
+                        <input type="checkbox" name="incidence_netSalary" ${draft.incidence.netSalary ? "checked" : ""}>
+                        <span>Compõe salário líquido</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div class="field full">
+                    <label class="checkbox-item">
+                      <input type="checkbox" name="generateAccountingEntry" ${draft.generateAccountingEntry ? "checked" : ""}>
+                      <span>Gerar lançamento contábil automaticamente</span>
+                    </label>
+                  </div>
+                  <div class="field">
+                    <label for="payroll-event-debit-account">Conta de débito</label>
+                    <select id="payroll-event-debit-account" name="debitAccountId" ${requireAccounts ? "" : ""}>
+                      <option value="">Selecione</option>
+                      ${selectableAccounts.map((record) => `
+                        <option value="${escapeHtml(record.id)}" ${draft.debitAccountId === record.id ? "selected" : ""}>${escapeHtml(record.code)} - ${escapeHtml(record.name)}</option>
+                      `).join("")}
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="payroll-event-credit-account">Conta de crédito</label>
+                    <select id="payroll-event-credit-account" name="creditAccountId" ${requireAccounts ? "" : ""}>
+                      <option value="">Selecione</option>
+                      ${selectableAccounts.map((record) => `
+                        <option value="${escapeHtml(record.id)}" ${draft.creditAccountId === record.id ? "selected" : ""}>${escapeHtml(record.code)} - ${escapeHtml(record.name)}</option>
+                      `).join("")}
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label class="checkbox-item">
+                      <input type="checkbox" name="isActive" ${draft.isActive ? "checked" : ""}>
+                      <span>Evento ativo</span>
+                    </label>
+                  </div>
+                  <div class="field full">
+                    <label for="payroll-event-history">Histórico padrão</label>
+                    <textarea id="payroll-event-history" name="historyTemplate" maxlength="180" placeholder="Ex.: Folha {period} - {employee} - {event}">${escapeHtml(draft.historyTemplate)}</textarea>
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button class="primary-button" type="submit">${editing ? "Salvar alterações" : "Cadastrar evento"}</button>
+                  ${(editing || draft.id) ? `<button class="ghost-button" type="button" data-action="reset-payroll-event">Cancelar edição</button>` : ""}
+                </div>
+              </form>
+            </article>
+
+            <article class="table-card">
+              <div class="table-toolbar">
+                <div>
+                  <h4>Eventos / rubricas</h4>
+                  <p class="page-subtitle">Pesquisa por código, nome, tipo ou contas vinculadas.</p>
+                </div>
+                <input class="search-input" data-search="payrollEvents" placeholder="Pesquisar eventos" value="${escapeHtml(searchTerm)}">
+              </div>
+              ${records.length ? `
+                <div class="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Código</th>
+                        <th>Evento</th>
+                        <th>Cálculo</th>
+                        <th>Contábil</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${records.map((record) => {
+                        const debit = record.debitAccountId ? getChartAccountById(record.debitAccountId) : null;
+                        const credit = record.creditAccountId ? getChartAccountById(record.creditAccountId) : null;
+                        return `
+                          <tr>
+                            <td class="mono">${escapeHtml(record.code)}</td>
+                            <td>
+                              <strong>${escapeHtml(record.name)}</strong>
+                              <div class="table-muted">${escapeHtml(getPayrollEventTypeLabel(record.type))}</div>
+                            </td>
+                            <td>
+                              <strong>${escapeHtml(getPayrollCalculationTypeLabel(record.calculationType))}</strong>
+                              <div class="table-muted">${escapeHtml(getPayrollBaseTypeLabel(record.baseType))}</div>
+                            </td>
+                            <td>
+                              ${record.generateAccountingEntry
+                                ? `
+                                  <div>${escapeHtml(debit?.code || "-")} → ${escapeHtml(credit?.code || "-")}</div>
+                                  <div class="table-muted">${escapeHtml(debit?.name || "Conta débito não configurada")} / ${escapeHtml(credit?.name || "Conta crédito não configurada")}</div>
+                                `
+                                : `<span class="badge">Sem integração</span>`}
+                            </td>
+                            <td><span class="badge ${record.isActive !== false ? "positive" : "danger"}">${record.isActive !== false ? "Ativo" : "Inativo"}</span></td>
+                            <td>
+                              <div class="table-actions">
+                                <button class="action-chip" type="button" data-action="edit-payroll-event" data-id="${escapeHtml(record.id)}">Editar</button>
+                                <button class="action-chip danger" type="button" data-action="delete-payroll-event" data-id="${escapeHtml(record.id)}">Excluir</button>
+                              </div>
+                            </td>
+                          </tr>
+                        `;
+                      }).join("")}
+                    </tbody>
+                  </table>
+                </div>
+              ` : `
+                <div class="empty-card">
+                  <strong>Nenhum evento encontrado.</strong>
+                  <p>${searchTerm ? "Nenhum evento corresponde ao termo pesquisado." : "Cadastre as rubricas que serão usadas no cálculo da folha."}</p>
+                </div>
+              `}
+            </article>
+          </section>
+        `;
+      }
+
+      function renderPayrollRunsPanel() {
+        const draft = state.ui.payrollRunDraft;
+        const editing = getActiveEditRecord("payrollRuns", state.ui.editing.payrollRunId);
+        const searchTerm = state.ui.search.payrollRuns;
+        const records = filterRecords(
+          state.data.payrollRuns,
+          searchTerm,
+          (record) => `${record.code} ${record.period} ${record.description} ${(record.employeeIds || []).join(" ")}`
+        ).slice().sort((left, right) => (right.period || "").localeCompare(left.period || ""));
+        const activeEmployees = getActiveEmployees();
+
+        return `
+          ${activeEmployees.length && getActivePayrollEvents().length ? "" : `
+            <section class="notice-card">
+              <strong>Há pendências antes do processamento.</strong>
+              <p>${!activeEmployees.length ? "Cadastre ao menos um funcionário ativo. " : ""}${!getActivePayrollEvents().length ? "Cadastre ao menos um evento ativo da folha." : ""}</p>
+            </section>
+          `}
+          <section class="layout-grid">
+            <article class="card">
+              <div class="section-head">
+                <div>
+                  <h3>${editing ? "Abrir / editar folha" : "Nova folha mensal"}</h3>
+                  <p>Selecione a competência, informe a data de pagamento, marque os funcionários ativos e monte a folha mensal.</p>
+                </div>
+                <div class="inline-actions">
+                  <button class="ghost-button" type="button" data-action="new-payroll-run">Nova folha</button>
+                  ${draft.id ? `<button class="secondary-button" type="button" data-action="calculate-payroll-run">Gerar linhas e calcular</button>` : `<button class="secondary-button" type="button" data-action="calculate-payroll-run">Gerar linhas e calcular</button>`}
+                </div>
+              </div>
+              <form data-form="payroll-run" autocomplete="off">
+                <input type="hidden" name="id" value="${escapeHtml(draft.id || editing?.id || "")}">
+                <input type="hidden" name="status" value="${escapeHtml(draft.status || "draft")}">
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="payroll-run-period">Competência</label>
+                    <input id="payroll-run-period" name="period" type="month" value="${escapeHtml(draft.period)}" required>
+                  </div>
+                  <div class="field">
+                    <label for="payroll-run-payment-date">Data de pagamento</label>
+                    <input id="payroll-run-payment-date" name="paymentDate" type="date" value="${escapeHtml(draft.paymentDate)}" required>
+                  </div>
+                  <div class="field">
+                    <label>Status atual</label>
+                    <div style="padding-top:10px;">${renderPayrollStatusBadge(draft.status || "draft")}</div>
+                  </div>
+                  <div class="field full">
+                    <label for="payroll-run-description">Descrição</label>
+                    <input id="payroll-run-description" name="description" maxlength="160" value="${escapeHtml(draft.description)}" placeholder="Opcional">
+                  </div>
+                  <div class="field full">
+                    <label>Funcionários ativos</label>
+                    ${activeEmployees.length ? `
+                      <div class="checkbox-grid">
+                        ${activeEmployees.map((employee) => `
+                          <label class="checkbox-item">
+                            <input type="checkbox" data-payroll-employee-toggle="${escapeHtml(employee.id)}" ${draft.employeeIds.includes(employee.id) ? "checked" : ""} ${draft.status === "closed" ? "disabled" : ""}>
+                            <span>${escapeHtml(employee.code)} - ${escapeHtml(employee.name)}</span>
+                          </label>
+                        `).join("")}
+                      </div>
+                    ` : `
+                      <div class="empty-card"><strong>Nenhum funcionário ativo disponível.</strong></div>
+                    `}
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button class="primary-button" type="submit" ${draft.status === "closed" ? "disabled" : ""}>Salvar folha</button>
+                  <button class="secondary-button" type="button" data-action="calculate-payroll-run" ${draft.status === "closed" ? "disabled" : ""}>Calcular</button>
+                  ${draft.id ? `<button class="secondary-button" type="button" data-action="post-payroll-run" data-id="${escapeHtml(draft.id)}" ${draft.status === "closed" ? "disabled" : ""}>Gerar lançamentos</button>` : ""}
+                  ${draft.id ? `<button class="ghost-button" type="button" data-action="remove-payroll-entries" data-id="${escapeHtml(draft.id)}" ${draft.status === "closed" ? "disabled" : ""}>Remover lançamentos gerados</button>` : ""}
+                  ${draft.id ? `<button class="ghost-button" type="button" data-action="close-payroll-run" data-id="${escapeHtml(draft.id)}" ${draft.status === "closed" ? "disabled" : ""}>Fechar folha</button>` : ""}
+                </div>
+              </form>
+              ${renderPayrollRunDetails(draft)}
+            </article>
+
+            <article class="table-card">
+              <div class="table-toolbar">
+                <div>
+                  <h4>Folhas processadas</h4>
+                  <p class="page-subtitle">Abra a folha para revisar linhas, recalcular e gerar lançamentos contábeis.</p>
+                </div>
+                <input class="search-input" data-search="payrollRuns" placeholder="Pesquisar folhas" value="${escapeHtml(searchTerm)}">
+              </div>
+              ${records.length ? `
+                <div class="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Código</th>
+                        <th>Competência</th>
+                        <th>Pagamento</th>
+                        <th>Funcionários</th>
+                        <th>Vencimentos</th>
+                        <th>Descontos</th>
+                        <th>Líquido</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${records.map((record) => `
+                        <tr>
+                          <td class="mono">${escapeHtml(record.code)}</td>
+                          <td>${escapeHtml(record.period || "-")}</td>
+                          <td>${escapeHtml(formatDate(record.paymentDate))}</td>
+                          <td>${escapeHtml(String((record.employeeIds || []).length))}</td>
+                          <td class="mono">${escapeHtml(formatCurrency(record.totals?.earnings || 0))}</td>
+                          <td class="mono">${escapeHtml(formatCurrency(record.totals?.deductions || 0))}</td>
+                          <td class="mono">${escapeHtml(formatCurrency(record.totals?.netPay || 0))}</td>
+                          <td>${renderPayrollStatusBadge(record.status)}</td>
+                          <td>
+                            <div class="table-actions">
+                              <button class="action-chip" type="button" data-action="edit-payroll-run" data-id="${escapeHtml(record.id)}">Editar/abrir</button>
+                              <button class="action-chip" type="button" data-action="calculate-payroll-run" data-id="${escapeHtml(record.id)}" ${record.status === "closed" ? "disabled" : ""}>Calcular</button>
+                              <button class="action-chip" type="button" data-action="post-payroll-run" data-id="${escapeHtml(record.id)}" ${record.status === "closed" ? "disabled" : ""}>Gerar lançamentos</button>
+                              <button class="action-chip" type="button" data-action="remove-payroll-entries" data-id="${escapeHtml(record.id)}" ${record.status === "closed" ? "disabled" : ""}>Remover lançamentos</button>
+                              <button class="action-chip" type="button" data-action="close-payroll-run" data-id="${escapeHtml(record.id)}" ${record.status === "closed" ? "disabled" : ""}>Fechar folha</button>
+                              <button class="action-chip danger" type="button" data-action="delete-payroll-run" data-id="${escapeHtml(record.id)}" ${record.status === "closed" ? "disabled" : ""}>Excluir</button>
+                            </div>
+                          </td>
+                        </tr>
+                      `).join("")}
+                    </tbody>
+                  </table>
+                </div>
+              ` : `
+                <div class="empty-card">
+                  <strong>Nenhuma folha encontrada.</strong>
+                  <p>${searchTerm ? "Nenhuma folha corresponde ao termo pesquisado." : "Crie a primeira competência para começar o processamento mensal."}</p>
+                </div>
+              `}
+            </article>
+          </section>
+        `;
+      }
+
+      function renderPayrollRunDetails(draft) {
+        if (!draft.employeeIds.length) {
+          return `
+            <div class="empty-card" style="margin-top:18px;">
+              <strong>Selecione os funcionários para iniciar.</strong>
+              <p>Depois você poderá gerar as linhas da folha, calcular os totais e contabilizar a competência.</p>
+            </div>
+          `;
+        }
+
+        const totals = draft.totals || calculatePayrollTotals(draft.lines || [], draft.employeeIds || []);
+        const employeeSummaries = draft.employeeIds
+          .map((employeeId) => {
+            const employee = getEmployeeById(employeeId);
+            if (!employee) {
+              return "";
+            }
+            const employeeLines = (draft.lines || []).filter((line) => line.employeeId === employeeId);
+            const employeeTotals = calculateEmployeePayrollTotals(draft.lines || [], employeeId);
+            return `
+              <section class="table-card" style="margin-top:18px;">
+                <div class="table-toolbar">
+                  <div>
+                    <h4>${escapeHtml(employee.name)}</h4>
+                    <p class="page-subtitle">${escapeHtml(employee.code)} • ${escapeHtml(employee.jobTitle || "Cargo não informado")} • ${escapeHtml(employee.department || "Departamento não informado")}</p>
+                  </div>
+                </div>
+                ${employeeLines.length ? `
+                  <div class="table-scroll">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Evento</th>
+                          <th>Tipo</th>
+                          <th>Referência</th>
+                          <th>Valor</th>
+                          <th>Contábil</th>
+                          <th>Histórico</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${employeeLines.map((line) => {
+                          const debit = line.debitAccountId ? getChartAccountById(line.debitAccountId) : null;
+                          const credit = line.creditAccountId ? getChartAccountById(line.creditAccountId) : null;
+                          return `
+                            <tr>
+                              <td>
+                                <strong>${escapeHtml(line.eventName || "-")}</strong>
+                                <div class="table-muted">${escapeHtml(getPayrollCalculationTypeLabel(line.calculationType))}</div>
+                              </td>
+                              <td>${escapeHtml(getPayrollEventTypeLabel(line.eventType))}</td>
+                              <td>
+                                <input name="reference" data-payroll-line-id="${escapeHtml(line.id)}" data-line-field="reference" type="number" step="0.01" value="${escapeHtml(line.reference != null ? String(line.reference) : "")}" ${draft.status === "closed" ? "disabled" : ""}>
+                              </td>
+                              <td>
+                                <input name="amount" data-payroll-line-id="${escapeHtml(line.id)}" data-line-field="amount" type="number" step="0.01" value="${escapeHtml(line.amount != null ? String(line.amount) : "")}" ${draft.status === "closed" ? "disabled" : ""}>
+                              </td>
+                              <td>
+                                ${line.generateAccountingEntry
+                                  ? `
+                                    <div>${escapeHtml(debit?.code || "-")} → ${escapeHtml(credit?.code || "-")}</div>
+                                    <div class="table-muted">${escapeHtml(debit?.name || "Conta débito")} / ${escapeHtml(credit?.name || "Conta crédito")}</div>
+                                  `
+                                  : `<span class="badge">Sem lançamento</span>`}
+                              </td>
+                              <td>
+                                <input name="history" data-payroll-line-id="${escapeHtml(line.id)}" data-line-field="history" value="${escapeHtml(line.history || "")}" ${draft.status === "closed" ? "disabled" : ""}>
+                              </td>
+                            </tr>
+                          `;
+                        }).join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                ` : `
+                  <div class="empty-card">
+                    <strong>Nenhuma linha gerada para este funcionário.</strong>
+                    <p>Use o botão calcular para gerar as linhas com base nos eventos ativos.</p>
+                  </div>
+                `}
+                <div class="summary-grid" style="margin-top:18px;">
+                  <article class="stats-card">
+                    <small>Vencimentos</small>
+                    <strong>${escapeHtml(formatCurrency(employeeTotals.earnings))}</strong>
+                    <span>Total de proventos do funcionário.</span>
+                  </article>
+                  <article class="stats-card">
+                    <small>Descontos</small>
+                    <strong>${escapeHtml(formatCurrency(employeeTotals.deductions))}</strong>
+                    <span>Total de descontos aplicados.</span>
+                  </article>
+                  <article class="stats-card">
+                    <small>Encargos + provisões</small>
+                    <strong>${escapeHtml(formatCurrency(employeeTotals.employerCharges + employeeTotals.provisions))}</strong>
+                    <span>Custo indireto da empresa nesta folha.</span>
+                  </article>
+                  <article class="stats-card">
+                    <small>Líquido</small>
+                    <strong>${escapeHtml(formatCurrency(employeeTotals.netPay))}</strong>
+                    <span>Valor líquido do funcionário.</span>
+                  </article>
+                </div>
+              </section>
+            `;
+          })
+          .join("");
+
+        return `
+          <section class="summary-grid" style="margin-top:18px;">
+            <article class="stats-card">
+              <small>Funcionários</small>
+              <strong>${escapeHtml(String(totals.employeesCount || draft.employeeIds.length))}</strong>
+              <span>Quantidade de empregados incluídos na competência.</span>
+            </article>
+            <article class="stats-card">
+              <small>Vencimentos</small>
+              <strong>${escapeHtml(formatCurrency(totals.earnings || 0))}</strong>
+              <span>Total bruto de vencimentos da folha.</span>
+            </article>
+            <article class="stats-card">
+              <small>Descontos</small>
+              <strong>${escapeHtml(formatCurrency(totals.deductions || 0))}</strong>
+              <span>Total de descontos lançados.</span>
+            </article>
+            <article class="stats-card">
+              <small>Líquido</small>
+              <strong>${escapeHtml(formatCurrency(totals.netPay || 0))}</strong>
+              <span>Valor líquido total para pagamento.</span>
+            </article>
+          </section>
+          <section class="summary-grid" style="margin-top:18px;">
+            <article class="stats-card">
+              <small>Encargos</small>
+              <strong>${escapeHtml(formatCurrency(totals.employerCharges || 0))}</strong>
+              <span>Encargos da empresa configurados na folha.</span>
+            </article>
+            <article class="stats-card">
+              <small>Provisões</small>
+              <strong>${escapeHtml(formatCurrency(totals.provisions || 0))}</strong>
+              <span>Valores provisionados nesta competência.</span>
+            </article>
+            <article class="stats-card">
+              <small>Informativos</small>
+              <strong>${escapeHtml(formatCurrency(totals.informational || 0))}</strong>
+              <span>Eventos informativos sem impacto no líquido.</span>
+            </article>
+            <article class="stats-card">
+              <small>Custo total</small>
+              <strong>${escapeHtml(formatCurrency(totals.totalCompanyCost || 0))}</strong>
+              <span>Vencimentos + encargos + provisões.</span>
+            </article>
+          </section>
+          ${employeeSummaries}
+        `;
+      }
+
+
       function initialize() {
         loadCollections();
         CLOUD.init();
@@ -2237,6 +3925,7 @@
         migrateDocumentTypes();
         migrateInvoices();
         migrateFinancialNatures();
+        migratePayrollCollections();
       }
 
       // Converte naturezas financeiras do formato antigo (uma única conta contábil) para o
@@ -2346,7 +4035,10 @@
           documentTypes: [...state.data.documentTypes],
           accountingEvents: [...state.data.accountingEvents],
           settlementEvents: [...state.data.settlementEvents],
-          settlements: [...state.data.settlements]
+          settlements: [...state.data.settlements],
+          employees: [...state.data.employees],
+          payrollEvents: [...state.data.payrollEvents],
+          payrollRuns: [...state.data.payrollRuns]
         };
       }
 
@@ -2914,6 +4606,73 @@
           case "delete-accounting-entry":
             deleteAccountingEntry(id);
             break;
+          case "switch-payroll-panel":
+            state.ui.payrollPanel = target.dataset.panel || "employees";
+            renderApp();
+            break;
+          case "reset-employee":
+            state.ui.editing.employeeId = null;
+            state.ui.employeeFormDraft = createEmptyEmployeeDraft();
+            state.ui.payrollPanel = "employees";
+            renderApp();
+            break;
+          case "edit-employee":
+            {
+              const record = getEmployeeById(id);
+              state.ui.employeeFormDraft = createEmptyEmployeeDraft(record);
+            }
+            state.ui.editing.employeeId = id;
+            state.ui.payrollPanel = "employees";
+            navigate("payroll");
+            break;
+          case "delete-employee":
+            deleteEmployee(id);
+            break;
+          case "reset-payroll-event":
+            state.ui.editing.payrollEventId = null;
+            state.ui.payrollEventFormDraft = createEmptyPayrollEventDraft();
+            state.ui.payrollPanel = "events";
+            renderApp();
+            break;
+          case "edit-payroll-event":
+            {
+              const record = getPayrollEventById(id);
+              state.ui.payrollEventFormDraft = createEmptyPayrollEventDraft(record);
+            }
+            state.ui.editing.payrollEventId = id;
+            state.ui.payrollPanel = "events";
+            navigate("payroll");
+            break;
+          case "delete-payroll-event":
+            deletePayrollEvent(id);
+            break;
+          case "new-payroll-run":
+            state.ui.editing.payrollRunId = null;
+            state.ui.payrollRunDraft = createEmptyPayrollRunDraft();
+            state.ui.payrollPanel = "runs";
+            navigate("payroll");
+            break;
+          case "edit-payroll-run":
+            startPayrollRunEdit(id);
+            break;
+          case "delete-payroll-run":
+            deletePayrollRun(id);
+            break;
+          case "calculate-payroll-run":
+            calculatePayrollRunAction(id);
+            break;
+          case "post-payroll-run":
+            {
+              const record = id ? getPayrollRunById(id) : getPayrollRunById(state.ui.payrollRunDraft.id);
+              syncPayrollAccountingEntries(record);
+            }
+            break;
+          case "remove-payroll-entries":
+            removePayrollEntriesAction(id || state.ui.payrollRunDraft.id);
+            break;
+          case "close-payroll-run":
+            closePayrollRunAction(id || state.ui.payrollRunDraft.id);
+            break;
           case "delete-invoice":
             deleteInvoice(id);
             break;
@@ -2993,6 +4752,15 @@
           case "settlement":
             submitSettlement(new FormData(form));
             break;
+          case "employee":
+            submitEmployee(new FormData(form));
+            break;
+          case "payroll-event":
+            submitPayrollEvent(new FormData(form));
+            break;
+          case "payroll-run":
+            submitPayrollRun(new FormData(form));
+            break;
           case "cloud-config":
             submitCloudConfig(new FormData(form));
             break;
@@ -3011,6 +4779,36 @@
         if (searchKey) {
           state.ui.search[searchKey] = target.value || "";
           renderApp();
+          return;
+        }
+
+        if (target instanceof HTMLInputElement && target.dataset.payrollEmployeeToggle) {
+          const employeeId = target.dataset.payrollEmployeeToggle;
+          const currentIds = new Set(state.ui.payrollRunDraft.employeeIds || []);
+          if (target.checked) {
+            currentIds.add(employeeId);
+          } else {
+            currentIds.delete(employeeId);
+          }
+          state.ui.payrollRunDraft.employeeIds = Array.from(currentIds);
+          state.ui.payrollRunDraft.lines = (state.ui.payrollRunDraft.lines || []).filter((line) => state.ui.payrollRunDraft.employeeIds.includes(line.employeeId));
+          state.ui.payrollRunDraft.totals = calculatePayrollTotals(state.ui.payrollRunDraft.lines || [], state.ui.payrollRunDraft.employeeIds || []);
+          renderApp();
+          return;
+        }
+
+        if (target.dataset.payrollLineId && target.dataset.lineField) {
+          const lineId = target.dataset.payrollLineId;
+          const lineField = target.dataset.lineField;
+          state.ui.payrollRunDraft.lines = (state.ui.payrollRunDraft.lines || []).map((line) => {
+            if (line.id !== lineId) {
+              return line;
+            }
+            return {
+              ...line,
+              [lineField]: target.value
+            };
+          });
           return;
         }
 
@@ -3065,6 +4863,31 @@
           state.ui.trialBalanceFilters[fieldName] = nextValue;
           state.ui.trialBalanceFilters.submitted = false;
           renderApp();
+        }
+
+        if (formType === "employee") {
+          state.ui.employeeFormDraft[fieldName] = target instanceof HTMLInputElement && target.type === "checkbox" ? target.checked : target.value;
+        }
+
+        if (formType === "payroll-event") {
+          if (fieldName.startsWith("incidence_")) {
+            const key = fieldName.replace("incidence_", "");
+            state.ui.payrollEventFormDraft.incidence[key] = target instanceof HTMLInputElement ? target.checked : Boolean(target.value);
+          } else if (fieldName === "generateAccountingEntry" || fieldName === "isActive") {
+            state.ui.payrollEventFormDraft[fieldName] = target instanceof HTMLInputElement ? target.checked : Boolean(target.value);
+            renderApp();
+            return;
+          } else {
+            state.ui.payrollEventFormDraft[fieldName] = target.value;
+            if (fieldName === "calculationType" || fieldName === "baseType") {
+              renderApp();
+              return;
+            }
+          }
+        }
+
+        if (formType === "payroll-run") {
+          state.ui.payrollRunDraft[fieldName] = target instanceof HTMLInputElement && target.type === "checkbox" ? target.checked : target.value;
         }
 
         if (formType === "cloud-config") {
@@ -5157,7 +6980,9 @@
                       ? `<button class="primary-button" type="button" data-action="new-invoice">Nova nota fiscal</button>`
                       : state.ui.activeView === "accountingEntries"
                         ? `<button class="primary-button" type="button" data-action="open-accounting-entries">Lançamentos contábeis</button>`
-                        : ""}
+                        : state.ui.activeView === "payroll"
+                          ? `<button class="primary-button" type="button" data-action="new-payroll-run">Nova folha</button>`
+                          : ""}
                   </div>
                 </header>
                 <div class="page-content">
@@ -5191,6 +7016,7 @@
           { view: "financialNatures", title: "Naturezas", subtitle: "Classificação financeira" },
           { view: "items", title: "Itens", subtitle: "Base para notas" },
           { view: "accountingEntries", title: "Contábil", subtitle: "Lançamentos e balancete" },
+          { view: "payroll", title: "Folha", subtitle: "Funcionários e folha" },
           { view: "fiscal", title: "Fiscal", subtitle: "Notas fiscais" },
           { view: "financeiro", title: "Financeiro", subtitle: "Parcelas e baixas" }
         ];
@@ -5255,6 +7081,8 @@
             return renderItemsView();
           case "accountingEntries":
             return renderAccountingEntriesView();
+          case "payroll":
+            return renderPayrollView();
           case "fiscal":
             return renderFiscalView();
           case "financeiro":
@@ -7330,6 +9158,9 @@
         }
         if (entry.origin === "settlement-event") {
           return "Evento de baixa";
+        }
+        if (entry.origin === "payroll-event") {
+          return "Evento da folha";
         }
         return "Lançamento manual";
       }
