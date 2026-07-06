@@ -4212,6 +4212,64 @@
         return false;
       }
 
+      function getPayrollTitlePayableAccountId(payrollTitle) {
+        if (!payrollTitle) return "";
+        if (payrollTitle.payableAccountId) return payrollTitle.payableAccountId;
+
+        if (payrollTitle.eventId) {
+          const runItem = state.data.payrollRunItems.find((item) => item.runId === payrollTitle.runId && item.eventId === payrollTitle.eventId && item.employeeId === payrollTitle.employeeId);
+          const mapping = runItem ? getPayrollMappingForItem(runItem) : null;
+          if (mapping?.creditAccountId) return mapping.creditAccountId;
+          const event = getPayrollEventById(payrollTitle.eventId);
+          if (event?.creditAccountId) return event.creditAccountId;
+        }
+
+        const params = getActivePayrollParameters(payrollTitle.competence);
+        if ((payrollTitle.description || "").toLowerCase().includes("salário líquido")) {
+          return params?.salaryPayableAccountId || "";
+        }
+        return params?.chargesPayableAccountId || params?.salaryPayableAccountId || "";
+      }
+
+      function generatePayrollSettlementAccountingEntry(settlement, payrollTitle) {
+        const id = `auto-payroll-payable-${settlement.id}`;
+        let entries = state.data.accountingEntries.filter((entry) => entry.id !== id);
+        const payableAccountId = getPayrollTitlePayableAccountId(payrollTitle);
+        const payableAccount = getChartAccountById(payableAccountId);
+        const payingAccount = getChartAccountById(settlement.payingAccountId);
+        const run = getPayrollRunById(payrollTitle.runId);
+        const employee = getPayrollEmployeeById(payrollTitle.employeeId);
+        const costCenterId = payrollTitle.costCenterId || employee?.costCenterId || "";
+
+        if (payableAccount && isChartAccountAvailableForLinks(payableAccount) && payingAccount && isChartAccountAvailableForLinks(payingAccount)) {
+          entries.push({
+            id,
+            code: id,
+            entryDate: settlement.settlementDate,
+            description: `Baixa - ${payrollTitle.description || "Título financeiro da folha"}`,
+            costCenterId,
+            debitAccountId: payableAccountId,
+            creditAccountId: settlement.payingAccountId,
+            amount: settlement.amount,
+            origin: "settlement-event",
+            batchName: "Lançamentos a Pagar",
+            sourcePayrollRunId: payrollTitle.runId,
+            sourcePayrollRunCode: run?.code || payrollTitle.competence || "Folha",
+            sourcePayrollTitleId: payrollTitle.id,
+            sourcePayrollTitleCode: payrollTitle.code,
+            sourceSettlementId: settlement.id,
+            competence: payrollTitle.competence,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+          saveCollection("accountingEntries", entries);
+          return true;
+        }
+
+        saveCollection("accountingEntries", entries);
+        return false;
+      }
+
       function submitSettlement(formData) {
         const target = state.ui.settlementTarget;
         if (!target) {
@@ -4266,11 +4324,13 @@
 
           const nextSettlements = [settlement, ...state.data.settlements];
           saveCollection("settlements", nextSettlements);
+          const generated = generatePayrollSettlementAccountingEntry(settlement, payrollTitle);
 
           const newSettled = roundCurrency(alreadySettled + amount);
           const nextStatus = roundCurrency(toDecimal(payrollTitle.amount) - newSettled) <= 0.009 ? "Quitada" : "Parcial";
           upsertRecord("payrollFinancialEntries", {
             ...payrollTitle,
+            payableAccountId: payrollTitle.payableAccountId || getPayrollTitlePayableAccountId(payrollTitle),
             status: nextStatus,
             paidAmount: newSettled,
             remainingAmount: Math.max(0, roundCurrency(toDecimal(payrollTitle.amount) - newSettled)),
@@ -4283,7 +4343,13 @@
           state.ui.settlementTarget = null;
           state.ui.settlementFormDraft = createEmptySettlementDraft();
 
-          notify("success", "Baixa", "Título financeiro da folha baixado no módulo financeiro.");
+          notify(
+            "success",
+            "Baixa",
+            generated
+              ? "Título financeiro da folha baixado e lançamento enviado para Contábil > Lançamentos a Pagar."
+              : "Título financeiro da folha baixado. Configure a conta a pagar da folha para gerar o lançamento em Contábil > Lançamentos a Pagar."
+          );
           renderApp();
           return;
         }
@@ -7432,7 +7498,7 @@
                   const debit = getChartAccountById(record.debitAccountId);
                   const credit = getChartAccountById(record.creditAccountId);
                   const invoice = state.data.invoices.find((item) => item.id === record.sourceInvoiceId);
-                  const documentLabel = record.sourcePayrollRunCode || invoice?.documentNumber || invoice?.code || record.code || "-";
+                  const documentLabel = record.sourcePayrollTitleCode || record.sourcePayrollRunCode || invoice?.documentNumber || invoice?.code || record.code || "-";
                   const originLabel = record.batchName || invoice?.type || getAccountingEntryOriginLabel(record);
                   return `
                     <tr>
@@ -7630,7 +7696,7 @@
           return "Evento contábil";
         }
         if (entry.origin === "settlement-event") {
-          return "Evento de baixa";
+          return entry.sourcePayrollTitleId ? "Baixa financeira da folha" : "Evento de baixa";
         }
         if (entry.origin === "payroll-accounting") {
           return entry.batchName || PAYROLL_ACCOUNTING_BATCH_NAME;
@@ -8495,6 +8561,7 @@
         });
         migratePayrollFinancialEntriesDestination();
         seedPayrollDefaults();
+        migratePayrollPayableAccountingEntries();
       }
 
       function migratePayrollFinancialEntriesDestination() {
@@ -8503,18 +8570,69 @@
         }
         let changed = false;
         state.data.payrollFinancialEntries = state.data.payrollFinancialEntries.map((entry) => {
-          if (entry.destinationModule === "financeiro" && entry.destinationName === "Módulo financeiro") {
-            return entry;
-          }
-          changed = true;
-          return {
+          const next = {
             ...entry,
             destinationModule: "financeiro",
             destinationName: "Módulo financeiro"
           };
+          if (!next.payableAccountId) {
+            const payableAccountId = getPayrollTitlePayableAccountId(next);
+            if (payableAccountId) {
+              next.payableAccountId = payableAccountId;
+            }
+          }
+          if (JSON.stringify(next) !== JSON.stringify(entry)) {
+            changed = true;
+          }
+          return next;
         });
         if (changed) {
           persistCollection("payrollFinancialEntries");
+        }
+      }
+
+      function migratePayrollPayableAccountingEntries() {
+        if (!Array.isArray(state.data.settlements) || !state.data.settlements.length || !Array.isArray(state.data.payrollFinancialEntries)) {
+          return;
+        }
+        const entriesToCreate = [];
+        state.data.settlements.forEach((settlement) => {
+          if (!settlement.payrollFinancialEntryId) return;
+          const id = `auto-payroll-payable-${settlement.id}`;
+          const alreadyExists = state.data.accountingEntries.some((entry) => entry.id === id);
+          if (alreadyExists) return;
+          const payrollTitle = state.data.payrollFinancialEntries.find((entry) => entry.id === settlement.payrollFinancialEntryId);
+          if (!payrollTitle) return;
+          const payableAccountId = getPayrollTitlePayableAccountId(payrollTitle);
+          const payableAccount = getChartAccountById(payableAccountId);
+          const payingAccount = getChartAccountById(settlement.payingAccountId);
+          if (!payableAccount || !isChartAccountAvailableForLinks(payableAccount) || !payingAccount || !isChartAccountAvailableForLinks(payingAccount)) return;
+          const run = getPayrollRunById(payrollTitle.runId);
+          const employee = getPayrollEmployeeById(payrollTitle.employeeId);
+          entriesToCreate.push({
+            id,
+            code: id,
+            entryDate: settlement.settlementDate,
+            description: `Baixa - ${payrollTitle.description || "Título financeiro da folha"}`,
+            costCenterId: payrollTitle.costCenterId || employee?.costCenterId || "",
+            debitAccountId: payableAccountId,
+            creditAccountId: settlement.payingAccountId,
+            amount: settlement.amount,
+            origin: "settlement-event",
+            batchName: "Lançamentos a Pagar",
+            sourcePayrollRunId: payrollTitle.runId,
+            sourcePayrollRunCode: run?.code || payrollTitle.competence || "Folha",
+            sourcePayrollTitleId: payrollTitle.id,
+            sourcePayrollTitleCode: payrollTitle.code,
+            sourceSettlementId: settlement.id,
+            competence: payrollTitle.competence,
+            createdAt: settlement.createdAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+        });
+        if (entriesToCreate.length) {
+          state.data.accountingEntries.push(...entriesToCreate);
+          persistCollection("accountingEntries");
         }
       }
 
@@ -9308,10 +9426,10 @@
           const employee = getPayrollEmployeeById(item.employeeId);
           accountingEntries.push({ id: generateId(), code: `FLC${String(state.data.payrollAccountingEntries.length + accountingEntries.length + 1).padStart(7, "0")}`, runId: id, runCode: run.code, competence: run.competence, employeeId: item.employeeId, eventId: item.eventId, date: `${run.competence}-28`, debitAccountId: mapping.debitAccountId, creditAccountId: mapping.creditAccountId, costCenterId: mapping.costCenterId || employee?.costCenterId || "", amount: item.amount, history: mapping.defaultHistory || `Folha ${run.competence} - ${item.eventName}`, status: "Gerado", createdAt: payrollNow(), updatedAt: payrollNow() });
           if (item.eventType === "Desconto" || item.eventType === "Informativa") {
-            financialEntries.push({ id: generateId(), code: `FFT${String(state.data.payrollFinancialEntries.length + financialEntries.length + 1).padStart(7, "0")}`, runId: id, employeeId: item.employeeId, eventId: item.eventId, competence: run.competence, dueDate: `${run.competence}-${String(params.paymentDay || 5).padStart(2, "0")}`, amount: item.amount, costCenterId: mapping.costCenterId || employee?.costCenterId || "", financialNatureId: mapping.financialNatureId || "", description: `Folha ${run.competence} - ${item.eventName}`, status: "Em aberto", destinationModule: "financeiro", destinationName: "Módulo financeiro", createdAt: payrollNow(), updatedAt: payrollNow() });
+            financialEntries.push({ id: generateId(), code: `FFT${String(state.data.payrollFinancialEntries.length + financialEntries.length + 1).padStart(7, "0")}`, runId: id, employeeId: item.employeeId, eventId: item.eventId, competence: run.competence, dueDate: `${run.competence}-${String(params.paymentDay || 5).padStart(2, "0")}`, amount: item.amount, costCenterId: mapping.costCenterId || employee?.costCenterId || "", financialNatureId: mapping.financialNatureId || "", payableAccountId: mapping.creditAccountId || params.chargesPayableAccountId || "", description: `Folha ${run.competence} - ${item.eventName}`, status: "Em aberto", destinationModule: "financeiro", destinationName: "Módulo financeiro", createdAt: payrollNow(), updatedAt: payrollNow() });
           }
         });
-        financialEntries.push({ id: generateId(), code: `FFT${String(state.data.payrollFinancialEntries.length + financialEntries.length + 1).padStart(7, "0")}`, runId: id, employeeId: "", eventId: "", competence: run.competence, dueDate: `${run.competence}-${String(params.paymentDay || 5).padStart(2, "0")}`, amount: run.netPayable, costCenterId: "", financialNatureId: "", description: `Salário líquido a pagar - ${run.code}`, status: "Em aberto", destinationModule: "financeiro", destinationName: "Módulo financeiro", createdAt: payrollNow(), updatedAt: payrollNow() });
+        financialEntries.push({ id: generateId(), code: `FFT${String(state.data.payrollFinancialEntries.length + financialEntries.length + 1).padStart(7, "0")}`, runId: id, employeeId: "", eventId: "", competence: run.competence, dueDate: `${run.competence}-${String(params.paymentDay || 5).padStart(2, "0")}`, amount: run.netPayable, costCenterId: "", financialNatureId: "", payableAccountId: params.salaryPayableAccountId || "", description: `Salário líquido a pagar - ${run.code}`, status: "Em aberto", destinationModule: "financeiro", destinationName: "Módulo financeiro", createdAt: payrollNow(), updatedAt: payrollNow() });
         const accountingModuleEntries = accountingEntries.map((entry) => ({
           id: `auto-payroll-accounting-${entry.id}`,
           code: entry.code,
@@ -9368,11 +9486,16 @@
         const removedAccountingEntries = state.data.payrollAccountingEntries.filter((item) => item.runId === id).length;
         const removedFinancialEntries = payrollTitleIds.length;
         const removedSettlements = state.data.settlements.filter((item) => payrollTitleIds.includes(item.payrollFinancialEntryId)).length;
+        const removedPayableEntries = state.data.accountingEntries.filter((item) => item.origin === "settlement-event" && item.sourcePayrollRunId === id).length;
 
         state.data.payrollAccountingEntries = state.data.payrollAccountingEntries.filter((item) => item.runId !== id);
         state.data.payrollFinancialEntries = state.data.payrollFinancialEntries.filter((item) => item.runId !== id);
         state.data.settlements = state.data.settlements.filter((item) => !payrollTitleIds.includes(item.payrollFinancialEntryId));
-        state.data.accountingEntries = state.data.accountingEntries.filter((item) => !(item.origin === "payroll-accounting" && item.sourcePayrollRunId === id));
+        state.data.accountingEntries = state.data.accountingEntries.filter((item) => {
+          if (item.origin === "payroll-accounting" && item.sourcePayrollRunId === id) return false;
+          if (item.origin === "settlement-event" && item.sourcePayrollRunId === id) return false;
+          return true;
+        });
 
         const reopenedRun = {
           ...run,
@@ -9395,7 +9518,7 @@
 
         ["accountingEntries", "settlements", "payrollAccountingEntries", "payrollFinancialEntries", "payrollRuns", "payrollPeriods"].forEach(persistCollection);
         CLOUD.schedulePush(getDataSnapshot());
-        notify("success", "Reabertura", `Folha reaberta. Removidos ${removedAccountingEntries} lançamentos contábeis, ${removedFinancialEntries} títulos financeiros e ${removedSettlements} baixas vinculadas.`);
+        notify("success", "Reabertura", `Folha reaberta. Removidos ${removedAccountingEntries} lançamentos contábeis, ${removedFinancialEntries} títulos financeiros, ${removedSettlements} baixas vinculadas e ${removedPayableEntries} lançamento(s) a pagar do contábil.`);
         state.ui.payrollSelectedRunId = id;
         renderApp();
       }
