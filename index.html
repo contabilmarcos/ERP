@@ -2064,6 +2064,7 @@
           accountingEventFormDraft: createEmptyAccountingEventDraft(),
           settlementEventFormDraft: createEmptySettlementEventDraft(),
           eventEntriesModalOpen: false,
+          payrollAccountingLotModalOpen: false,
           payableEntriesModalOpen: false,
           settlementModalOpen: false,
           settlementTarget: null,
@@ -2970,6 +2971,14 @@
             break;
           case "close-event-entries-modal":
             state.ui.eventEntriesModalOpen = false;
+            renderApp();
+            break;
+          case "open-payroll-accounting-lot-modal":
+            state.ui.payrollAccountingLotModalOpen = true;
+            renderApp();
+            break;
+          case "close-payroll-accounting-lot-modal":
+            state.ui.payrollAccountingLotModalOpen = false;
             renderApp();
             break;
           case "open-payable-entries-modal":
@@ -4562,7 +4571,7 @@
       function getFilteredAccountingEntries() {
         const filters = state.ui.accountingEntryFilters;
         return state.data.accountingEntries.filter((record) => {
-          if (record.origin === "accounting-event" || record.origin === "settlement-event") {
+          if (record.origin) {
             return false;
           }
           const matchesStartDate = !filters.startDate || record.entryDate >= filters.startDate;
@@ -5460,6 +5469,7 @@
           || state.ui.trialBalanceModalOpen
           || state.ui.trialBalanceReportModalOpen
           || state.ui.eventEntriesModalOpen
+          || state.ui.payrollAccountingLotModalOpen
           || state.ui.payableEntriesModalOpen
           || state.ui.settlementModalOpen
         );
@@ -5509,6 +5519,7 @@
           ${state.ui.trialBalanceModalOpen ? renderTrialBalanceModal() : ""}
           ${state.ui.trialBalanceReportModalOpen ? renderTrialBalanceReportModal() : ""}
           ${state.ui.eventEntriesModalOpen ? renderEventEntriesModal() : ""}
+          ${state.ui.payrollAccountingLotModalOpen ? renderPayrollAccountingLotModal() : ""}
           ${state.ui.payableEntriesModalOpen ? renderPayableEntriesModal() : ""}
           ${state.ui.settlementModalOpen ? renderSettlementModal() : ""}
         `;
@@ -7460,11 +7471,13 @@
 
 
       function renderAccountingEntriesView() {
-        const reportCount = state.data.accountingEntries.filter((entry) => entry.origin !== "accounting-event" && entry.origin !== "settlement-event").length;
+        const reportCount = state.data.accountingEntries.filter((entry) => !entry.origin).length;
         const costCenterCount = state.data.costCenters.length;
         const accountCount = getSelectableChartAccounts().length;
         const eventEntriesCount = state.data.accountingEntries.filter((entry) => entry.origin === "accounting-event").length;
-        const payableEntriesCount = state.data.accountingEntries.filter((entry) => entry.origin === "settlement-event").length;
+        const payrollAccountingCount = state.data.accountingEntries.filter((entry) => entry.origin === "payroll-accounting").length;
+        const payrollPayableCount = state.data.payrollFinancialEntries.length;
+        const payableEntriesCount = state.data.accountingEntries.filter((entry) => entry.origin === "settlement-event").length + payrollPayableCount;
 
         return `
           <section class="card">
@@ -7493,9 +7506,17 @@
                 </div>
               </article>
               <article class="option-card">
+                <h3>Lançamentos da folha</h3>
+                <p>Lote contábil criado para receber automaticamente os lançamentos contábeis gerados no fechamento da folha.</p>
+                <small>${escapeHtml(String(payrollAccountingCount))} lançamento(s) no lote ${escapeHtml(PAYROLL_ACCOUNTING_BATCH_NAME)}.</small>
+                <div class="form-actions">
+                  <button class="secondary-button" type="button" data-action="open-payroll-accounting-lot-modal">Abrir lote da folha</button>
+                </div>
+              </article>
+              <article class="option-card">
                 <h3>Lançamentos a Pagar</h3>
-                <p>Lançamentos gerados automaticamente pelos eventos de baixa quando uma parcela é baixada no módulo financeiro.</p>
-                <small>${escapeHtml(String(payableEntriesCount))} lançamento(s) gerado(s) por eventos de baixa.</small>
+                <p>Lançamentos de baixa do financeiro e títulos financeiros da folha, incluindo salários líquidos e encargos a recolher.</p>
+                <small>${escapeHtml(String(payableEntriesCount))} lançamento(s)/título(s) a pagar.</small>
                 <div class="form-actions">
                   <button class="secondary-button" type="button" data-action="open-payable-entries-modal">Abrir lançamentos a pagar</button>
                 </div>
@@ -7562,13 +7583,15 @@
                   const debit = getChartAccountById(record.debitAccountId);
                   const credit = getChartAccountById(record.creditAccountId);
                   const invoice = state.data.invoices.find((item) => item.id === record.sourceInvoiceId);
+                  const documentLabel = record.sourcePayrollRunCode || invoice?.documentNumber || invoice?.code || record.code || "-";
+                  const originLabel = record.batchName || invoice?.type || getAccountingEntryOriginLabel(record);
                   return `
                     <tr>
                       <td>${escapeHtml(formatDate(record.entryDate))}</td>
-                      <td class="mono">${escapeHtml(invoice?.documentNumber || invoice?.code || "-")}</td>
+                      <td class="mono">${escapeHtml(documentLabel)}</td>
                       <td>
                         <strong>${escapeHtml(record.description || "Sem descrição")}</strong>
-                        <div class="table-muted">${escapeHtml(invoice?.type || "")}</div>
+                        <div class="table-muted">${escapeHtml(originLabel || "")}</div>
                       </td>
                       <td>${escapeHtml(costCenter?.name || "-")}</td>
                       <td>
@@ -7624,11 +7647,108 @@
         `;
       }
 
+      function renderPayrollAccountingLotModal() {
+        const records = state.data.accountingEntries
+          .filter((entry) => entry.origin === "payroll-accounting")
+          .slice()
+          .sort((a, b) => (b.entryDate || "").localeCompare(a.entryDate || "") || (a.code || "").localeCompare(b.code || ""));
+
+        return `
+          <div class="modal-overlay">
+            <button class="modal-backdrop" type="button" data-action="close-payroll-accounting-lot-modal" aria-label="Fechar modal"></button>
+            <div class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="payroll-accounting-lot-modal-title">
+              <div class="modal-header">
+                <div>
+                  <h3 class="modal-title" id="payroll-accounting-lot-modal-title">${escapeHtml(PAYROLL_ACCOUNTING_BATCH_NAME)}</h3>
+                  <p class="modal-subtitle">Lote contábil gerado automaticamente pelo fechamento da folha de pagamento.</p>
+                </div>
+                <div class="inline-actions">
+                  <button class="ghost-button" type="button" data-action="close-payroll-accounting-lot-modal">Fechar</button>
+                </div>
+              </div>
+              <div class="modal-body">
+                <section class="notice-card">
+                  <div class="notice-icon">LF</div>
+                  <div>
+                    <strong>Lote contábil da folha</strong>
+                    <p>Os lançamentos abaixo também alimentam o balancete, porque ficam gravados no módulo contábil com origem de folha e lote ${escapeHtml(PAYROLL_ACCOUNTING_BATCH_NAME)}.</p>
+                  </div>
+                </section>
+                <section class="table-card">
+                  <div class="table-toolbar">
+                    <div>
+                      <h4>Lançamentos contábeis da folha</h4>
+                      <p class="page-subtitle">${escapeHtml(String(records.length))} lançamento(s) encontrado(s).</p>
+                    </div>
+                  </div>
+                  ${renderAutoEntriesTable(records, "Feche uma folha processada para gerar lançamentos neste lote.")}
+                </section>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderPayrollFinancialEntriesTable(records) {
+        if (!records.length) {
+          return `
+            <div class="empty-card">
+              <strong>Nenhum título financeiro da folha encontrado.</strong>
+              <p>Feche uma folha processada para enviar salários líquidos e encargos para lançamentos a pagar.</p>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Vencimento</th>
+                  <th>Título</th>
+                  <th>Competência</th>
+                  <th>Funcionário</th>
+                  <th>Centro de custo</th>
+                  <th>Natureza</th>
+                  <th>Valor</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${records.map((record) => {
+                  const employee = getPayrollEmployeeById(record.employeeId);
+                  const costCenter = getCostCenterById(record.costCenterId);
+                  const nature = getFinancialNatureById(record.financialNatureId);
+                  return `
+                    <tr>
+                      <td>${escapeHtml(formatDate(record.dueDate))}</td>
+                      <td>
+                        <strong>${escapeHtml(record.code || "-")}</strong>
+                        <div class="table-muted">${escapeHtml(record.description || "Título financeiro da folha")}</div>
+                      </td>
+                      <td>${escapeHtml(record.competence || "-")}</td>
+                      <td>${escapeHtml(employee?.name || "Geral da folha")}</td>
+                      <td>${escapeHtml(costCenter?.name || "-")}</td>
+                      <td>${escapeHtml(nature?.name || "-")}</td>
+                      <td class="mono">${escapeHtml(formatCurrency(record.amount))}</td>
+                      <td>${renderStatusBadge(record.status || "Em aberto")}</td>
+                    </tr>
+                  `;
+                }).join("")}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
       function renderPayableEntriesModal() {
         const records = state.data.accountingEntries
           .filter((entry) => entry.origin === "settlement-event")
           .slice()
           .sort((a, b) => (b.entryDate || "").localeCompare(a.entryDate || ""));
+        const payrollTitles = state.data.payrollFinancialEntries
+          .slice()
+          .sort((a, b) => (b.dueDate || "").localeCompare(a.dueDate || "") || (a.code || "").localeCompare(b.code || ""));
 
         return `
           <div class="modal-overlay">
@@ -7637,13 +7757,22 @@
               <div class="modal-header">
                 <div>
                   <h3 class="modal-title" id="payable-entries-modal-title">Lançamentos a Pagar</h3>
-                  <p class="modal-subtitle">Lançamentos contábeis gerados automaticamente pelos eventos de baixa ao dar baixa nas parcelas no módulo financeiro.</p>
+                  <p class="modal-subtitle">Lançamentos de baixa do financeiro e títulos financeiros gerados pela folha de pagamento.</p>
                 </div>
                 <div class="inline-actions">
                   <button class="ghost-button" type="button" data-action="close-payable-entries-modal">Fechar</button>
                 </div>
               </div>
               <div class="modal-body">
+                <section class="table-card">
+                  <div class="table-toolbar">
+                    <div>
+                      <h4>Títulos financeiros da folha</h4>
+                      <p class="page-subtitle">${escapeHtml(String(payrollTitles.length))} título(s) gerado(s) no fechamento da folha.</p>
+                    </div>
+                  </div>
+                  ${renderPayrollFinancialEntriesTable(payrollTitles)}
+                </section>
                 <section class="table-card">
                   <div class="table-toolbar">
                     <div>
@@ -7665,6 +7794,12 @@
         }
         if (entry.origin === "settlement-event") {
           return "Evento de baixa";
+        }
+        if (entry.origin === "payroll-accounting") {
+          return entry.batchName || PAYROLL_ACCOUNTING_BATCH_NAME;
+        }
+        if (entry.origin === "payroll-payable") {
+          return "Título financeiro da folha";
         }
         return "Lançamento manual";
       }
@@ -8293,6 +8428,7 @@
       const PAYROLL_EVENT_TYPES = ["Provento", "Desconto", "Informativa", "Base de cálculo"];
       const PAYROLL_EVENT_NATURES = ["Salário", "Hora extra", "Adicional", "Falta", "DSR", "INSS", "IRRF", "FGTS", "Férias", "13º", "Rescisão", "Vale-transporte", "Vale-alimentação", "Adiantamento", "Pensão", "Outros"];
       const PAYROLL_CALC_TYPES = ["Valor fixo", "Percentual", "Fórmula", "Quantidade x valor", "Tabela progressiva"];
+      const PAYROLL_ACCOUNTING_BATCH_NAME = "Lançamentos da folha";
 
       function createEmptyPayrollEmployeeDraft(employee) {
         return {
@@ -9288,17 +9424,37 @@
           const employee = getPayrollEmployeeById(item.employeeId);
           accountingEntries.push({ id: generateId(), code: `FLC${String(state.data.payrollAccountingEntries.length + accountingEntries.length + 1).padStart(7, "0")}`, runId: id, runCode: run.code, competence: run.competence, employeeId: item.employeeId, eventId: item.eventId, date: `${run.competence}-28`, debitAccountId: mapping.debitAccountId, creditAccountId: mapping.creditAccountId, costCenterId: mapping.costCenterId || employee?.costCenterId || "", amount: item.amount, history: mapping.defaultHistory || `Folha ${run.competence} - ${item.eventName}`, status: "Gerado", createdAt: payrollNow(), updatedAt: payrollNow() });
           if (item.eventType === "Desconto" || item.eventType === "Informativa") {
-            financialEntries.push({ id: generateId(), code: `FFT${String(state.data.payrollFinancialEntries.length + financialEntries.length + 1).padStart(7, "0")}`, runId: id, employeeId: item.employeeId, eventId: item.eventId, competence: run.competence, dueDate: `${run.competence}-${String(params.paymentDay || 5).padStart(2, "0")}`, amount: item.amount, costCenterId: mapping.costCenterId || employee?.costCenterId || "", financialNatureId: mapping.financialNatureId || "", description: `Folha ${run.competence} - ${item.eventName}`, status: "Em aberto", createdAt: payrollNow(), updatedAt: payrollNow() });
+            financialEntries.push({ id: generateId(), code: `FFT${String(state.data.payrollFinancialEntries.length + financialEntries.length + 1).padStart(7, "0")}`, runId: id, employeeId: item.employeeId, eventId: item.eventId, competence: run.competence, dueDate: `${run.competence}-${String(params.paymentDay || 5).padStart(2, "0")}`, amount: item.amount, costCenterId: mapping.costCenterId || employee?.costCenterId || "", financialNatureId: mapping.financialNatureId || "", description: `Folha ${run.competence} - ${item.eventName}`, status: "Em aberto", destinationModule: "accounting-payables", destinationName: "Lançamentos a Pagar", createdAt: payrollNow(), updatedAt: payrollNow() });
           }
         });
-        financialEntries.push({ id: generateId(), code: `FFT${String(state.data.payrollFinancialEntries.length + financialEntries.length + 1).padStart(7, "0")}`, runId: id, employeeId: "", eventId: "", competence: run.competence, dueDate: `${run.competence}-${String(params.paymentDay || 5).padStart(2, "0")}`, amount: run.netPayable, costCenterId: "", financialNatureId: "", description: `Salário líquido a pagar - ${run.code}`, status: "Em aberto", createdAt: payrollNow(), updatedAt: payrollNow() });
-        state.data.payrollAccountingEntries.push(...accountingEntries);
-        state.data.payrollFinancialEntries.push(...financialEntries);
-        upsertRecord("payrollRuns", { ...run, status: "Contabilizada", updatedAt: payrollNow() });
+        financialEntries.push({ id: generateId(), code: `FFT${String(state.data.payrollFinancialEntries.length + financialEntries.length + 1).padStart(7, "0")}`, runId: id, employeeId: "", eventId: "", competence: run.competence, dueDate: `${run.competence}-${String(params.paymentDay || 5).padStart(2, "0")}`, amount: run.netPayable, costCenterId: "", financialNatureId: "", description: `Salário líquido a pagar - ${run.code}`, status: "Em aberto", destinationModule: "accounting-payables", destinationName: "Lançamentos a Pagar", createdAt: payrollNow(), updatedAt: payrollNow() });
+        const accountingModuleEntries = accountingEntries.map((entry) => ({
+          id: `auto-payroll-accounting-${entry.id}`,
+          code: entry.code,
+          entryDate: entry.date,
+          description: entry.history,
+          costCenterId: entry.costCenterId,
+          debitAccountId: entry.debitAccountId,
+          creditAccountId: entry.creditAccountId,
+          amount: entry.amount,
+          origin: "payroll-accounting",
+          batchName: PAYROLL_ACCOUNTING_BATCH_NAME,
+          sourcePayrollRunId: id,
+          sourcePayrollRunCode: run.code,
+          sourcePayrollEntryId: entry.id,
+          competence: run.competence,
+          createdAt: payrollNow(),
+          updatedAt: payrollNow()
+        }));
+        state.data.accountingEntries = state.data.accountingEntries.filter((entry) => !(entry.origin === "payroll-accounting" && entry.sourcePayrollRunId === id));
+        state.data.accountingEntries.push(...accountingModuleEntries);
+        state.data.payrollAccountingEntries.push(...accountingEntries.map((entry) => ({ ...entry, accountingBatchName: PAYROLL_ACCOUNTING_BATCH_NAME, accountingModuleEntryId: `auto-payroll-accounting-${entry.id}` })));
+        state.data.payrollFinancialEntries.push(...financialEntries.map((entry) => ({ ...entry, destinationModule: entry.destinationModule || "accounting-payables", destinationName: entry.destinationName || "Lançamentos a Pagar" })));
+        upsertRecord("payrollRuns", { ...run, status: "Contabilizada", accountingBatchName: PAYROLL_ACCOUNTING_BATCH_NAME, updatedAt: payrollNow() });
         const period = getPayrollPeriodById(run.periodId);
         if (period) upsertRecord("payrollPeriods", { ...period, status: "Contabilizada", closeDate: new Date().toISOString().slice(0, 10), updatedAt: payrollNow() });
-        ["payrollAccountingEntries", "payrollFinancialEntries"].forEach(persistCollection);
-        notify("success", "Fechamento", "Folha contabilizada e títulos financeiros gerados.");
+        ["accountingEntries", "payrollAccountingEntries", "payrollFinancialEntries"].forEach(persistCollection);
+        notify("success", "Fechamento", `Folha contabilizada no lote ${PAYROLL_ACCOUNTING_BATCH_NAME} e títulos enviados para Lançamentos a Pagar.`);
         renderApp();
       }
 
@@ -9307,11 +9463,12 @@
         if (!run) return;
         state.data.payrollAccountingEntries = state.data.payrollAccountingEntries.filter((item) => item.runId !== id);
         state.data.payrollFinancialEntries = state.data.payrollFinancialEntries.filter((item) => item.runId !== id);
+        state.data.accountingEntries = state.data.accountingEntries.filter((item) => !(item.origin === "payroll-accounting" && item.sourcePayrollRunId === id));
         upsertRecord("payrollRuns", { ...run, status: "Calculada", updatedAt: payrollNow() });
         const period = getPayrollPeriodById(run.periodId);
         if (period) upsertRecord("payrollPeriods", { ...period, status: "Calculada", updatedAt: payrollNow() });
-        ["payrollAccountingEntries", "payrollFinancialEntries"].forEach(persistCollection);
-        notify("success", "Reabertura", "Lançamentos de integração foram estornados e a folha voltou para cálculo.");
+        ["accountingEntries", "payrollAccountingEntries", "payrollFinancialEntries"].forEach(persistCollection);
+        notify("success", "Reabertura", "Lançamentos do lote da folha e títulos a pagar foram estornados; a folha voltou para cálculo.");
         renderApp();
       }
 
