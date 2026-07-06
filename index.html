@@ -4546,6 +4546,63 @@
         printWindow.print();
       }
 
+      function generateCode(collectionKey) {
+        const config = CODE_CONFIG[collectionKey];
+        if (!config) {
+          return String(collectionKey || "REG").slice(0, 3).toUpperCase() + "-" + Date.now();
+        }
+        const collection = Array.isArray(state.data[collectionKey]) ? state.data[collectionKey] : [];
+        const max = collection.reduce((highest, record) => {
+          const number = extractNumericCode(record.code, config.prefix);
+          return number > highest ? number : highest;
+        }, 0);
+        return config.prefix + String(max + 1).padStart(config.digits, "0");
+      }
+
+      function extractNumericCode(code, prefix) {
+        if (!code || typeof code !== "string" || !code.startsWith(prefix)) {
+          return 0;
+        }
+        const digits = Number(code.slice(prefix.length));
+        return Number.isFinite(digits) ? digits : 0;
+      }
+
+      function generateId() {
+        if (window.crypto && typeof window.crypto.randomUUID === "function") {
+          return window.crypto.randomUUID();
+        }
+        return "id-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+      }
+
+      function getChartAccountById(id) {
+        return state.data.chartAccounts.find((record) => record.id === id) || null;
+      }
+
+      function getChartAccountByCode(code) {
+        const formattedCode = formatAccountCode(code);
+        return state.data.chartAccounts.find((record) => record.code === formattedCode) || null;
+      }
+
+      function getFinancialNatureById(id) {
+        return state.data.financialNatures.find((record) => record.id === id) || null;
+      }
+
+      function getSupplierById(id) {
+        return state.data.suppliers.find((record) => record.id === id) || null;
+      }
+
+      function getCostCenterById(id) {
+        return state.data.costCenters.find((record) => record.id === id) || null;
+      }
+
+      function getDocumentTypeById(id) {
+        return state.data.documentTypes.find((record) => record.id === id) || null;
+      }
+
+      function getDocumentTypeByName(name) {
+        return state.data.documentTypes.find((record) => record.name === name) || null;
+      }
+
       function getItemById(id) {
 
         return state.data.items.find((record) => record.id === id) || null;
