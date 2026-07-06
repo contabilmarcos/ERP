@@ -2991,14 +2991,22 @@
             break;
           case "open-settlement-modal":
             {
-              const invoiceId = target.dataset.invoiceId;
-              const installmentId = target.dataset.installmentId;
-              const invoice = state.data.invoices.find((record) => record.id === invoiceId);
-              const installment = invoice?.installments.find((item) => item.id === installmentId);
-              const remaining = invoice && installment
-                ? roundCurrency(installment.amount - getInstallmentSettledAmount(invoiceId, installmentId))
-                : 0;
-              state.ui.settlementTarget = { invoiceId, installmentId };
+              const payrollTitleId = target.dataset.payrollTitleId;
+              let remaining = 0;
+              if (payrollTitleId) {
+                const payrollTitle = state.data.payrollFinancialEntries.find((record) => record.id === payrollTitleId);
+                remaining = payrollTitle ? roundCurrency(toDecimal(payrollTitle.amount) - getPayrollTitleSettledAmount(payrollTitleId)) : 0;
+                state.ui.settlementTarget = { type: "payroll", payrollTitleId };
+              } else {
+                const invoiceId = target.dataset.invoiceId;
+                const installmentId = target.dataset.installmentId;
+                const invoice = state.data.invoices.find((record) => record.id === invoiceId);
+                const installment = invoice?.installments.find((item) => item.id === installmentId);
+                remaining = invoice && installment
+                  ? roundCurrency(installment.amount - getInstallmentSettledAmount(invoiceId, installmentId))
+                  : 0;
+                state.ui.settlementTarget = { type: "invoice", invoiceId, installmentId };
+              }
               state.ui.settlementFormDraft = {
                 settlementDate: getToday(),
                 payingAccountId: "",
@@ -4174,14 +4182,6 @@
           return;
         }
 
-        const invoice = state.data.invoices.find((record) => record.id === target.invoiceId);
-        const installment = invoice?.installments.find((item) => item.id === target.installmentId);
-
-        if (!invoice || !installment) {
-          notify("error", "Baixa", "Parcela não encontrada.");
-          return;
-        }
-
         const settlementDate = clean(formData.get("settlementDate"));
         const payingAccountId = clean(formData.get("payingAccountId"));
         const amount = Number(clean(formData.get("amount")) || 0);
@@ -4197,13 +4197,70 @@
           return;
         }
 
-        const alreadySettled = getInstallmentSettledAmount(invoice.id, installment.id);
-        const remaining = roundCurrency(installment.amount - alreadySettled);
-
         if (!amount || amount <= 0) {
           notify("error", "Baixa", "Informe um valor de baixa maior que zero.");
           return;
         }
+
+        if (target.type === "payroll") {
+          const payrollTitle = state.data.payrollFinancialEntries.find((record) => record.id === target.payrollTitleId);
+          if (!payrollTitle) {
+            notify("error", "Baixa", "Título financeiro da folha não encontrado.");
+            return;
+          }
+
+          const alreadySettled = getPayrollTitleSettledAmount(payrollTitle.id);
+          const remaining = roundCurrency(toDecimal(payrollTitle.amount) - alreadySettled);
+          if (amount - remaining > 0.009) {
+            notify("error", "Baixa", `O valor da baixa não pode ultrapassar o saldo em aberto de ${formatCurrency(remaining)}.`);
+            return;
+          }
+
+          const settlement = {
+            id: generateId(),
+            code: generateCode("settlements"),
+            payrollFinancialEntryId: payrollTitle.id,
+            settlementDate,
+            payingAccountId,
+            amount: roundCurrency(amount),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+
+          const nextSettlements = [settlement, ...state.data.settlements];
+          saveCollection("settlements", nextSettlements);
+
+          const newSettled = roundCurrency(alreadySettled + amount);
+          const nextStatus = roundCurrency(toDecimal(payrollTitle.amount) - newSettled) <= 0.009 ? "Quitada" : "Parcial";
+          upsertRecord("payrollFinancialEntries", {
+            ...payrollTitle,
+            status: nextStatus,
+            paidAmount: newSettled,
+            remainingAmount: Math.max(0, roundCurrency(toDecimal(payrollTitle.amount) - newSettled)),
+            lastSettlementDate: settlementDate,
+            payingAccountId,
+            updatedAt: payrollNow()
+          });
+
+          state.ui.settlementModalOpen = false;
+          state.ui.settlementTarget = null;
+          state.ui.settlementFormDraft = createEmptySettlementDraft();
+
+          notify("success", "Baixa", "Título financeiro da folha baixado no módulo financeiro.");
+          renderApp();
+          return;
+        }
+
+        const invoice = state.data.invoices.find((record) => record.id === target.invoiceId);
+        const installment = invoice?.installments.find((item) => item.id === target.installmentId);
+
+        if (!invoice || !installment) {
+          notify("error", "Baixa", "Parcela não encontrada.");
+          return;
+        }
+
+        const alreadySettled = getInstallmentSettledAmount(invoice.id, installment.id);
+        const remaining = roundCurrency(installment.amount - alreadySettled);
 
         if (amount - remaining > 0.009) {
           notify("error", "Baixa", `O valor da baixa não pode ultrapassar o saldo em aberto de ${formatCurrency(remaining)}.`);
@@ -4239,315 +4296,6 @@
         renderApp();
       }
 
-      function submitInvoiceLine(formData) {
-        const itemId = clean(formData.get("itemId"));
-        const quantity = Number(clean(formData.get("quantity")) || 0);
-        const unitPrice = Number(clean(formData.get("unitPrice")) || 0);
-
-        if (!itemId) {
-          notify("error", "Itens da nota", "Selecione um item para adicionar à nota fiscal.");
-          return;
-        }
-
-        if (!quantity || quantity <= 0 || !unitPrice || unitPrice <= 0) {
-          notify("error", "Itens da nota", "Informe quantidade e valor unitário maiores que zero.");
-          return;
-        }
-
-        const item = getItemById(itemId);
-        const nature = item ? getFinancialNatureById(item.financialNatureId) : null;
-        const account = nature ? getFinancialNatureAccountForCostCenter(nature, state.ui.invoiceDraft.costCenterId) : null;
-
-        if (!item || !nature || !account || !isChartAccountAvailableForLinks(account) || !isAnalyticalAccount(account)) {
-          notify("error", "Itens da nota", "A natureza financeira deste item não possui conta contábil configurada para o centro de custo da nota (nem um vínculo padrão). Ajuste o centro de custo na aba Dados ou cadastre o vínculo em Naturezas financeiras.");
-          return;
-        }
-
-        state.ui.invoiceDraft.items.push({
-          id: generateId(),
-          itemId: item.id,
-          itemCode: item.code,
-          itemName: item.name,
-          financialNatureId: nature.id,
-          financialNatureName: nature.name,
-          chartAccountId: account.id,
-          chartAccountCode: account.code,
-          chartAccountName: account.name,
-          chartAccountGroup: account.group,
-          chartAccountBalanceNature: account.balanceNature,
-          chartAccountType: account.type,
-          quantity,
-          unitPrice,
-          totalPrice: roundCurrency(quantity * unitPrice)
-        });
-
-        state.ui.invoiceDraft.lineForm = {
-          itemId: "",
-          quantity: 1,
-          unitPrice: ""
-        };
-
-        notify("success", "Itens da nota", "Item adicionado à nota fiscal.");
-        renderApp();
-      }
-
-      function submitInstallment(formData) {
-        const installmentNumber = Number(clean(formData.get("installmentNumber")) || 0);
-        const dueDate = clean(formData.get("dueDate"));
-        const amount = Number(clean(formData.get("amount")) || 0);
-        const paymentMethod = clean(formData.get("paymentMethod"));
-        const status = clean(formData.get("status")) || "Em aberto";
-
-        if (!installmentNumber || installmentNumber <= 0 || !dueDate || !amount || amount <= 0 || !paymentMethod) {
-          notify("error", "Parcelas", "Preencha número da parcela, vencimento, valor e forma de pagamento.");
-          return;
-        }
-
-        const duplicate = state.ui.invoiceDraft.installments.find((installment) => installment.installmentNumber === installmentNumber);
-        if (duplicate) {
-          notify("error", "Parcelas", "Já existe uma parcela com esse número.");
-          return;
-        }
-
-        state.ui.invoiceDraft.installments.push({
-          id: generateId(),
-          installmentNumber,
-          dueDate,
-          amount: roundCurrency(amount),
-          paymentMethod,
-          status
-        });
-
-        state.ui.invoiceDraft.installmentForm = {
-          installmentNumber: state.ui.invoiceDraft.installments.length + 1,
-          dueDate: "",
-          amount: "",
-          paymentMethod: "",
-          status: "Em aberto"
-        };
-
-        notify("success", "Parcelas", "Parcela adicionada à nota fiscal.");
-        renderApp();
-      }
-
-      function startAccountingEntryEdit(entryId) {
-        const entry = state.data.accountingEntries.find((record) => record.id === entryId);
-        if (!entry) {
-          notify("error", "Lançamento contábil", "Lançamento contábil não encontrado para edição.");
-          return;
-        }
-
-        state.ui.accountingEntryDraft = createEmptyAccountingEntryDraft(entry);
-        state.ui.editing.accountingEntryId = entryId;
-        state.ui.activeView = "accountingEntries";
-        state.ui.sidebarOpen = false;
-        state.ui.accountingEntriesModalOpen = false;
-        state.ui.accountingEntryFormModalOpen = true;
-        renderApp();
-      }
-
-      function startInvoiceEdit(invoiceId) {
-        const invoice = state.data.invoices.find((record) => record.id === invoiceId);
-        if (!invoice) {
-          notify("error", "Nota fiscal", "Nota fiscal não encontrada para edição.");
-          return;
-        }
-
-        state.ui.invoiceDraft = createEmptyInvoiceDraft(invoice);
-        state.ui.invoiceModalOpen = true;
-        state.ui.activeInvoiceTab = "dados";
-        navigate("fiscal");
-      }
-
-      function deleteCostCenter(id) {
-        const linkedEntry = state.data.accountingEntries.find((entry) => entry.costCenterId === id);
-        if (linkedEntry) {
-          notify("error", "Centro de custo", "Não é possível excluir: o centro de custo está vinculado a um lançamento contábil.");
-          return;
-        }
-        deleteRecord("costCenters", id, "Centro de custo", "Centro de custo excluído com sucesso.");
-      }
-
-      function deleteSupplier(id) {
-        const linkedInvoice = state.data.invoices.find((invoice) => invoice.supplierId === id);
-        if (linkedInvoice) {
-          notify("error", "Fornecedor", "Não é possível excluir: o fornecedor está vinculado a uma nota fiscal.");
-          return;
-        }
-        deleteRecord("suppliers", id, "Fornecedor", "Fornecedor excluído com sucesso.");
-      }
-
-      function deleteChartAccount(id) {
-        const linkedNature = state.data.financialNatures.find((nature) => (nature.accountMappings || []).some((mapping) => mapping.chartAccountId === id));
-        const linkedItem = state.data.items.find((item) => {
-          const nature = getFinancialNatureById(item.financialNatureId);
-          return Boolean(nature) && (nature.accountMappings || []).some((mapping) => mapping.chartAccountId === id);
-        });
-        const linkedInvoice = state.data.invoices.find((invoice) => invoice.items.some((item) => item.chartAccountId === id));
-        const linkedEntry = state.data.accountingEntries.find((entry) => entry.debitAccountId === id || entry.creditAccountId === id);
-        const account = getChartAccountById(id);
-        const hasChildren = account ? accountHasChildren(account) : false;
-
-        if (hasChildren || linkedNature || linkedItem || linkedInvoice || linkedEntry) {
-          notify("error", "Conta contábil", "Não é possível excluir: a conta contábil possui vínculos ativos.");
-          return;
-        }
-
-        deleteRecord("chartAccounts", id, "Conta contábil", "Conta contábil excluída com sucesso.");
-      }
-
-      function deleteFinancialNature(id) {
-        const linkedItem = state.data.items.find((item) => item.financialNatureId === id);
-        const linkedInvoice = state.data.invoices.find((invoice) => invoice.items.some((item) => item.financialNatureId === id));
-
-        if (linkedItem || linkedInvoice) {
-          notify("error", "Natureza financeira", "Não é possível excluir: a natureza financeira possui vínculos ativos.");
-          return;
-        }
-
-        deleteRecord("financialNatures", id, "Natureza financeira", "Natureza financeira excluída com sucesso.");
-      }
-
-      function deleteItem(id) {
-        const linkedInvoice = state.data.invoices.find((invoice) => invoice.items.some((item) => item.itemId === id));
-        if (linkedInvoice) {
-          notify("error", "Item", "Não é possível excluir: o item está vinculado a uma nota fiscal.");
-          return;
-        }
-        deleteRecord("items", id, "Item", "Item excluído com sucesso.");
-      }
-
-      function deleteInvoice(id) {
-        removeInvoiceGeneratedEntries(id);
-        deleteRecord("invoices", id, "Nota fiscal", "Nota fiscal excluída com sucesso.");
-      }
-
-      function deleteAccountingEntry(id) {
-        deleteRecord("accountingEntries", id, "Lançamento contábil", "Lançamento contábil excluído com sucesso.");
-      }
-
-      function removeInvoiceLine(lineId) {
-        state.ui.invoiceDraft.items = state.ui.invoiceDraft.items.filter((line) => line.id !== lineId);
-        notify("success", "Itens da nota", "Item removido da nota fiscal.");
-        renderApp();
-      }
-
-      function removeInstallment(installmentId) {
-        state.ui.invoiceDraft.installments = state.ui.invoiceDraft.installments.filter((installment) => installment.id !== installmentId);
-        state.ui.invoiceDraft.installmentForm.installmentNumber = state.ui.invoiceDraft.installments.length + 1;
-        notify("success", "Parcelas", "Parcela removida da nota fiscal.");
-        renderApp();
-      }
-
-      function deleteRecord(collectionKey, id, title, successMessage) {
-        const exists = state.data[collectionKey].some((record) => record.id === id);
-        if (!exists) {
-          notify("error", title, "Registro não encontrado.");
-          return;
-        }
-
-        saveCollection(collectionKey, state.data[collectionKey].filter((record) => record.id !== id));
-
-        Object.keys(state.ui.editing).forEach((key) => {
-          if (state.ui.editing[key] === id) {
-            state.ui.editing[key] = null;
-          }
-        });
-
-        if (state.ui.itemNaturePreviewId && collectionKey === "items") {
-          state.ui.itemNaturePreviewId = "";
-          state.ui.itemFormDraft = createEmptyItemDraft();
-        }
-
-        if (collectionKey === "chartAccounts") {
-          state.ui.chartAccountFormDraft = createEmptyChartAccountDraft();
-        }
-
-        if (collectionKey === "financialNatures") {
-          state.ui.financialNatureFormDraft = createEmptyFinancialNatureDraft();
-        }
-
-        if (state.ui.invoiceDraft.id === id) {
-          state.ui.invoiceDraft = createEmptyInvoiceDraft();
-          state.ui.invoiceModalOpen = false;
-          state.ui.activeInvoiceTab = "dados";
-        }
-
-        if (state.ui.accountingEntryDraft.id === id) {
-          state.ui.accountingEntryDraft = createEmptyAccountingEntryDraft();
-          state.ui.accountingEntryFormModalOpen = false;
-        }
-
-        notify("success", title, successMessage);
-        renderApp();
-      }
-
-      function upsertRecord(collectionKey, record) {
-        const existingIndex = state.data[collectionKey].findIndex((item) => item.id === record.id);
-        const nextCollection = [...state.data[collectionKey]];
-
-        if (existingIndex >= 0) {
-          nextCollection[existingIndex] = record;
-        } else {
-          nextCollection.unshift(record);
-        }
-
-        saveCollection(collectionKey, collectionKey === "chartAccounts" ? sortAccountsByCode(nextCollection) : nextCollection);
-      }
-
-      function generateCode(collectionKey) {
-        const config = CODE_CONFIG[collectionKey];
-        const max = state.data[collectionKey].reduce((highest, record) => {
-          const number = extractNumericCode(record.code, config.prefix);
-          return number > highest ? number : highest;
-        }, 0);
-        return config.prefix + String(max + 1).padStart(config.digits, "0");
-      }
-
-      function extractNumericCode(code, prefix) {
-        if (!code || typeof code !== "string" || !code.startsWith(prefix)) {
-          return 0;
-        }
-        const digits = Number(code.slice(prefix.length));
-        return Number.isFinite(digits) ? digits : 0;
-      }
-
-      function generateId() {
-        if (window.crypto && typeof window.crypto.randomUUID === "function") {
-          return window.crypto.randomUUID();
-        }
-        return "id-" + Date.now() + "-" + Math.random().toString(16).slice(2);
-      }
-
-      function getChartAccountById(id) {
-        return state.data.chartAccounts.find((record) => record.id === id) || null;
-      }
-
-      function getChartAccountByCode(code) {
-        const formattedCode = formatAccountCode(code);
-        return state.data.chartAccounts.find((record) => record.code === formattedCode) || null;
-      }
-
-      function getFinancialNatureById(id) {
-        return state.data.financialNatures.find((record) => record.id === id) || null;
-      }
-
-      function getSupplierById(id) {
-        return state.data.suppliers.find((record) => record.id === id) || null;
-      }
-
-      function getCostCenterById(id) {
-        return state.data.costCenters.find((record) => record.id === id) || null;
-      }
-
-      function getDocumentTypeById(id) {
-        return state.data.documentTypes.find((record) => record.id === id) || null;
-      }
-
-      function getDocumentTypeByName(name) {
-        return state.data.documentTypes.find((record) => record.name === name) || null;
-      }
-
       function getActiveDocumentTypes() {
         return state.data.documentTypes.filter((record) => record.isActive !== false);
       }
@@ -4566,6 +4314,14 @@
 
       function getInstallmentSettledAmount(invoiceId, installmentId) {
         return roundCurrency(getInstallmentSettlements(invoiceId, installmentId).reduce((sum, record) => sum + Number(record.amount || 0), 0));
+      }
+
+      function getPayrollTitleSettlements(payrollFinancialEntryId) {
+        return state.data.settlements.filter((record) => record.payrollFinancialEntryId === payrollFinancialEntryId);
+      }
+
+      function getPayrollTitleSettledAmount(payrollFinancialEntryId) {
+        return roundCurrency(getPayrollTitleSettlements(payrollFinancialEntryId).reduce((sum, record) => sum + Number(record.amount || 0), 0));
       }
 
       function getFilteredAccountingEntries() {
@@ -7476,8 +7232,7 @@
         const accountCount = getSelectableChartAccounts().length;
         const eventEntriesCount = state.data.accountingEntries.filter((entry) => entry.origin === "accounting-event").length;
         const payrollAccountingCount = state.data.accountingEntries.filter((entry) => entry.origin === "payroll-accounting").length;
-        const payrollPayableCount = state.data.payrollFinancialEntries.length;
-        const payableEntriesCount = state.data.accountingEntries.filter((entry) => entry.origin === "settlement-event").length + payrollPayableCount;
+        const payableEntriesCount = state.data.accountingEntries.filter((entry) => entry.origin === "settlement-event").length;
 
         return `
           <section class="card">
@@ -7515,8 +7270,8 @@
               </article>
               <article class="option-card">
                 <h3>Lançamentos a Pagar</h3>
-                <p>Lançamentos de baixa do financeiro e títulos financeiros da folha, incluindo salários líquidos e encargos a recolher.</p>
-                <small>${escapeHtml(String(payableEntriesCount))} lançamento(s)/título(s) a pagar.</small>
+                <p>Lançamentos contábeis gerados automaticamente quando uma conta a pagar é baixada pelo módulo financeiro.</p>
+                <small>${escapeHtml(String(payableEntriesCount))} lançamento(s) gerado(s) por baixas financeiras.</small>
                 <div class="form-actions">
                   <button class="secondary-button" type="button" data-action="open-payable-entries-modal">Abrir lançamentos a pagar</button>
                 </div>
@@ -7746,9 +7501,6 @@
           .filter((entry) => entry.origin === "settlement-event")
           .slice()
           .sort((a, b) => (b.entryDate || "").localeCompare(a.entryDate || ""));
-        const payrollTitles = state.data.payrollFinancialEntries
-          .slice()
-          .sort((a, b) => (b.dueDate || "").localeCompare(a.dueDate || "") || (a.code || "").localeCompare(b.code || ""));
 
         return `
           <div class="modal-overlay">
@@ -7757,22 +7509,13 @@
               <div class="modal-header">
                 <div>
                   <h3 class="modal-title" id="payable-entries-modal-title">Lançamentos a Pagar</h3>
-                  <p class="modal-subtitle">Lançamentos de baixa do financeiro e títulos financeiros gerados pela folha de pagamento.</p>
+                  <p class="modal-subtitle">Aqui ficam somente os lançamentos contábeis gerados por baixas financeiras. Os títulos da folha aparecem no módulo Financeiro como contas a pagar normais.</p>
                 </div>
                 <div class="inline-actions">
                   <button class="ghost-button" type="button" data-action="close-payable-entries-modal">Fechar</button>
                 </div>
               </div>
               <div class="modal-body">
-                <section class="table-card">
-                  <div class="table-toolbar">
-                    <div>
-                      <h4>Títulos financeiros da folha</h4>
-                      <p class="page-subtitle">${escapeHtml(String(payrollTitles.length))} título(s) gerado(s) no fechamento da folha.</p>
-                    </div>
-                  </div>
-                  ${renderPayrollFinancialEntriesTable(payrollTitles)}
-                </section>
                 <section class="table-card">
                   <div class="table-toolbar">
                     <div>
@@ -8046,11 +7789,21 @@
       function renderSettlementModal() {
         const target = state.ui.settlementTarget;
         const draft = state.ui.settlementFormDraft;
-        const invoice = target ? state.data.invoices.find((record) => record.id === target.invoiceId) : null;
+        const isPayrollTitle = target?.type === "payroll";
+        const payrollTitle = isPayrollTitle ? state.data.payrollFinancialEntries.find((record) => record.id === target.payrollTitleId) : null;
+        const invoice = !isPayrollTitle && target ? state.data.invoices.find((record) => record.id === target.invoiceId) : null;
         const installment = invoice ? invoice.installments.find((item) => item.id === target.installmentId) : null;
-        const alreadySettled = target ? getInstallmentSettledAmount(target.invoiceId, target.installmentId) : 0;
-        const remaining = installment ? roundCurrency(installment.amount - alreadySettled) : 0;
+        const alreadySettled = isPayrollTitle && payrollTitle
+          ? getPayrollTitleSettledAmount(payrollTitle.id)
+          : (target ? getInstallmentSettledAmount(target.invoiceId, target.installmentId) : 0);
+        const titleAmount = isPayrollTitle ? toDecimal(payrollTitle?.amount) : toDecimal(installment?.amount);
+        const remaining = titleAmount ? roundCurrency(titleAmount - alreadySettled) : 0;
         const accounts = getSelectableChartAccounts();
+        const payrollEmployee = payrollTitle ? getPayrollEmployeeById(payrollTitle.employeeId) : null;
+        const subtitle = isPayrollTitle
+          ? `Folha de Pagamento ${escapeHtml(payrollTitle?.competence || "")} - ${escapeHtml(payrollTitle?.code || "")}`
+          : (invoice ? `${escapeHtml(invoice.type)} ${escapeHtml(invoice.documentNumber || invoice.code)}${installment ? ` - Parcela ${escapeHtml(String(installment.installmentNumber))}` : ""}` : "Parcela");
+        const notFound = isPayrollTitle ? !payrollTitle : (!invoice || !installment);
 
         return `
           <div class="modal-overlay">
@@ -8059,21 +7812,22 @@
               <div class="modal-header">
                 <div>
                   <h3 class="modal-title" id="settlement-modal-title">Dar baixa</h3>
-                  <p class="modal-subtitle">${invoice ? `${escapeHtml(invoice.type)} ${escapeHtml(invoice.documentNumber || invoice.code)}${installment ? ` - Parcela ${escapeHtml(String(installment.installmentNumber))}` : ""}` : "Parcela"}</p>
+                  <p class="modal-subtitle">${subtitle}</p>
                 </div>
                 <div class="inline-actions">
                   <button class="ghost-button" type="button" data-action="close-settlement-modal">Fechar</button>
                 </div>
               </div>
               <div class="modal-body">
-                ${!invoice || !installment ? `
-                  <div class="empty-card"><strong>Parcela não encontrada.</strong></div>
+                ${notFound ? `
+                  <div class="empty-card"><strong>${isPayrollTitle ? "Título financeiro da folha não encontrado." : "Parcela não encontrada."}</strong></div>
                 ` : `
                   <div class="subtle-panel" style="margin-bottom:16px;">
+                    ${isPayrollTitle ? `<p style="margin:0 0 12px;"><strong>${escapeHtml(payrollTitle.description || "Título financeiro da folha")}</strong><br><span class="table-muted">${escapeHtml(payrollEmployee?.name || "Geral da folha")}</span></p>` : ""}
                     <div class="account-preview-grid">
                       <div>
-                        <span class="table-muted">Valor da parcela</span>
-                        <div class="field-readonly compact mono">${escapeHtml(formatCurrency(installment.amount))}</div>
+                        <span class="table-muted">Valor do título</span>
+                        <div class="field-readonly compact mono">${escapeHtml(formatCurrency(titleAmount))}</div>
                       </div>
                       <div>
                         <span class="table-muted">Já baixado</span>
@@ -8085,7 +7839,7 @@
                       </div>
                       <div>
                         <span class="table-muted">Vencimento</span>
-                        <div class="field-readonly compact">${escapeHtml(formatDate(installment.dueDate))}</div>
+                        <div class="field-readonly compact">${escapeHtml(formatDate(isPayrollTitle ? payrollTitle.dueDate : installment.dueDate))}</div>
                       </div>
                     </div>
                   </div>
@@ -8387,11 +8141,18 @@
             const settled = getInstallmentSettledAmount(invoice.id, installment.id);
             const remaining = roundCurrency(installment.amount - settled);
             const status = remaining <= 0.009 ? "Quitada" : (settled > 0 ? "Parcial" : "Em aberto");
-            rows.push({ invoice, installment, settled, remaining, status });
+            rows.push({ source: "invoice", invoice, installment, dueDate: installment.dueDate, amount: installment.amount, settled, remaining, status });
           });
         });
 
-        rows.sort((a, b) => (a.installment.dueDate || "").localeCompare(b.installment.dueDate || ""));
+        state.data.payrollFinancialEntries.forEach((title) => {
+          const settled = getPayrollTitleSettledAmount(title.id);
+          const remaining = roundCurrency(toDecimal(title.amount) - settled);
+          const status = remaining <= 0.009 ? "Quitada" : (settled > 0 ? "Parcial" : (title.status || "Em aberto"));
+          rows.push({ source: "payroll", payrollTitle: title, dueDate: title.dueDate, amount: title.amount, settled, remaining, status });
+        });
+
+        rows.sort((a, b) => (a.dueDate || "").localeCompare(b.dueDate || "") || (a.source || "").localeCompare(b.source || ""));
 
         const term = (searchTerm || "").toLowerCase().trim();
         if (!term) {
@@ -8399,6 +8160,13 @@
         }
 
         return rows.filter((row) => {
+          if (row.source === "payroll") {
+            const employee = getPayrollEmployeeById(row.payrollTitle.employeeId);
+            const costCenter = getCostCenterById(row.payrollTitle.costCenterId);
+            const nature = state.data.financialNatures.find((item) => item.id === row.payrollTitle.financialNatureId);
+            const haystack = `${row.payrollTitle.code} ${row.payrollTitle.description || ""} Folha de Pagamento ${row.payrollTitle.competence || ""} ${employee?.name || ""} ${costCenter?.name || ""} ${nature?.name || ""}`.toLowerCase();
+            return haystack.includes(term);
+          }
           const supplier = getSupplierById(row.invoice.supplierId);
           const haystack = `${row.invoice.code} ${row.invoice.documentNumber || ""} ${row.invoice.type} ${supplier?.legalName || ""} ${row.installment.paymentMethod || ""}`.toLowerCase();
           return haystack.includes(term);
@@ -8631,7 +8399,29 @@
             persistCollection(key);
           }
         });
+        migratePayrollFinancialEntriesDestination();
         seedPayrollDefaults();
+      }
+
+      function migratePayrollFinancialEntriesDestination() {
+        if (!Array.isArray(state.data.payrollFinancialEntries) || !state.data.payrollFinancialEntries.length) {
+          return;
+        }
+        let changed = false;
+        state.data.payrollFinancialEntries = state.data.payrollFinancialEntries.map((entry) => {
+          if (entry.destinationModule === "financeiro" && entry.destinationName === "Módulo financeiro") {
+            return entry;
+          }
+          changed = true;
+          return {
+            ...entry,
+            destinationModule: "financeiro",
+            destinationName: "Módulo financeiro"
+          };
+        });
+        if (changed) {
+          persistCollection("payrollFinancialEntries");
+        }
       }
 
       function seedPayrollDefaults() {
@@ -9424,10 +9214,10 @@
           const employee = getPayrollEmployeeById(item.employeeId);
           accountingEntries.push({ id: generateId(), code: `FLC${String(state.data.payrollAccountingEntries.length + accountingEntries.length + 1).padStart(7, "0")}`, runId: id, runCode: run.code, competence: run.competence, employeeId: item.employeeId, eventId: item.eventId, date: `${run.competence}-28`, debitAccountId: mapping.debitAccountId, creditAccountId: mapping.creditAccountId, costCenterId: mapping.costCenterId || employee?.costCenterId || "", amount: item.amount, history: mapping.defaultHistory || `Folha ${run.competence} - ${item.eventName}`, status: "Gerado", createdAt: payrollNow(), updatedAt: payrollNow() });
           if (item.eventType === "Desconto" || item.eventType === "Informativa") {
-            financialEntries.push({ id: generateId(), code: `FFT${String(state.data.payrollFinancialEntries.length + financialEntries.length + 1).padStart(7, "0")}`, runId: id, employeeId: item.employeeId, eventId: item.eventId, competence: run.competence, dueDate: `${run.competence}-${String(params.paymentDay || 5).padStart(2, "0")}`, amount: item.amount, costCenterId: mapping.costCenterId || employee?.costCenterId || "", financialNatureId: mapping.financialNatureId || "", description: `Folha ${run.competence} - ${item.eventName}`, status: "Em aberto", destinationModule: "accounting-payables", destinationName: "Lançamentos a Pagar", createdAt: payrollNow(), updatedAt: payrollNow() });
+            financialEntries.push({ id: generateId(), code: `FFT${String(state.data.payrollFinancialEntries.length + financialEntries.length + 1).padStart(7, "0")}`, runId: id, employeeId: item.employeeId, eventId: item.eventId, competence: run.competence, dueDate: `${run.competence}-${String(params.paymentDay || 5).padStart(2, "0")}`, amount: item.amount, costCenterId: mapping.costCenterId || employee?.costCenterId || "", financialNatureId: mapping.financialNatureId || "", description: `Folha ${run.competence} - ${item.eventName}`, status: "Em aberto", destinationModule: "financeiro", destinationName: "Módulo financeiro", createdAt: payrollNow(), updatedAt: payrollNow() });
           }
         });
-        financialEntries.push({ id: generateId(), code: `FFT${String(state.data.payrollFinancialEntries.length + financialEntries.length + 1).padStart(7, "0")}`, runId: id, employeeId: "", eventId: "", competence: run.competence, dueDate: `${run.competence}-${String(params.paymentDay || 5).padStart(2, "0")}`, amount: run.netPayable, costCenterId: "", financialNatureId: "", description: `Salário líquido a pagar - ${run.code}`, status: "Em aberto", destinationModule: "accounting-payables", destinationName: "Lançamentos a Pagar", createdAt: payrollNow(), updatedAt: payrollNow() });
+        financialEntries.push({ id: generateId(), code: `FFT${String(state.data.payrollFinancialEntries.length + financialEntries.length + 1).padStart(7, "0")}`, runId: id, employeeId: "", eventId: "", competence: run.competence, dueDate: `${run.competence}-${String(params.paymentDay || 5).padStart(2, "0")}`, amount: run.netPayable, costCenterId: "", financialNatureId: "", description: `Salário líquido a pagar - ${run.code}`, status: "Em aberto", destinationModule: "financeiro", destinationName: "Módulo financeiro", createdAt: payrollNow(), updatedAt: payrollNow() });
         const accountingModuleEntries = accountingEntries.map((entry) => ({
           id: `auto-payroll-accounting-${entry.id}`,
           code: entry.code,
@@ -9449,26 +9239,28 @@
         state.data.accountingEntries = state.data.accountingEntries.filter((entry) => !(entry.origin === "payroll-accounting" && entry.sourcePayrollRunId === id));
         state.data.accountingEntries.push(...accountingModuleEntries);
         state.data.payrollAccountingEntries.push(...accountingEntries.map((entry) => ({ ...entry, accountingBatchName: PAYROLL_ACCOUNTING_BATCH_NAME, accountingModuleEntryId: `auto-payroll-accounting-${entry.id}` })));
-        state.data.payrollFinancialEntries.push(...financialEntries.map((entry) => ({ ...entry, destinationModule: entry.destinationModule || "accounting-payables", destinationName: entry.destinationName || "Lançamentos a Pagar" })));
+        state.data.payrollFinancialEntries.push(...financialEntries.map((entry) => ({ ...entry, destinationModule: "financeiro", destinationName: "Módulo financeiro" })));
         upsertRecord("payrollRuns", { ...run, status: "Contabilizada", accountingBatchName: PAYROLL_ACCOUNTING_BATCH_NAME, updatedAt: payrollNow() });
         const period = getPayrollPeriodById(run.periodId);
         if (period) upsertRecord("payrollPeriods", { ...period, status: "Contabilizada", closeDate: new Date().toISOString().slice(0, 10), updatedAt: payrollNow() });
-        ["accountingEntries", "payrollAccountingEntries", "payrollFinancialEntries"].forEach(persistCollection);
-        notify("success", "Fechamento", `Folha contabilizada no lote ${PAYROLL_ACCOUNTING_BATCH_NAME} e títulos enviados para Lançamentos a Pagar.`);
+        ["accountingEntries", "settlements", "payrollAccountingEntries", "payrollFinancialEntries"].forEach(persistCollection);
+        notify("success", "Fechamento", `Folha contabilizada no lote ${PAYROLL_ACCOUNTING_BATCH_NAME} e títulos enviados para o módulo Financeiro.`);
         renderApp();
       }
 
       function reopenPayrollRun(id) {
         const run = getPayrollRunById(id);
         if (!run) return;
+        const payrollTitleIds = state.data.payrollFinancialEntries.filter((item) => item.runId === id).map((item) => item.id);
         state.data.payrollAccountingEntries = state.data.payrollAccountingEntries.filter((item) => item.runId !== id);
         state.data.payrollFinancialEntries = state.data.payrollFinancialEntries.filter((item) => item.runId !== id);
+        state.data.settlements = state.data.settlements.filter((item) => !payrollTitleIds.includes(item.payrollFinancialEntryId));
         state.data.accountingEntries = state.data.accountingEntries.filter((item) => !(item.origin === "payroll-accounting" && item.sourcePayrollRunId === id));
         upsertRecord("payrollRuns", { ...run, status: "Calculada", updatedAt: payrollNow() });
         const period = getPayrollPeriodById(run.periodId);
         if (period) upsertRecord("payrollPeriods", { ...period, status: "Calculada", updatedAt: payrollNow() });
-        ["accountingEntries", "payrollAccountingEntries", "payrollFinancialEntries"].forEach(persistCollection);
-        notify("success", "Reabertura", "Lançamentos do lote da folha e títulos a pagar foram estornados; a folha voltou para cálculo.");
+        ["accountingEntries", "settlements", "payrollAccountingEntries", "payrollFinancialEntries"].forEach(persistCollection);
+        notify("success", "Reabertura", "Lançamentos do lote da folha e títulos financeiros foram estornados; a folha voltou para cálculo.");
         renderApp();
       }
 
@@ -10346,6 +10138,58 @@
         return `<tr><td colspan="${colspan}"><div class="empty-card" style="border:0; box-shadow:none;"><strong>${escapeHtml(message)}</strong><p>Use o formulário ao lado para criar o primeiro registro.</p></div></td></tr>`;
       }
 
+      function renderFinanceiroPayableRow(row) {
+        const isPayroll = row.source === "payroll";
+        const statusClass = row.status === "Quitada" ? "positive" : (row.status === "Parcial" ? "warning" : "");
+        if (isPayroll) {
+          const title = row.payrollTitle;
+          const employee = getPayrollEmployeeById(title.employeeId);
+          const costCenter = getCostCenterById(title.costCenterId);
+          return `
+            <tr>
+              <td>
+                <strong class="mono">${escapeHtml(title.code)}</strong>
+                <div class="table-muted">Folha de Pagamento ${escapeHtml(title.competence || "")}</div>
+              </td>
+              <td class="table-muted">${escapeHtml(employee?.name || "Geral da folha")}${costCenter ? `<br>${escapeHtml(costCenter.name)}` : ""}</td>
+              <td class="mono">1</td>
+              <td>${escapeHtml(formatDate(title.dueDate))}</td>
+              <td class="mono">${escapeHtml(formatCurrency(title.amount))}</td>
+              <td class="mono">${escapeHtml(formatCurrency(row.settled))}</td>
+              <td class="mono">${escapeHtml(formatCurrency(row.remaining))}</td>
+              <td><span class="badge ${statusClass}">${escapeHtml(row.status)}</span></td>
+              <td>
+                <div class="table-actions">
+                  <button class="action-chip" type="button" data-action="open-settlement-modal" data-payroll-title-id="${escapeHtml(title.id)}" ${row.status === "Quitada" ? "disabled" : ""}>Dar baixa</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }
+
+        const supplier = getSupplierById(row.invoice.supplierId);
+        return `
+          <tr>
+            <td>
+              <strong class="mono">${escapeHtml(row.invoice.documentNumber || row.invoice.code)}</strong>
+              <div class="table-muted">${escapeHtml(row.invoice.type)}</div>
+            </td>
+            <td class="table-muted">${escapeHtml(supplier?.legalName || "Sem fornecedor")}</td>
+            <td class="mono">${escapeHtml(String(row.installment.installmentNumber))}</td>
+            <td>${escapeHtml(formatDate(row.installment.dueDate))}</td>
+            <td class="mono">${escapeHtml(formatCurrency(row.installment.amount))}</td>
+            <td class="mono">${escapeHtml(formatCurrency(row.settled))}</td>
+            <td class="mono">${escapeHtml(formatCurrency(row.remaining))}</td>
+            <td><span class="badge ${statusClass}">${escapeHtml(row.status)}</span></td>
+            <td>
+              <div class="table-actions">
+                <button class="action-chip" type="button" data-action="open-settlement-modal" data-invoice-id="${escapeHtml(row.invoice.id)}" data-installment-id="${escapeHtml(row.installment.id)}" ${row.status === "Quitada" ? "disabled" : ""}>Dar baixa</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+
       function renderFinanceiroView() {
         const searchTerm = state.ui.search.financeiro;
         const rows = getAllInstallmentsWithStatus(searchTerm);
@@ -10357,7 +10201,7 @@
             <div class="section-head">
               <div>
                 <h3>Módulo financeiro</h3>
-                <p>Acompanhe as parcelas geradas por notas fiscais e lançamentos e dê baixa informando data, conta e valor.</p>
+                <p>Acompanhe parcelas geradas por notas fiscais e títulos financeiros da folha, fazendo a baixa pela mesma rotina de contas a pagar.</p>
               </div>
             </div>
             <div class="summary-grid">
@@ -10374,8 +10218,8 @@
           <section class="table-card">
             <div class="table-toolbar">
               <div>
-                <h4>Parcelas lançadas</h4>
-                <p class="page-subtitle">Pesquise por documento, número, tipo ou fornecedor.</p>
+                <h4>Contas a pagar</h4>
+                <p class="page-subtitle">Pesquise por documento, fornecedor, funcionário, competência ou título da folha.</p>
               </div>
               <input class="search-input" data-search="financeiro" placeholder="Pesquisar parcelas" value="${escapeHtml(searchTerm)}">
             </div>
@@ -10396,37 +10240,14 @@
                     </tr>
                   </thead>
                   <tbody>
-                    ${rows.map((row) => {
-                      const supplier = getSupplierById(row.invoice.supplierId);
-                      const statusClass = row.status === "Quitada" ? "positive" : (row.status === "Parcial" ? "warning" : "");
-                      return `
-                        <tr>
-                          <td>
-                            <strong class="mono">${escapeHtml(row.invoice.documentNumber || row.invoice.code)}</strong>
-                            <div class="table-muted">${escapeHtml(row.invoice.type)}</div>
-                          </td>
-                          <td class="table-muted">${escapeHtml(supplier?.legalName || "Sem fornecedor")}</td>
-                          <td class="mono">${escapeHtml(String(row.installment.installmentNumber))}</td>
-                          <td>${escapeHtml(formatDate(row.installment.dueDate))}</td>
-                          <td class="mono">${escapeHtml(formatCurrency(row.installment.amount))}</td>
-                          <td class="mono">${escapeHtml(formatCurrency(row.settled))}</td>
-                          <td class="mono">${escapeHtml(formatCurrency(row.remaining))}</td>
-                          <td><span class="badge ${statusClass}">${escapeHtml(row.status)}</span></td>
-                          <td>
-                            <div class="table-actions">
-                              <button class="action-chip" type="button" data-action="open-settlement-modal" data-invoice-id="${escapeHtml(row.invoice.id)}" data-installment-id="${escapeHtml(row.installment.id)}" ${row.status === "Quitada" ? "disabled" : ""}>Dar baixa</button>
-                            </div>
-                          </td>
-                        </tr>
-                      `;
-                    }).join("")}
+                    ${rows.map((row) => renderFinanceiroPayableRow(row)).join("")}
                   </tbody>
                 </table>
               </div>
             ` : `
               <div class="empty-card">
                 <strong>Nenhuma parcela encontrada.</strong>
-                <p>Lance uma nota fiscal ou um lançamento no módulo fiscal para que as parcelas apareçam aqui.</p>
+                <p>Lance uma nota fiscal ou feche uma folha para que parcelas e títulos a pagar apareçam aqui.</p>
               </div>
             `}
           </section>
