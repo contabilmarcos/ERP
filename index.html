@@ -2442,9 +2442,46 @@
       }
 
       function saveCollection(collectionKey, records) {
-        state.data[collectionKey] = records;
+        state.data[collectionKey] = Array.isArray(records) ? records : [];
         persistCollection(collectionKey);
         CLOUD.schedulePush(getDataSnapshot());
+      }
+
+      function upsertRecord(collectionKey, record) {
+        if (!STORAGE_KEYS[collectionKey]) {
+          console.error(`Coleção desconhecida: ${collectionKey}`);
+          return record;
+        }
+        if (!Array.isArray(state.data[collectionKey])) {
+          state.data[collectionKey] = [];
+        }
+        const index = state.data[collectionKey].findIndex((item) => item.id === record.id);
+        if (index >= 0) {
+          state.data[collectionKey][index] = record;
+        } else {
+          state.data[collectionKey].push(record);
+        }
+        persistCollection(collectionKey);
+        CLOUD.schedulePush(getDataSnapshot());
+        return record;
+      }
+
+      function deleteRecord(collectionKey, id, title = "Registro", successMessage = "Registro excluído com sucesso.") {
+        if (!STORAGE_KEYS[collectionKey] || !Array.isArray(state.data[collectionKey])) {
+          notify("error", title, "Coleção não encontrada para exclusão.");
+          return false;
+        }
+        const before = state.data[collectionKey].length;
+        state.data[collectionKey] = state.data[collectionKey].filter((record) => record.id !== id);
+        if (state.data[collectionKey].length === before) {
+          notify("error", title, "Registro não encontrado.");
+          return false;
+        }
+        persistCollection(collectionKey);
+        CLOUD.schedulePush(getDataSnapshot());
+        notify("success", title, successMessage);
+        renderApp();
+        return true;
       }
 
       // Aplica um snapshot remoto/local completo sem acionar o ciclo de autosave.
@@ -9305,19 +9342,61 @@
         renderApp();
       }
 
+      function canReopenPayrollRun(run) {
+        if (!run) return false;
+        return ["Fechada", "Contabilizada", "Integrada", "Encerrada"].includes(run.status)
+          || state.data.payrollAccountingEntries.some((item) => item.runId === run.id)
+          || state.data.payrollFinancialEntries.some((item) => item.runId === run.id)
+          || state.data.accountingEntries.some((item) => item.origin === "payroll-accounting" && item.sourcePayrollRunId === run.id);
+      }
+
+      function getPayrollPeriodByRun(run) {
+        return getPayrollPeriodById(run?.periodId) || state.data.payrollPeriods.find((item) => item.competence === run?.competence) || null;
+      }
+
       function reopenPayrollRun(id) {
         const run = getPayrollRunById(id);
-        if (!run) return;
-        const payrollTitleIds = state.data.payrollFinancialEntries.filter((item) => item.runId === id).map((item) => item.id);
+        if (!run) {
+          notify("error", "Reabertura", "Folha não encontrada para reabertura.");
+          return;
+        }
+
+        const payrollTitleIds = state.data.payrollFinancialEntries
+          .filter((item) => item.runId === id)
+          .map((item) => item.id);
+
+        const removedAccountingEntries = state.data.payrollAccountingEntries.filter((item) => item.runId === id).length;
+        const removedFinancialEntries = payrollTitleIds.length;
+        const removedSettlements = state.data.settlements.filter((item) => payrollTitleIds.includes(item.payrollFinancialEntryId)).length;
+
         state.data.payrollAccountingEntries = state.data.payrollAccountingEntries.filter((item) => item.runId !== id);
         state.data.payrollFinancialEntries = state.data.payrollFinancialEntries.filter((item) => item.runId !== id);
         state.data.settlements = state.data.settlements.filter((item) => !payrollTitleIds.includes(item.payrollFinancialEntryId));
         state.data.accountingEntries = state.data.accountingEntries.filter((item) => !(item.origin === "payroll-accounting" && item.sourcePayrollRunId === id));
-        upsertRecord("payrollRuns", { ...run, status: "Calculada", updatedAt: payrollNow() });
-        const period = getPayrollPeriodById(run.periodId);
-        if (period) upsertRecord("payrollPeriods", { ...period, status: "Calculada", updatedAt: payrollNow() });
-        ["accountingEntries", "settlements", "payrollAccountingEntries", "payrollFinancialEntries"].forEach(persistCollection);
-        notify("success", "Reabertura", "Lançamentos do lote da folha e títulos financeiros foram estornados; a folha voltou para cálculo.");
+
+        const reopenedRun = {
+          ...run,
+          status: "Calculada",
+          accountingBatchName: "",
+          reopenedAt: payrollNow(),
+          updatedAt: payrollNow()
+        };
+        upsertRecord("payrollRuns", reopenedRun);
+
+        const period = getPayrollPeriodByRun(run);
+        if (period) {
+          upsertRecord("payrollPeriods", {
+            ...period,
+            status: "Calculada",
+            closeDate: "",
+            updatedAt: payrollNow()
+          });
+        }
+
+        ["accountingEntries", "settlements", "payrollAccountingEntries", "payrollFinancialEntries", "payrollRuns", "payrollPeriods"].forEach(persistCollection);
+        CLOUD.schedulePush(getDataSnapshot());
+        notify("success", "Reabertura", `Folha reaberta. Removidos ${removedAccountingEntries} lançamentos contábeis, ${removedFinancialEntries} títulos financeiros e ${removedSettlements} baixas vinculadas.`);
+        state.ui.payrollSelectedRunId = id;
         renderApp();
       }
 
@@ -9501,7 +9580,7 @@
         const runs = filterRecords(state.data.payrollRuns, state.ui.search.payrollRuns, (item) => `${item.code} ${item.competence} ${item.payrollType} ${item.status}`);
         const selectedRun = getPayrollRunById(state.ui.payrollSelectedRunId) || runs[0];
         const selectedItems = selectedRun ? state.data.payrollRunItems.filter((item) => item.runId === selectedRun.id) : [];
-        return `<div class="layout-grid"><form class="card" data-form="payroll-run"><div class="section-head"><div><h3>Processamento mensal</h3><p>Selecione competência, tipo de folha e informe a apuração de cada funcionário antes de calcular.</p></div></div><div class="form-grid">${renderPayrollInput("competence", "Competência", draft.competence, "2026-07", "month")}${renderPayrollSelect("payrollType", "Tipo de folha", draft.payrollType, PAYROLL_TYPES.map((x) => [x, x]))}${renderPayrollSelect("employeeScope", "Funcionários", draft.employeeScope, [["active", "Somente ativos"], ["all", "Ativos e afastados"]])}${renderPayrollTextarea("notes", "Observações", draft.notes, "Observações do processamento")}</div>${renderPayrollProcessingEmployeeGrid(employees)}<div class="form-actions"><button class="primary-button" type="button" data-action="payroll-process-run">Gerar cálculo</button></div></form><section class="table-card">${renderPayrollTableHeader("Folhas processadas", "payrollRuns", "Pesquisar competência")}<div class="table-scroll"><table><thead><tr><th>Folha</th><th>Tipo</th><th>Funcionários</th><th>Proventos</th><th>Descontos</th><th>Líquido</th><th>Status</th><th>Ações</th></tr></thead><tbody>${runs.length ? runs.map((run) => `<tr class="selectable-row ${selectedRun?.id === run.id ? "selected" : ""}" data-action="payroll-select-run" data-id="${run.id}"><td><strong>${escapeHtml(run.code)}</strong><div class="table-muted">${escapeHtml(run.competence)}</div></td><td>${escapeHtml(run.payrollType)}</td><td>${run.employeeCount || 0}</td><td>${formatCurrency(run.totalEarnings)}</td><td>${formatCurrency(run.totalDeductions)}</td><td><strong>${formatCurrency(run.netPayable)}</strong></td><td>${renderStatusBadge(run.status)}</td><td><div class="table-actions"><button class="action-chip" type="button" data-action="payroll-select-run" data-id="${run.id}">Ver</button>${run.status === "Contabilizada" ? `<button class="action-chip danger" type="button" data-action="payroll-reopen-run" data-id="${run.id}">Reabrir</button>` : `<button class="action-chip" type="button" data-action="payroll-close-run" data-id="${run.id}">Fechar</button>`}</div></td></tr>`).join("") : renderPayrollEmptyRow(8, "Nenhuma folha processada.")}</tbody></table></div></section></div>${renderPayrollRunDetails(selectedRun, selectedItems)}`;
+        return `<div class="layout-grid"><form class="card" data-form="payroll-run"><div class="section-head"><div><h3>Processamento mensal</h3><p>Selecione competência, tipo de folha e informe a apuração de cada funcionário antes de calcular.</p></div></div><div class="form-grid">${renderPayrollInput("competence", "Competência", draft.competence, "2026-07", "month")}${renderPayrollSelect("payrollType", "Tipo de folha", draft.payrollType, PAYROLL_TYPES.map((x) => [x, x]))}${renderPayrollSelect("employeeScope", "Funcionários", draft.employeeScope, [["active", "Somente ativos"], ["all", "Ativos e afastados"]])}${renderPayrollTextarea("notes", "Observações", draft.notes, "Observações do processamento")}</div>${renderPayrollProcessingEmployeeGrid(employees)}<div class="form-actions"><button class="primary-button" type="button" data-action="payroll-process-run">Gerar cálculo</button></div></form><section class="table-card">${renderPayrollTableHeader("Folhas processadas", "payrollRuns", "Pesquisar competência")}<div class="table-scroll"><table><thead><tr><th>Folha</th><th>Tipo</th><th>Funcionários</th><th>Proventos</th><th>Descontos</th><th>Líquido</th><th>Status</th><th>Ações</th></tr></thead><tbody>${runs.length ? runs.map((run) => `<tr class="selectable-row ${selectedRun?.id === run.id ? "selected" : ""}" data-action="payroll-select-run" data-id="${run.id}"><td><strong>${escapeHtml(run.code)}</strong><div class="table-muted">${escapeHtml(run.competence)}</div></td><td>${escapeHtml(run.payrollType)}</td><td>${run.employeeCount || 0}</td><td>${formatCurrency(run.totalEarnings)}</td><td>${formatCurrency(run.totalDeductions)}</td><td><strong>${formatCurrency(run.netPayable)}</strong></td><td>${renderStatusBadge(run.status)}</td><td><div class="table-actions"><button class="action-chip" type="button" data-action="payroll-select-run" data-id="${run.id}">Ver</button>${canReopenPayrollRun(run) ? `<button class="action-chip danger" type="button" data-action="payroll-reopen-run" data-id="${run.id}">Reabrir</button>` : `<button class="action-chip" type="button" data-action="payroll-close-run" data-id="${run.id}">Fechar</button>`}</div></td></tr>`).join("") : renderPayrollEmptyRow(8, "Nenhuma folha processada.")}</tbody></table></div></section></div>${renderPayrollRunDetails(selectedRun, selectedItems)}`;
       }
 
       function renderPayrollProcessingEmployeeGrid(employees) {
