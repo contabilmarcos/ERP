@@ -1,5 +1,7 @@
 
 
+
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -1828,6 +1830,1013 @@
         transition-duration: 0.001ms !important;
       }
     }
+
+
+    /* =========================================================
+       Camada visual ERP corporativo
+       - Mantém a estrutura e as regras do sistema.
+       - Ajusta apenas aparência, hierarquia visual e organização.
+       - Referência estética: ERP web moderno, sem uso de marca/logotipo.
+       ========================================================= */
+    :root {
+      --canvas: #f3f5f8;
+      --surface: #ffffff;
+      --surface-2: #f8fafc;
+      --surface-3: #eef2f6;
+      --sidebar: #202936;
+      --sidebar-2: #18212b;
+      --sidebar-muted: #95a1b2;
+      --sidebar-text: #e7edf5;
+      --ink: #1f2933;
+      --ink-2: #56616f;
+      --ink-3: #8a96a6;
+      --border: #e1e6ee;
+      --border-2: #cfd7e2;
+      --accent: #b42318;
+      --accent-hover: #971b12;
+      --accent-soft: #fff0ed;
+      --accent-soft-2: #ffdcd6;
+      --accent-ink: #8f1b13;
+      --support-blue: #1d4ed8;
+      --support-blue-soft: #edf4ff;
+      --success: #0b7d62;
+      --success-soft: #e8f6f1;
+      --warning: #a26705;
+      --warning-soft: #fff5df;
+      --danger: #b42318;
+      --danger-soft: #fff0ed;
+      --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+      --shadow-sm: 0 8px 22px rgba(15, 23, 42, 0.05);
+      --shadow-md: 0 18px 46px rgba(15, 23, 42, 0.14);
+      --radius-xl: 18px;
+      --radius-lg: 14px;
+      --radius-md: 11px;
+      --radius-sm: 9px;
+    }
+
+    html,
+    body {
+      background: radial-gradient(circle at top right, rgba(180, 35, 24, 0.06), transparent 30%), var(--canvas);
+      color: var(--ink);
+    }
+
+    .app-shell {
+      grid-template-columns: 274px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      background: linear-gradient(180deg, var(--sidebar) 0%, var(--sidebar-2) 100%);
+      border-right: 0;
+      padding: 20px 14px;
+      gap: 18px;
+      box-shadow: 4px 0 24px rgba(15, 23, 42, 0.12);
+    }
+
+    .brand {
+      padding: 8px 8px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      background: linear-gradient(135deg, var(--accent) 0%, #dc4334 100%);
+      box-shadow: 0 8px 18px rgba(180, 35, 24, 0.28);
+    }
+
+    .brand h1 {
+      color: #ffffff;
+      font-size: 0.96rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand p {
+      color: var(--sidebar-muted);
+    }
+
+    .menu-section-label {
+      margin-top: 4px;
+      color: #7f8da0;
+    }
+
+    .menu {
+      gap: 4px;
+    }
+
+    .nav-button {
+      position: relative;
+      padding: 10px 11px;
+      border-radius: 10px;
+      color: #c7d1df;
+      border-color: transparent;
+    }
+
+    .nav-button:hover,
+    .nav-button:focus-visible {
+      background: rgba(255, 255, 255, 0.07);
+      color: #ffffff;
+    }
+
+    .nav-button.active {
+      background: rgba(255, 255, 255, 0.11);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.10);
+      box-shadow: inset 3px 0 0 var(--accent), 0 8px 18px rgba(0, 0, 0, 0.12);
+    }
+
+    .nav-icon {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #697789;
+    }
+
+    .nav-button:hover .nav-icon,
+    .nav-button.active .nav-icon {
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(180, 35, 24, 0.16);
+    }
+
+    .nav-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    .nav-subtitle {
+      color: #93a0b2;
+    }
+
+    .sidebar-foot {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.10);
+      color: var(--sidebar-text);
+    }
+
+    .sidebar-foot strong {
+      color: #ffffff;
+    }
+
+    .sidebar-foot p {
+      color: #a9b4c3;
+    }
+
+    .sidebar-foot code,
+    .subtle-panel code {
+      background: rgba(255, 255, 255, 0.10);
+      border-color: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+    }
+
+    .content-area {
+      padding: 24px;
+    }
+
+    .page-frame {
+      border-color: #dfe5ee;
+      border-radius: 20px;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.07);
+    }
+
+    .topbar {
+      padding: 18px 26px;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
+      border-bottom-color: var(--border);
+    }
+
+    .title-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--accent-soft);
+      border-color: #ffd1ca;
+      color: var(--accent-ink);
+    }
+
+    .page-title {
+      font-size: 1.22rem;
+      font-weight: 700;
+      color: #17202a;
+    }
+
+    .page-subtitle {
+      color: #667386;
+    }
+
+    .page-content {
+      padding: 24px 26px 28px;
+      gap: 18px;
+      background: linear-gradient(180deg, #fbfcfe 0%, #f5f7fa 100%);
+    }
+
+    .hero-panel,
+    .card,
+    .table-card,
+    .empty-card,
+    .stats-card,
+    .notice-card,
+    .option-card,
+    .summary-card,
+    .total-card,
+    .subtle-panel {
+      border-color: var(--border);
+      box-shadow: var(--shadow-xs);
+    }
+
+    .hero-panel,
+    .card,
+    .table-card,
+    .empty-card,
+    .stats-card,
+    .notice-card,
+    .option-card {
+      background: rgba(255, 255, 255, 0.98);
+    }
+
+    .hero-panel {
+      padding: 28px;
+      border-top: 3px solid var(--accent);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .hero-eyebrow {
+      background: var(--accent-soft);
+      color: var(--accent-ink);
+      border: 1px solid #ffd7d1;
+    }
+
+    .hero-panel h2 {
+      font-size: 1.58rem;
+      color: #17202a;
+    }
+
+    .stats-card {
+      padding: 18px;
+      border-top: 3px solid #e6ebf2;
+      transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
+    }
+
+    .stats-card:hover {
+      transform: translateY(-1px);
+      border-top-color: var(--accent);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .stats-card small,
+    .total-card span,
+    .summary-card span {
+      text-transform: uppercase;
+      letter-spacing: 0.055em;
+      color: #7d8898;
+    }
+
+    .stats-card strong,
+    .total-card strong {
+      color: #17202a;
+    }
+
+    .section-head {
+      margin-bottom: 18px;
+    }
+
+    .section-head h3,
+    .section-head h4 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #17202a;
+    }
+
+    .layout-grid,
+    .split-grid,
+    .trial-balance-split {
+      gap: 18px;
+    }
+
+    .form-grid {
+      gap: 15px;
+    }
+
+    .field label {
+      color: #334155;
+      font-weight: 600;
+    }
+
+    .field input,
+    .field select,
+    .field textarea,
+    .search-input {
+      min-height: 40px;
+      background: #ffffff;
+      border-color: #cfd7e2;
+      border-radius: 10px;
+      box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.02);
+    }
+
+    .field input:hover,
+    .field select:hover,
+    .field textarea:hover,
+    .search-input:hover {
+      border-color: #b8c2cf;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus,
+    .search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(180, 35, 24, 0.10);
+    }
+
+    .field-readonly {
+      background: #f3f6f9;
+      border-color: #d9e0ea;
+      color: #475569;
+    }
+
+    .ghost-button,
+    .primary-button,
+    .danger-button,
+    .secondary-button,
+    .icon-button,
+    .action-chip,
+    .modal-tab,
+    .tree-toggle,
+    .blueprint-icon-button {
+      border-radius: 10px;
+    }
+
+    .ghost-button,
+    .primary-button,
+    .danger-button,
+    .secondary-button {
+      min-height: 38px;
+      padding: 9px 14px;
+      font-weight: 600;
+    }
+
+    .primary-button {
+      background: var(--accent);
+      border-color: var(--accent);
+      box-shadow: 0 8px 18px rgba(180, 35, 24, 0.18);
+    }
+
+    .primary-button:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .secondary-button {
+      background: var(--support-blue-soft);
+      color: var(--support-blue);
+      border-color: #d8e6ff;
+    }
+
+    .secondary-button:hover {
+      background: #dfeaff;
+      border-color: #c9dcff;
+    }
+
+    .ghost-button,
+    .icon-button {
+      background: #ffffff;
+      border-color: #cfd7e2;
+      color: #334155;
+    }
+
+    .ghost-button:hover,
+    .icon-button:hover {
+      background: #f3f6f9;
+      border-color: #b8c2cf;
+    }
+
+    .danger-button {
+      background: var(--danger-soft);
+      color: var(--danger);
+      border-color: #ffd2cc;
+    }
+
+    .danger-button:hover {
+      background: #ffe2de;
+    }
+
+    .table-card {
+      background: #ffffff;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .table-toolbar {
+      padding: 18px 20px;
+      background: #ffffff;
+      border-bottom-color: var(--border);
+    }
+
+    .table-toolbar h4 {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #17202a;
+    }
+
+    table {
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    th,
+    td {
+      padding: 13px 16px;
+      border-bottom-color: #e5ebf2;
+    }
+
+    th {
+      background: #f6f8fb;
+      color: #687589;
+      font-size: 0.69rem;
+      letter-spacing: 0.07em;
+    }
+
+    td {
+      color: #263241;
+    }
+
+    tbody tr:hover {
+      background: #fbf2f0;
+    }
+
+    tr.selectable-row:hover {
+      background: var(--accent-soft);
+    }
+
+    tr.selectable-row.selected {
+      background: var(--accent-soft-2);
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
+
+    .table-actions {
+      gap: 7px;
+    }
+
+    .action-chip {
+      padding: 6px 10px;
+      background: #ffffff;
+      border-color: #d5dde7;
+      color: #405064;
+      font-weight: 600;
+    }
+
+    .action-chip:hover {
+      background: #f3f6f9;
+      border-color: #b8c2cf;
+    }
+
+    .action-chip.danger {
+      color: var(--danger);
+      border-color: #f6c5bf;
+    }
+
+    .action-chip.danger:hover {
+      background: var(--danger-soft);
+      border-color: #f6c5bf;
+    }
+
+    .badge,
+    .cloud-chip,
+    .status-highlight {
+      border-radius: 999px;
+      font-weight: 700;
+    }
+
+    .badge {
+      padding: 4px 9px;
+      border-color: #dbe2ec;
+      background: #f3f6f9;
+      color: #56616f;
+    }
+
+    .badge.positive,
+    .cloud-chip.ok,
+    .status-highlight.ok {
+      background: var(--success-soft);
+      color: var(--success);
+    }
+
+    .badge.warning,
+    .cloud-chip.syncing,
+    .status-highlight.warn {
+      background: var(--warning-soft);
+      color: var(--warning);
+    }
+
+    .badge.danger,
+    .cloud-chip.error {
+      background: var(--danger-soft);
+      color: var(--danger);
+    }
+
+    .notice-card {
+      background: #ffffff;
+      border-left: 4px solid var(--support-blue);
+    }
+
+    .notice-icon {
+      background: var(--support-blue-soft);
+      border-color: #d8e6ff;
+      color: var(--support-blue);
+    }
+
+    .empty-card {
+      background: linear-gradient(180deg, #ffffff 0%, #fafbfd 100%);
+      border-style: dashed;
+    }
+
+    .subtle-panel,
+    .summary-card,
+    .total-card {
+      background: #f8fafc;
+    }
+
+    .modal-shell {
+      border-radius: 20px;
+      border-color: #dfe5ee;
+      box-shadow: 0 28px 68px rgba(15, 23, 42, 0.22);
+    }
+
+    .modal-header {
+      background: #ffffff;
+      border-bottom-color: var(--border);
+    }
+
+    .modal-title {
+      font-size: 1.08rem;
+      font-weight: 700;
+      color: #17202a;
+    }
+
+    .modal-body {
+      background: #f4f6f9;
+    }
+
+    .modal-tab.active {
+      background: var(--accent-soft);
+      color: var(--accent-ink);
+      border-color: #ffd1ca;
+    }
+
+    .checkbox-item {
+      border-color: #dfe5ee;
+      background: #ffffff;
+      border-radius: 10px;
+    }
+
+    .checkbox-item input {
+      accent-color: var(--accent);
+    }
+
+    .toast {
+      border-color: #dfe5ee;
+      box-shadow: var(--shadow-md);
+    }
+
+    .toast.success .notice-icon {
+      background: var(--success-soft);
+      color: var(--success);
+    }
+
+    .toast.error .notice-icon {
+      background: var(--danger-soft);
+      color: var(--danger);
+    }
+
+    .chart-blueprint-card {
+      background: #ffffff;
+      border-color: var(--border);
+    }
+
+    .chart-blueprint-sheet {
+      background: #f8fafc;
+      border-color: #dbe3ee;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+
+    .chart-blueprint-title {
+      background: #ffffff;
+      color: #17202a;
+      border-color: #aab5c4;
+      border-radius: 8px;
+    }
+
+    .chart-blueprint-row.synthetic {
+      background: #fff0ed;
+      border-color: #ffd1ca;
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
+
+    .chart-blueprint-row.analytical {
+      background: #ffffff;
+      border-color: #e4eaf2;
+    }
+
+    .chart-blueprint-code,
+    .chart-blueprint-name {
+      color: #17202a;
+    }
+
+    .chart-blueprint-row.analytical .chart-blueprint-code {
+      color: #5a6677;
+    }
+
+    .blueprint-icon-button {
+      border-color: #d4dce7;
+      color: #334155;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .blueprint-icon-button:hover {
+      background: #f3f6f9;
+    }
+
+    .blueprint-icon-button.add {
+      color: var(--accent);
+    }
+
+    .account-tree-item.current {
+      background: var(--accent-soft);
+      border-color: #ffd1ca;
+    }
+
+    .account-tree-item.current .mono {
+      color: var(--accent-ink);
+    }
+
+    .financeiro-legacy-shell {
+      background: #f1f1f3;
+      border: 1px solid #d5d7dc;
+      border-radius: 10px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      overflow: hidden;
+    }
+
+    .financeiro-legacy-head {
+      padding: 22px 24px 10px;
+      border-bottom: 1px solid #d7d9de;
+      background: linear-gradient(180deg, #f6f6f8 0%, #efeff2 100%);
+    }
+
+    .financeiro-legacy-title {
+      margin: 0;
+      color: #4f555f;
+      font-size: 2rem;
+      font-weight: 300;
+      letter-spacing: -0.03em;
+      text-transform: uppercase;
+    }
+
+    .financeiro-legacy-note {
+      margin: 8px 0 0;
+      color: #6a7180;
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+
+    .financeiro-legacy-body {
+      padding: 18px 18px 22px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .financeiro-legacy-panel {
+      background: #f6f6f8;
+      border: 1px solid #d8dae0;
+      border-radius: 8px;
+      padding: 14px 16px 16px;
+    }
+
+    .financeiro-legacy-section-title {
+      margin: 0 0 14px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #bfc4cd;
+      color: #505661;
+      font-size: 1rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      position: relative;
+    }
+
+    .financeiro-legacy-section-title::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -1px;
+      width: 54px;
+      height: 3px;
+      background: #2c3fa3;
+    }
+
+    .financeiro-legacy-form {
+      display: grid;
+      gap: 8px;
+    }
+
+    .financeiro-legacy-row {
+      display: grid;
+      grid-template-columns: 140px minmax(0, 1fr);
+      gap: 8px;
+      align-items: center;
+    }
+
+    .financeiro-legacy-row.dual {
+      grid-template-columns: 140px minmax(0, 1fr) 18px minmax(0, 1fr);
+    }
+
+    .financeiro-legacy-label {
+      color: #5f6570;
+      font-size: 0.8rem;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .financeiro-legacy-control-group {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 22px;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .financeiro-legacy-control-group.single {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .financeiro-legacy-range-separator {
+      color: #727887;
+      font-size: 0.78rem;
+      text-align: center;
+    }
+
+    .financeiro-legacy-input,
+    .financeiro-legacy-select {
+      width: 100%;
+      min-height: 27px;
+      padding: 4px 8px;
+      border: 1px solid #b8bec8;
+      border-radius: 2px;
+      background: #ffffff;
+      color: #3f4652;
+      font-size: 0.78rem;
+      box-shadow: inset 0 1px 1px rgba(17, 24, 39, 0.05);
+    }
+
+    .financeiro-legacy-input:focus,
+    .financeiro-legacy-select:focus {
+      outline: none;
+      border-color: #2c3fa3;
+      box-shadow: 0 0 0 2px rgba(44, 63, 163, 0.12);
+    }
+
+    .financeiro-legacy-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 2px;
+      border: 1px solid #bcc2cc;
+      background: linear-gradient(180deg, #fafbff 0%, #dde2f8 100%);
+      color: #2c3fa3;
+      display: grid;
+      place-items: center;
+      font-size: 0.72rem;
+      user-select: none;
+    }
+
+    .financeiro-legacy-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .financeiro-legacy-button {
+      min-height: 31px;
+      padding: 0 14px;
+      border: 0;
+      border-radius: 2px;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      color: #ffffff;
+      background: #263b9a;
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+    }
+
+    .financeiro-legacy-button:hover {
+      background: #1f3287;
+    }
+
+    .financeiro-legacy-button.secondary {
+      background: #a8adb7;
+    }
+
+    .financeiro-legacy-button.secondary:hover {
+      background: #9197a2;
+    }
+
+    .financeiro-legacy-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .financeiro-legacy-stat {
+      background: #ffffff;
+      border: 1px solid #d2d7e0;
+      border-radius: 4px;
+      padding: 10px 12px;
+      min-height: 72px;
+    }
+
+    .financeiro-legacy-stat span {
+      display: block;
+      color: #707785;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .financeiro-legacy-stat strong {
+      display: block;
+      margin-top: 6px;
+      color: #2a3140;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .financeiro-legacy-stat small {
+      display: block;
+      margin-top: 4px;
+      color: #7b8190;
+      font-size: 0.74rem;
+    }
+
+    .financeiro-legacy-table-wrap {
+      border: 1px solid #cfd4dc;
+      border-radius: 4px;
+      background: #ffffff;
+      overflow: auto;
+    }
+
+    .financeiro-legacy-table {
+      min-width: 840px;
+    }
+
+    .financeiro-legacy-table th {
+      background: #eceef2;
+      color: #5a6170;
+      font-size: 0.69rem;
+      border-bottom-color: #cfd4dc;
+    }
+
+    .financeiro-legacy-table td {
+      font-size: 0.8rem;
+      border-bottom-color: #dde1e8;
+    }
+
+    .financeiro-legacy-table tbody tr:hover {
+      background: #f6f8fb;
+    }
+
+    .financeiro-legacy-status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 84px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      border: 1px solid transparent;
+    }
+
+    .financeiro-legacy-status.open {
+      background: #fff7e5;
+      color: #946200;
+      border-color: #f2d58b;
+    }
+
+    .financeiro-legacy-status.partial {
+      background: #fff1e9;
+      color: #bf5a24;
+      border-color: #f2c2a9;
+    }
+
+    .financeiro-legacy-status.paid {
+      background: #ecf8f3;
+      color: #0b7d62;
+      border-color: #b7e4d3;
+    }
+
+    .financeiro-legacy-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.02fr) minmax(0, 1.18fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .financeiro-legacy-stack {
+      display: grid;
+      gap: 16px;
+    }
+
+    .financeiro-legacy-toolbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .financeiro-legacy-toolbar .page-subtitle {
+      margin-top: 4px;
+      max-width: 720px;
+    }
+
+    .financeiro-legacy-subpanel {
+      margin-top: 16px;
+      padding: 14px;
+      border: 1px solid #d4d8df;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .financeiro-legacy-subpanel strong {
+      display: block;
+      color: #434956;
+      font-size: 0.84rem;
+      margin-bottom: 4px;
+    }
+
+    .financeiro-legacy-subpanel p {
+      margin: 0;
+      color: #6c7381;
+      font-size: 0.78rem;
+      line-height: 1.5;
+    }
+
+    .financeiro-legacy-list {
+      margin: 0;
+      padding-left: 18px;
+      color: #5c6472;
+      font-size: 0.8rem;
+      line-height: 1.6;
+    }
+
+    .financeiro-legacy-list li + li {
+      margin-top: 4px;
+    }
+
+    @media (max-width: 960px) {
+      .sidebar {
+        width: min(84vw, 312px);
+      }
+
+      .content-area {
+        padding: 12px;
+      }
+
+      .financeiro-legacy-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .financeiro-legacy-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .financeiro-legacy-row,
+      .financeiro-legacy-row.dual {
+        grid-template-columns: 1fr;
+      }
+
+      .financeiro-legacy-label {
+        text-align: left;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .financeiro-legacy-head,
+      .financeiro-legacy-body {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      .financeiro-legacy-summary {
+        grid-template-columns: 1fr;
+      }
+
+      .financeiro-legacy-actions {
+        justify-content: stretch;
+      }
+
+      .financeiro-legacy-button {
+        flex: 1;
+      }
+    }
   </style>
 </head>
 <body>
@@ -2041,14 +3050,20 @@
           },
           cloudDraft: createEmptyCloudDraft(),
           costCenterClassificationFormDraft: createEmptyCostCenterClassificationDraft(),
+          supplierFilters: createEmptySupplierFilters(),
+          supplierModalOpen: false,
           chartAccountFormDraft: createEmptyChartAccountDraft(),
           chartAccountsModalOpen: false,
           chartAccountChildModalOpen: false,
           chartAccountChildParentId: "",
           chartAccountChildDraft: createEmptyChartAccountDraft(),
           chartAccountTreeCollapsed: {},
+          financialNatureFilters: createEmptyFinancialNatureFilters(),
+          financialNatureModalOpen: false,
           financialNatureFormDraft: createEmptyFinancialNatureDraft(),
           itemNaturePreviewId: "",
+          itemFilters: createEmptyItemFilters(),
+          itemModalOpen: false,
           itemFormDraft: createEmptyItemDraft(),
           accountingEntryDraft: createEmptyAccountingEntryDraft(),
           accountingEntryFilters: createEmptyAccountingEntryFilters(),
@@ -2059,6 +3074,8 @@
           trialBalanceModalOpen: false,
           trialBalanceReportModalOpen: false,
           trialBalanceSelectedAccountId: "",
+          invoiceFilters: createEmptyInvoiceFilters(),
+          financeiroFilters: createEmptyFinanceiroFilters(),
           settingsPanel: "costCenters",
           documentTypeFormDraft: createEmptyDocumentTypeDraft(),
           accountingEventFormDraft: createEmptyAccountingEventDraft(),
@@ -2222,6 +3239,56 @@
           startDate: "",
           endDate: "",
           amount: "",
+          description: ""
+        };
+      }
+
+      function createEmptyFinanceiroFilters() {
+        return {
+          general: "",
+          creditor: "",
+          source: "all",
+          status: "all",
+          dueStart: "",
+          dueEnd: "",
+          amountMin: "",
+          amountMax: ""
+        };
+      }
+
+      function createEmptySupplierFilters() {
+        return {
+          legalName: "",
+          document: "",
+          email: "",
+          phone: "",
+          address: ""
+        };
+      }
+
+      function createEmptyFinancialNatureFilters() {
+        return {
+          name: "",
+          chartAccountId: "",
+          costCenterId: ""
+        };
+      }
+
+      function createEmptyItemFilters() {
+        return {
+          name: "",
+          financialNatureId: "",
+          description: ""
+        };
+      }
+
+      function createEmptyInvoiceFilters() {
+        return {
+          type: "",
+          supplierId: "",
+          documentNumber: "",
+          issueDate: "",
+          costCenterId: "",
           description: ""
         };
       }
@@ -2837,6 +3904,15 @@
             state.ui.payrollReportFilters = createEmptyPayrollReportFilters();
             renderApp();
             break;
+          case "reset-financeiro-filters":
+            state.ui.financeiroFilters = createEmptyFinanceiroFilters();
+            state.ui.search.financeiro = "";
+            renderApp();
+            break;
+          case "reset-invoice-filters":
+            state.ui.invoiceFilters = createEmptyInvoiceFilters();
+            renderApp();
+            break;
           case "print-payroll-report":
             exportPayrollAnalyticalPdf();
             break;
@@ -2858,6 +3934,21 @@
             break;
           case "reset-supplier":
             state.ui.editing.supplierId = null;
+            state.ui.supplierModalOpen = false;
+            renderApp();
+            break;
+          case "new-supplier":
+            state.ui.editing.supplierId = null;
+            state.ui.supplierModalOpen = true;
+            navigate("suppliers");
+            break;
+          case "close-supplier-modal":
+            state.ui.editing.supplierId = null;
+            state.ui.supplierModalOpen = false;
+            renderApp();
+            break;
+          case "reset-supplier-filters":
+            state.ui.supplierFilters = createEmptySupplierFilters();
             renderApp();
             break;
           case "reset-chart-account":
@@ -2905,6 +3996,23 @@
           case "reset-financial-nature":
             state.ui.editing.financialNatureId = null;
             state.ui.financialNatureFormDraft = createEmptyFinancialNatureDraft();
+            state.ui.financialNatureModalOpen = false;
+            renderApp();
+            break;
+          case "new-financial-nature":
+            state.ui.editing.financialNatureId = null;
+            state.ui.financialNatureFormDraft = createEmptyFinancialNatureDraft();
+            state.ui.financialNatureModalOpen = true;
+            navigate("financialNatures");
+            break;
+          case "close-financial-nature-modal":
+            state.ui.editing.financialNatureId = null;
+            state.ui.financialNatureFormDraft = createEmptyFinancialNatureDraft();
+            state.ui.financialNatureModalOpen = false;
+            renderApp();
+            break;
+          case "reset-financial-nature-filters":
+            state.ui.financialNatureFilters = createEmptyFinancialNatureFilters();
             renderApp();
             break;
           case "remove-financial-nature-mapping":
@@ -2930,6 +4038,25 @@
             state.ui.editing.itemId = null;
             state.ui.itemNaturePreviewId = "";
             state.ui.itemFormDraft = createEmptyItemDraft();
+            state.ui.itemModalOpen = false;
+            renderApp();
+            break;
+          case "new-item":
+            state.ui.editing.itemId = null;
+            state.ui.itemNaturePreviewId = "";
+            state.ui.itemFormDraft = createEmptyItemDraft();
+            state.ui.itemModalOpen = true;
+            navigate("items");
+            break;
+          case "close-item-modal":
+            state.ui.editing.itemId = null;
+            state.ui.itemNaturePreviewId = "";
+            state.ui.itemFormDraft = createEmptyItemDraft();
+            state.ui.itemModalOpen = false;
+            renderApp();
+            break;
+          case "reset-item-filters":
+            state.ui.itemFilters = createEmptyItemFilters();
             renderApp();
             break;
           case "new-invoice":
@@ -3064,6 +4191,7 @@
             break;
           case "edit-supplier":
             state.ui.editing.supplierId = id;
+            state.ui.supplierModalOpen = true;
             navigate("suppliers");
             break;
           case "edit-chart-account":
@@ -3081,6 +4209,7 @@
               state.ui.financialNatureFormDraft = createEmptyFinancialNatureDraft(nature);
             }
             state.ui.editing.financialNatureId = id;
+            state.ui.financialNatureModalOpen = true;
             navigate("financialNatures");
             break;
           case "edit-item":
@@ -3090,6 +4219,7 @@
               state.ui.itemFormDraft = createEmptyItemDraft(item);
             }
             state.ui.editing.itemId = id;
+            state.ui.itemModalOpen = true;
             navigate("items");
             break;
           case "open-accounting-entries":
@@ -3316,6 +4446,21 @@
           case "payroll-report-filters":
             submitPayrollAnalyticalReport(new FormData(form));
             break;
+          case "supplier-filters":
+            renderApp();
+            break;
+          case "financial-nature-filters":
+            renderApp();
+            break;
+          case "item-filters":
+            renderApp();
+            break;
+          case "invoice-filters":
+            renderApp();
+            break;
+          case "financeiro-filters":
+            renderApp();
+            break;
           case "cloud-config":
             submitCloudConfig(new FormData(form));
             break;
@@ -3333,7 +4478,9 @@
         const searchKey = target.dataset.search;
         if (searchKey) {
           state.ui.search[searchKey] = target.value || "";
-          renderApp();
+          if (event.type === "change") {
+            renderApp();
+          }
           return;
         }
 
@@ -3445,6 +4592,32 @@
           state.ui.payrollReportFilters[fieldName] = target.value;
           state.ui.payrollReportFilters.submitted = false;
           renderApp();
+          return;
+        }
+
+        if (formType === "supplier-filters") {
+          state.ui.supplierFilters[fieldName] = target.value;
+          return;
+        }
+
+        if (formType === "financial-nature-filters") {
+          state.ui.financialNatureFilters[fieldName] = target.value;
+          return;
+        }
+
+        if (formType === "item-filters") {
+          state.ui.itemFilters[fieldName] = target.value;
+          return;
+        }
+
+        if (formType === "invoice-filters") {
+          state.ui.invoiceFilters[fieldName] = target.value;
+          return;
+        }
+
+        if (formType === "financeiro-filters") {
+          state.ui.financeiroFilters[fieldName] = target.value;
+          state.ui.search.financeiro = state.ui.financeiroFilters.general || "";
           return;
         }
 
@@ -3819,6 +4992,7 @@
 
         upsertRecord("suppliers", record);
         state.ui.editing.supplierId = null;
+        state.ui.supplierModalOpen = false;
         notify("success", "Fornecedor", existing ? "Fornecedor atualizado com sucesso." : "Fornecedor cadastrado com sucesso.");
         renderApp();
       }
@@ -3932,6 +5106,7 @@
         upsertRecord("financialNatures", record);
         state.ui.editing.financialNatureId = null;
         state.ui.financialNatureFormDraft = createEmptyFinancialNatureDraft();
+        state.ui.financialNatureModalOpen = false;
         notify("success", "Natureza financeira", existing ? "Natureza financeira atualizada com sucesso." : "Natureza financeira cadastrada com sucesso.");
         renderApp();
       }
@@ -4017,6 +5192,7 @@
         state.ui.editing.itemId = null;
         state.ui.itemNaturePreviewId = "";
         state.ui.itemFormDraft = createEmptyItemDraft();
+        state.ui.itemModalOpen = false;
         notify("success", "Item", existing ? "Item atualizado com sucesso." : "Item cadastrado com sucesso.");
         renderApp();
       }
@@ -5378,8 +6554,11 @@
         const app = document.getElementById("app");
         const hasOpenModal = Boolean(
           state.ui.invoiceModalOpen
+          || state.ui.supplierModalOpen
           || state.ui.chartAccountsModalOpen
           || state.ui.chartAccountChildModalOpen
+          || state.ui.financialNatureModalOpen
+          || state.ui.itemModalOpen
           || state.ui.accountingEntriesModalOpen
           || state.ui.accountingEntryFormModalOpen
           || state.ui.trialBalanceModalOpen
@@ -5428,8 +6607,11 @@
             ${state.ui.toasts.map(renderToast).join("")}
           </div>
           ${state.ui.invoiceModalOpen ? renderInvoiceModal() : ""}
+          ${state.ui.supplierModalOpen ? renderSupplierModal() : ""}
           ${state.ui.chartAccountsModalOpen ? renderChartAccountsModal() : ""}
           ${state.ui.chartAccountChildModalOpen ? renderChartAccountChildModal() : ""}
+          ${state.ui.financialNatureModalOpen ? renderFinancialNatureModal() : ""}
+          ${state.ui.itemModalOpen ? renderItemModal() : ""}
           ${state.ui.accountingEntriesModalOpen ? renderAccountingEntriesModal() : ""}
           ${state.ui.accountingEntryFormModalOpen ? renderAccountingEntryFormModal() : ""}
           ${state.ui.trialBalanceModalOpen ? renderTrialBalanceModal() : ""}
@@ -6270,104 +7452,108 @@
       }
 
       function renderSuppliersView() {
-        const editing = getActiveEditRecord("suppliers", state.ui.editing.supplierId);
-        const searchTerm = state.ui.search.suppliers;
-        const records = filterRecords(
-          state.data.suppliers,
-          searchTerm,
-          (record) => `${record.code} ${record.legalName} ${record.document} ${record.email} ${record.phone}`
-        );
+        const filters = state.ui.supplierFilters || createEmptySupplierFilters();
+        const records = getFilteredSuppliers(filters);
+        const hasFilters = Object.values(filters).some((value) => String(value || "").trim() !== "");
 
         return `
-          <section class="layout-grid">
-            <article class="card">
-              <div class="section-head">
-                <div>
-                  <h3>${editing ? "Editar fornecedor" : "Novo fornecedor"}</h3>
-                  <p>Os fornecedores cadastrados aqui serão usados depois no lançamento das notas fiscais.</p>
-                </div>
-              </div>
-              <form data-form="supplier" autocomplete="off">
-                <input type="hidden" name="id" value="${escapeHtml(editing?.id || "")}">
-                <div class="form-grid">
-                  <div class="field">
-                    <label for="supplier-legal-name">Nome / Razão social</label>
-                    <input id="supplier-legal-name" name="legalName" maxlength="160" value="${escapeHtml(editing?.legalName || "")}" required>
+          <section class="financeiro-legacy-shell">
+            <div class="financeiro-legacy-head">
+              <h3 class="financeiro-legacy-title">Cadastro de fornecedores</h3>
+              <p class="financeiro-legacy-note">Bloco superior com os parâmetros do módulo e, abaixo, o resultado da consulta de fornecedores.</p>
+            </div>
+            <div class="financeiro-legacy-body">
+              <section class="financeiro-legacy-panel">
+                <div class="financeiro-legacy-toolbar">
+                  <div>
+                    <h4 class="financeiro-legacy-section-title">Parâmetros do módulo</h4>
+                    <p class="page-subtitle">Os parâmetros de consulta seguem os mesmos campos do cadastro de fornecedores.</p>
                   </div>
-                  <div class="field">
-                    <label for="supplier-document">CPF ou CNPJ</label>
-                    <input id="supplier-document" name="document" maxlength="24" value="${escapeHtml(editing?.document || "")}" placeholder="Somente números ou formato livre">
-                  </div>
-                  <div class="field">
-                    <label for="supplier-email">E-mail</label>
-                    <input id="supplier-email" name="email" type="email" maxlength="120" value="${escapeHtml(editing?.email || "")}" placeholder="financeiro@empresa.com">
-                  </div>
-                  <div class="field">
-                    <label for="supplier-phone">Telefone</label>
-                    <input id="supplier-phone" name="phone" maxlength="30" value="${escapeHtml(editing?.phone || "")}" placeholder="(00) 00000-0000">
-                  </div>
-                  <div class="field full">
-                    <label for="supplier-address">Endereço</label>
-                    <textarea id="supplier-address" name="address" maxlength="260" placeholder="Rua, número, complemento, bairro, cidade, UF">${escapeHtml(editing?.address || "")}</textarea>
+                  <div class="inline-actions">
+                    <button class="secondary-button" type="button" data-action="reset-supplier-filters">Limpar</button>
+                    <button class="primary-button" type="button" data-action="new-supplier">Novo</button>
                   </div>
                 </div>
-                <div class="form-actions">
-                  <button class="primary-button" type="submit">${editing ? "Salvar alterações" : "Cadastrar fornecedor"}</button>
-                  ${editing ? `<button class="ghost-button" type="button" data-action="reset-supplier">Cancelar edição</button>` : ""}
+                <form data-form="supplier-filters" autocomplete="off">
+                  <div class="form-grid">
+                    <div class="field">
+                      <label for="supplier-filter-legal-name">Nome / Razão social</label>
+                      <input id="supplier-filter-legal-name" name="legalName" maxlength="160" value="${escapeHtml(filters.legalName)}" placeholder="Filtrar por nome">
+                    </div>
+                    <div class="field">
+                      <label for="supplier-filter-document">CPF ou CNPJ</label>
+                      <input id="supplier-filter-document" name="document" maxlength="24" value="${escapeHtml(filters.document)}" placeholder="Filtrar por documento">
+                    </div>
+                    <div class="field">
+                      <label for="supplier-filter-email">E-mail</label>
+                      <input id="supplier-filter-email" name="email" maxlength="120" value="${escapeHtml(filters.email)}" placeholder="Filtrar por e-mail">
+                    </div>
+                    <div class="field">
+                      <label for="supplier-filter-phone">Telefone</label>
+                      <input id="supplier-filter-phone" name="phone" maxlength="30" value="${escapeHtml(filters.phone)}" placeholder="Filtrar por telefone">
+                    </div>
+                    <div class="field full">
+                      <label for="supplier-filter-address">Endereço</label>
+                      <input id="supplier-filter-address" name="address" maxlength="260" value="${escapeHtml(filters.address)}" placeholder="Filtrar por endereço">
+                    </div>
+                  </div>
+                  <div class="form-actions">
+                    <button class="primary-button" type="submit">Consultar</button>
+                  </div>
+                </form>
+              </section>
+
+              <section class="financeiro-legacy-panel">
+                <div class="financeiro-legacy-toolbar">
+                  <div>
+                    <h4 class="financeiro-legacy-section-title">Resultado da consulta</h4>
+                    <p class="page-subtitle">Fornecedores cadastrados no sistema.</p>
+                  </div>
                 </div>
-              </form>
-            </article>
-            <article class="table-card">
-              <div class="table-toolbar">
-                <div>
-                  <h4>Lista de fornecedores</h4>
-                  <p class="page-subtitle">Pesquisa por código, nome, documento, e-mail ou telefone.</p>
-                </div>
-                <input class="search-input" data-search="suppliers" placeholder="Pesquisar fornecedores" value="${escapeHtml(searchTerm)}">
-              </div>
-              ${records.length ? `
-                <div class="table-scroll">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Código</th>
-                        <th>Fornecedor</th>
-                        <th>Contato</th>
-                        <th>Endereço</th>
-                        <th>Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${records.map((record) => `
+                ${records.length ? `
+                  <div class="financeiro-legacy-table-wrap">
+                    <table class="financeiro-legacy-table">
+                      <thead>
                         <tr>
-                          <td class="mono">${escapeHtml(record.code)}</td>
-                          <td>
-                            <strong>${escapeHtml(record.legalName)}</strong>
-                            <div class="table-muted">${escapeHtml(record.document || "Documento não informado")}</div>
-                          </td>
-                          <td>
-                            <div>${escapeHtml(record.email || "E-mail não informado")}</div>
-                            <div class="table-muted">${escapeHtml(record.phone || "Telefone não informado")}</div>
-                          </td>
-                          <td class="table-muted">${escapeHtml(record.address || "Endereço não informado")}</td>
-                          <td>
-                            <div class="table-actions">
-                              <button class="action-chip" type="button" data-action="edit-supplier" data-id="${escapeHtml(record.id)}">Editar</button>
-                              <button class="action-chip danger" type="button" data-action="delete-supplier" data-id="${escapeHtml(record.id)}">Excluir</button>
-                            </div>
-                          </td>
+                          <th>Código</th>
+                          <th>Fornecedor</th>
+                          <th>Contato</th>
+                          <th>Endereço</th>
+                          <th>Ações</th>
                         </tr>
-                      `).join("")}
-                    </tbody>
-                  </table>
-                </div>
-              ` : `
-                <div class="empty-card">
-                  <strong>Nenhum fornecedor encontrado.</strong>
-                  <p>${searchTerm ? "Nenhum fornecedor corresponde ao termo pesquisado." : "Cadastre o primeiro fornecedor para habilitar lançamentos no módulo fiscal."}</p>
-                </div>
-              `}
-            </article>
+                      </thead>
+                      <tbody>
+                        ${records.map((record) => `
+                          <tr>
+                            <td class="mono">${escapeHtml(record.code)}</td>
+                            <td>
+                              <strong>${escapeHtml(record.legalName)}</strong>
+                              <div class="table-muted">${escapeHtml(record.document || "Documento não informado")}</div>
+                            </td>
+                            <td>
+                              <div>${escapeHtml(record.email || "E-mail não informado")}</div>
+                              <div class="table-muted">${escapeHtml(record.phone || "Telefone não informado")}</div>
+                            </td>
+                            <td class="table-muted">${escapeHtml(record.address || "Endereço não informado")}</td>
+                            <td>
+                              <div class="table-actions">
+                                <button class="action-chip" type="button" data-action="edit-supplier" data-id="${escapeHtml(record.id)}">Editar</button>
+                                <button class="action-chip danger" type="button" data-action="delete-supplier" data-id="${escapeHtml(record.id)}">Excluir</button>
+                              </div>
+                            </td>
+                          </tr>
+                        `).join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                ` : `
+                  <div class="empty-card" style="border-radius:4px;">
+                    <strong>Nenhum fornecedor encontrado.</strong>
+                    <p>${hasFilters ? "Nenhum fornecedor corresponde aos parâmetros informados." : "Cadastre o primeiro fornecedor para habilitar lançamentos no módulo fiscal."}</p>
+                  </div>
+                `}
+              </section>
+            </div>
           </section>
         `;
       }
@@ -6649,97 +7835,396 @@
       }
 
       function renderFinancialNaturesView() {
+        const filters = state.ui.financialNatureFilters || createEmptyFinancialNatureFilters();
+        const selectableAccounts = getSelectableChartAccounts();
+        const records = getFilteredFinancialNatures(filters);
+        const canCreate = selectableAccounts.length > 0;
+        const hasFilters = Object.values(filters).some((value) => String(value || "").trim() !== "");
+        return `
+          <section class="financeiro-legacy-shell">
+            <div class="financeiro-legacy-head">
+              <h3 class="financeiro-legacy-title">Naturezas financeiras</h3>
+              <p class="financeiro-legacy-note">Bloco superior com os parâmetros do módulo e, abaixo, o resultado da consulta das naturezas financeiras.</p>
+            </div>
+            <div class="financeiro-legacy-body">
+              ${!canCreate ? `
+                <section class="notice-card">
+                  <div class="notice-icon">AT</div>
+                  <div>
+                    <strong>Cadastre primeiro as contas contábeis</strong>
+                    <p>O Cadastro Contábil da natureza financeira depende de contas analíticas ativas. Crie ou ajuste ao menos uma conta válida antes de montar os vínculos.</p>
+                  </div>
+                </section>
+              ` : ""}
 
+              <section class="financeiro-legacy-panel">
+                <div class="financeiro-legacy-toolbar">
+                  <div>
+                    <h4 class="financeiro-legacy-section-title">Parâmetros do módulo</h4>
+                    <p class="page-subtitle">Os parâmetros de consulta seguem os mesmos campos usados no cadastro da natureza financeira.</p>
+                  </div>
+                  <div class="inline-actions">
+                    <button class="secondary-button" type="button" data-action="reset-financial-nature-filters">Limpar</button>
+                    <button class="primary-button" type="button" data-action="new-financial-nature" ${canCreate ? "" : "disabled"}>Novo</button>
+                  </div>
+                </div>
+                <form data-form="financial-nature-filters" autocomplete="off">
+                  <div class="form-grid">
+                    <div class="field">
+                      <label for="financial-nature-filter-name">Nome da natureza financeira</label>
+                      <input id="financial-nature-filter-name" name="name" maxlength="160" value="${escapeHtml(filters.name)}" placeholder="Filtrar por nome">
+                    </div>
+                    <div class="field">
+                      <label for="financial-nature-filter-account">Conta contábil</label>
+                      <select id="financial-nature-filter-account" name="chartAccountId">
+                        <option value="">Todas</option>
+                        ${selectableAccounts.map((account) => `
+                          <option value="${escapeHtml(account.id)}" ${filters.chartAccountId === account.id ? "selected" : ""}>
+                            ${escapeHtml(account.code)} - ${escapeHtml(account.name)}
+                          </option>
+                        `).join("")}
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="financial-nature-filter-cost-center">Centro de custo</label>
+                      <select id="financial-nature-filter-cost-center" name="costCenterId">
+                        <option value="">Todos</option>
+                        ${state.data.costCenters.map((record) => `
+                          <option value="${escapeHtml(record.id)}" ${filters.costCenterId === record.id ? "selected" : ""}>
+                            ${escapeHtml(record.code)} - ${escapeHtml(record.name)}
+                          </option>
+                        `).join("")}
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-actions">
+                    <button class="primary-button" type="submit">Consultar</button>
+                  </div>
+                </form>
+              </section>
+
+              <section class="financeiro-legacy-panel">
+                <div class="financeiro-legacy-toolbar">
+                  <div>
+                    <h4 class="financeiro-legacy-section-title">Resultado da consulta</h4>
+                    <p class="page-subtitle">Naturezas financeiras cadastradas no sistema.</p>
+                  </div>
+                </div>
+                ${records.length ? `
+                  <div class="financeiro-legacy-table-wrap">
+                    <table class="financeiro-legacy-table">
+                      <thead>
+                        <tr>
+                          <th>Código</th>
+                          <th>Natureza financeira</th>
+                          <th>Cadastro Contábil</th>
+                          <th>Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${records.map((record) => {
+                          const mappings = record.accountMappings || [];
+                          return `
+                            <tr>
+                              <td class="mono">${escapeHtml(record.code)}</td>
+                              <td>${escapeHtml(record.name)}</td>
+                              <td>
+                                ${mappings.length ? mappings.map((mapping) => {
+                                  const account = getChartAccountById(mapping.chartAccountId);
+                                  const costCenter = mapping.costCenterId ? getCostCenterById(mapping.costCenterId) : null;
+                                  const valid = isChartAccountAvailableForLinks(account);
+                                  return `
+                                    <div class="badge-row" style="margin-bottom:4px;">
+                                      <span class="badge ${valid ? "" : "danger"}">${escapeHtml(account?.code || "Conta indisponível")}</span>
+                                      <span class="table-muted">${costCenter ? escapeHtml(costCenter.name) : "Todos (padrão)"}</span>
+                                    </div>
+                                  `;
+                                }).join("") : `<span class="table-muted">Nenhum vínculo cadastrado</span>`}
+                              </td>
+                              <td>
+                                <div class="table-actions">
+                                  <button class="action-chip" type="button" data-action="edit-financial-nature" data-id="${escapeHtml(record.id)}">Editar</button>
+                                  <button class="action-chip danger" type="button" data-action="delete-financial-nature" data-id="${escapeHtml(record.id)}">Excluir</button>
+                                </div>
+                              </td>
+                            </tr>
+                          `;
+                        }).join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                ` : `
+                  <div class="empty-card" style="border-radius:4px;">
+                    <strong>Nenhuma natureza financeira encontrada.</strong>
+                    <p>${hasFilters ? "Nenhum registro combina com os parâmetros informados." : "Cadastre a primeira natureza financeira para liberar o cadastro de itens."}</p>
+                  </div>
+                `}
+              </section>
+            </div>
+          </section>
+        `;
+      }
+
+      function renderItemsView() {
+        const filters = state.ui.itemFilters || createEmptyItemFilters();
+        const selectableNatures = getSelectableFinancialNatures();
+        const records = getFilteredItems(filters);
+        const canCreate = selectableNatures.length > 0;
+        const hasFilters = Object.values(filters).some((value) => String(value || "").trim() !== "");
+        return `
+          <section class="financeiro-legacy-shell">
+            <div class="financeiro-legacy-head">
+              <h3 class="financeiro-legacy-title">Cadastro de itens</h3>
+              <p class="financeiro-legacy-note">Bloco superior com os parâmetros do módulo e, abaixo, o resultado da consulta dos itens.</p>
+            </div>
+            <div class="financeiro-legacy-body">
+              ${!canCreate ? `
+                <section class="notice-card">
+                  <div class="notice-icon">AT</div>
+                  <div>
+                    <strong>Cadastre primeiro a natureza financeira</strong>
+                    <p>Itens só podem ser criados quando houver pelo menos uma natureza financeira vinculada a conta analítica ativa.</p>
+                  </div>
+                </section>
+              ` : ""}
+
+              <section class="financeiro-legacy-panel">
+                <div class="financeiro-legacy-toolbar">
+                  <div>
+                    <h4 class="financeiro-legacy-section-title">Parâmetros do módulo</h4>
+                    <p class="page-subtitle">Os parâmetros de consulta seguem os mesmos campos usados no cadastro do item.</p>
+                  </div>
+                  <div class="inline-actions">
+                    <button class="secondary-button" type="button" data-action="reset-item-filters">Limpar</button>
+                    <button class="primary-button" type="button" data-action="new-item" ${canCreate ? "" : "disabled"}>Novo</button>
+                  </div>
+                </div>
+                <form data-form="item-filters" autocomplete="off">
+                  <div class="form-grid">
+                    <div class="field">
+                      <label for="item-filter-name">Nome do item</label>
+                      <input id="item-filter-name" name="name" maxlength="160" value="${escapeHtml(filters.name)}" placeholder="Filtrar por nome">
+                    </div>
+                    <div class="field">
+                      <label for="item-filter-nature">Natureza financeira vinculada</label>
+                      <select id="item-filter-nature" name="financialNatureId">
+                        <option value="">Todas</option>
+                        ${selectableNatures.map((nature) => `
+                          <option value="${escapeHtml(nature.id)}" ${filters.financialNatureId === nature.id ? "selected" : ""}>
+                            ${escapeHtml(nature.code)} - ${escapeHtml(nature.name)}
+                          </option>
+                        `).join("")}
+                      </select>
+                    </div>
+                    <div class="field full">
+                      <label for="item-filter-description">Descrição</label>
+                      <input id="item-filter-description" name="description" maxlength="260" value="${escapeHtml(filters.description)}" placeholder="Filtrar por descrição">
+                    </div>
+                  </div>
+                  <div class="form-actions">
+                    <button class="primary-button" type="submit">Consultar</button>
+                  </div>
+                </form>
+              </section>
+
+              <section class="financeiro-legacy-panel">
+                <div class="financeiro-legacy-toolbar">
+                  <div>
+                    <h4 class="financeiro-legacy-section-title">Resultado da consulta</h4>
+                    <p class="page-subtitle">Itens cadastrados no sistema.</p>
+                  </div>
+                </div>
+                ${records.length ? `
+                  <div class="financeiro-legacy-table-wrap">
+                    <table class="financeiro-legacy-table">
+                      <thead>
+                        <tr>
+                          <th>Código</th>
+                          <th>Item</th>
+                          <th>Natureza financeira</th>
+                          <th>Cadastro Contábil</th>
+                          <th>Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${records.map((record) => {
+                          const nature = getFinancialNatureById(record.financialNatureId);
+                          const defaultAccount = nature ? getFinancialNatureDefaultAccount(nature) : null;
+                          const mappingsCount = nature ? (nature.accountMappings || []).length : 0;
+                          const natureValid = nature ? isFinancialNatureAvailableForLinks(nature) : false;
+                          return `
+                            <tr>
+                              <td class="mono">${escapeHtml(record.code)}</td>
+                              <td>
+                                <strong>${escapeHtml(record.name)}</strong>
+                                <div class="table-muted">${escapeHtml(record.description || "Sem descrição")}</div>
+                              </td>
+                              <td>${escapeHtml(nature?.name || "Natureza indisponível")}</td>
+                              <td>
+                                <div class="badge-row">
+                                  <span class="badge">${escapeHtml(String(mappingsCount))} vínculo(s)</span>
+                                  ${natureValid ? `<span class="badge positive">Vínculo liberado</span>` : `<span class="badge warning">Revisar vínculo</span>`}
+                                </div>
+                                <div class="table-muted">${defaultAccount ? `Padrão: ${escapeHtml(defaultAccount.code)} - ${escapeHtml(defaultAccount.name)}` : "Sem vínculo padrão (depende do centro de custo do lançamento)"}</div>
+                              </td>
+                              <td>
+                                <div class="table-actions">
+                                  <button class="action-chip" type="button" data-action="edit-item" data-id="${escapeHtml(record.id)}">Editar</button>
+                                  <button class="action-chip danger" type="button" data-action="delete-item" data-id="${escapeHtml(record.id)}">Excluir</button>
+                                </div>
+                              </td>
+                            </tr>
+                          `;
+                        }).join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                ` : `
+                  <div class="empty-card" style="border-radius:4px;">
+                    <strong>Nenhum item encontrado.</strong>
+                    <p>${hasFilters ? "Nenhum item foi localizado com os parâmetros informados." : "Cadastre o primeiro item para utilizá-lo nas notas fiscais."}</p>
+                  </div>
+                `}
+              </section>
+            </div>
+          </section>
+        `;
+      }
+
+      function renderSupplierModal() {
+        const editing = getActiveEditRecord("suppliers", state.ui.editing.supplierId);
+        return `
+          <div class="modal-overlay">
+            <button class="modal-backdrop" type="button" data-action="close-supplier-modal" aria-label="Fechar modal"></button>
+            <div class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="supplier-modal-title">
+              <div class="modal-header">
+                <div>
+                  <h3 class="modal-title" id="supplier-modal-title">${editing ? "Editar fornecedor" : "Novo fornecedor"}</h3>
+                  <p class="modal-subtitle">Cadastro aberto em modal, mantendo a consulta na tela principal.</p>
+                </div>
+                <div class="inline-actions">
+                  <button class="ghost-button" type="button" data-action="close-supplier-modal">Fechar</button>
+                </div>
+              </div>
+              <div class="modal-body">
+                <form data-form="supplier" autocomplete="off">
+                  <input type="hidden" name="id" value="${escapeHtml(editing?.id || "")}">
+                  <div class="form-grid">
+                    <div class="field">
+                      <label for="supplier-legal-name-modal">Nome / Razão social</label>
+                      <input id="supplier-legal-name-modal" name="legalName" maxlength="160" value="${escapeHtml(editing?.legalName || "")}" required>
+                    </div>
+                    <div class="field">
+                      <label for="supplier-document-modal">CPF ou CNPJ</label>
+                      <input id="supplier-document-modal" name="document" maxlength="24" value="${escapeHtml(editing?.document || "")}" placeholder="Somente números ou formato livre">
+                    </div>
+                    <div class="field">
+                      <label for="supplier-email-modal">E-mail</label>
+                      <input id="supplier-email-modal" name="email" type="email" maxlength="120" value="${escapeHtml(editing?.email || "")}" placeholder="financeiro@empresa.com">
+                    </div>
+                    <div class="field">
+                      <label for="supplier-phone-modal">Telefone</label>
+                      <input id="supplier-phone-modal" name="phone" maxlength="30" value="${escapeHtml(editing?.phone || "")}" placeholder="(00) 00000-0000">
+                    </div>
+                    <div class="field full">
+                      <label for="supplier-address-modal">Endereço</label>
+                      <textarea id="supplier-address-modal" name="address" maxlength="260" placeholder="Rua, número, complemento, bairro, cidade, UF">${escapeHtml(editing?.address || "")}</textarea>
+                    </div>
+                  </div>
+                  <div class="form-actions">
+                    <button class="primary-button" type="submit">${editing ? "Salvar alterações" : "Cadastrar fornecedor"}</button>
+                    <button class="ghost-button" type="button" data-action="close-supplier-modal">Cancelar</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderFinancialNatureModal() {
         const editing = getActiveEditRecord("financialNatures", state.ui.editing.financialNatureId);
         const natureDraft = state.ui.financialNatureFormDraft;
-        const searchTerm = state.ui.search.financialNatures;
         const selectableAccounts = getSelectableChartAccounts();
-        const records = filterRecords(
-          state.data.financialNatures,
-          searchTerm,
-          (record) => {
-            const mappingsText = (record.accountMappings || []).map((mapping) => {
-              const account = getChartAccountById(mapping.chartAccountId);
-              const costCenter = mapping.costCenterId ? getCostCenterById(mapping.costCenterId) : null;
-              return `${account?.code || ""} ${account?.name || ""} ${costCenter ? costCenter.name : "todos"}`;
-            }).join(" ");
-            return `${record.code} ${record.name} ${mappingsText}`;
-          }
-        );
         const canCreate = selectableAccounts.length > 0;
         const draftMappings = natureDraft.accountMappings || [];
-
         return `
-          ${!canCreate ? `
-            <section class="notice-card">
-              <div class="notice-icon">AT</div>
-              <div>
-                <strong>Cadastre primeiro as contas contábeis</strong>
-                <p>O Cadastro Contábil da natureza financeira depende de contas analíticas ativas. Crie ou ajuste ao menos uma conta válida antes de montar os vínculos.</p>
-              </div>
-            </section>
-          ` : ""}
-          <section class="layout-grid">
-            <article class="card">
-              <div class="section-head">
+          <div class="modal-overlay">
+            <button class="modal-backdrop" type="button" data-action="close-financial-nature-modal" aria-label="Fechar modal"></button>
+            <div class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="financial-nature-modal-title">
+              <div class="modal-header">
                 <div>
-                  <h3>${editing ? "Editar natureza financeira" : "Nova natureza financeira"}</h3>
-                  <p>Informe o nome da natureza e monte o Cadastro Contábil: qual conta contábil será usada em cada centro de custo.</p>
+                  <h3 class="modal-title" id="financial-nature-modal-title">${editing ? "Editar natureza financeira" : "Nova natureza financeira"}</h3>
+                  <p class="modal-subtitle">Cadastro em modal com a montagem completa do Cadastro Contábil.</p>
                 </div>
-                ${editing ? `<button class="ghost-button" type="button" data-action="reset-financial-nature">Novo rascunho</button>` : ""}
+                <div class="inline-actions">
+                  <button class="ghost-button" type="button" data-action="close-financial-nature-modal">Fechar</button>
+                </div>
               </div>
-              <form data-form="financial-nature" autocomplete="off">
-                <input type="hidden" name="id" value="${escapeHtml(natureDraft.id || editing?.id || "")}">
-                <div class="form-grid single-column">
-                  <div class="field">
-                    <label for="financial-nature-name">Nome da natureza financeira</label>
-                    <input id="financial-nature-name" name="name" maxlength="160" value="${escapeHtml(natureDraft.name || "")}" placeholder="Ex.: Serviços" required>
+              <div class="modal-body">
+                ${!canCreate ? `
+                  <section class="notice-card" style="margin-bottom:16px;">
+                    <div class="notice-icon">AT</div>
+                    <div>
+                      <strong>Cadastre primeiro as contas contábeis</strong>
+                      <p>O Cadastro Contábil da natureza financeira depende de contas analíticas ativas.</p>
+                    </div>
+                  </section>
+                ` : ""}
+                <form data-form="financial-nature" autocomplete="off">
+                  <input type="hidden" name="id" value="${escapeHtml(natureDraft.id || editing?.id || "")}">
+                  <div class="form-grid single-column">
+                    <div class="field">
+                      <label for="financial-nature-name-modal">Nome da natureza financeira</label>
+                      <input id="financial-nature-name-modal" name="name" maxlength="160" value="${escapeHtml(natureDraft.name || "")}" placeholder="Ex.: Serviços" required>
+                    </div>
                   </div>
+                  <div class="financeiro-legacy-subpanel">
+                    <strong>Cadastro Contábil</strong>
+                    <p>Cada linha define qual conta contábil será usada em um centro de custo. Deixe o centro de custo em branco para criar o vínculo padrão.</p>
+                  </div>
+                  <div class="form-actions">
+                    <button class="primary-button" type="submit" ${canCreate || draftMappings.length ? "" : "disabled"}>${editing ? "Salvar alterações" : "Cadastrar natureza financeira"}</button>
+                  </div>
+                </form>
+
+                <div class="financeiro-legacy-subpanel">
+                  <strong>Adicionar vínculo</strong>
+                  <p>Monte a combinação conta contábil x centro de custo antes de salvar a natureza.</p>
+                  <form data-form="financial-nature-mapping" autocomplete="off" style="margin-top:12px;">
+                    <div class="form-grid">
+                      <div class="field">
+                        <label for="financial-nature-mapping-account-modal">Conta contábil</label>
+                        <select id="financial-nature-mapping-account-modal" name="chartAccountId" ${canCreate ? "required" : "disabled"}>
+                          <option value="">Selecione uma conta contábil</option>
+                          ${selectableAccounts.map((account) => `
+                            <option value="${escapeHtml(account.id)}" ${natureDraft.mappingForm.chartAccountId === account.id ? "selected" : ""}>
+                              ${escapeHtml(account.code)} - ${escapeHtml(account.name)}
+                            </option>
+                          `).join("")}
+                        </select>
+                      </div>
+                      <div class="field">
+                        <label for="financial-nature-mapping-cost-center-modal">Centro de custo</label>
+                        <select id="financial-nature-mapping-cost-center-modal" name="costCenterId" ${canCreate ? "" : "disabled"}>
+                          <option value="" ${!natureDraft.mappingForm.costCenterId ? "selected" : ""}>Todos os centros de custo (padrão)</option>
+                          ${state.data.costCenters.map((record) => `
+                            <option value="${escapeHtml(record.id)}" ${natureDraft.mappingForm.costCenterId === record.id ? "selected" : ""}>
+                              ${escapeHtml(record.code)} - ${escapeHtml(record.name)}
+                            </option>
+                          `).join("")}
+                        </select>
+                      </div>
+                    </div>
+                    <div class="form-actions">
+                      <button class="secondary-button" type="submit" ${canCreate ? "" : "disabled"}>Adicionar vínculo</button>
+                    </div>
+                  </form>
                 </div>
 
-                <div class="subtle-panel" style="margin-top:16px;">
-                  <h4>Cadastro Contábil</h4>
-                  <p>Cada linha define qual conta contábil será usada quando o lançamento for de um determinado centro de custo. Deixe o centro de custo em branco para cadastrar o vínculo padrão (usado quando nenhum vínculo específico existir para o centro de custo do lançamento).</p>
-                </div>
-                <div class="form-actions">
-                  <button class="primary-button" type="submit" ${canCreate || draftMappings.length ? "" : "disabled"}>${editing ? "Salvar alterações" : "Cadastrar natureza financeira"}</button>
-                </div>
-              </form>
-
-              <form data-form="financial-nature-mapping" autocomplete="off" style="margin-top:14px;">
-                <div class="form-grid">
-                  <div class="field">
-                    <label for="financial-nature-mapping-account">Conta contábil</label>
-                    <select id="financial-nature-mapping-account" name="chartAccountId" ${canCreate ? "required" : "disabled"}>
-                      <option value="">Selecione uma conta contábil</option>
-                      ${selectableAccounts.map((account) => `
-                        <option value="${escapeHtml(account.id)}" ${natureDraft.mappingForm.chartAccountId === account.id ? "selected" : ""}>
-                          ${escapeHtml(account.code)} - ${escapeHtml(account.name)}
-                        </option>
-                      `).join("")}
-                    </select>
-                  </div>
-                  <div class="field">
-                    <label for="financial-nature-mapping-cost-center">Centro de custo</label>
-                    <select id="financial-nature-mapping-cost-center" name="costCenterId" ${canCreate ? "" : "disabled"}>
-                      <option value="" ${!natureDraft.mappingForm.costCenterId ? "selected" : ""}>Todos os centros de custo (padrão)</option>
-                      ${state.data.costCenters.map((record) => `
-                        <option value="${escapeHtml(record.id)}" ${natureDraft.mappingForm.costCenterId === record.id ? "selected" : ""}>
-                          ${escapeHtml(record.code)} - ${escapeHtml(record.name)}
-                        </option>
-                      `).join("")}
-                    </select>
-                  </div>
-                </div>
-                <div class="form-actions">
-                  <button class="secondary-button" type="submit" ${canCreate ? "" : "disabled"}>Adicionar vínculo</button>
-                </div>
-              </form>
-
-              ${draftMappings.length ? `
-                <div class="table-card" style="margin-top:16px;">
-                  <div class="table-scroll">
-                    <table>
+                ${draftMappings.length ? `
+                  <div class="financeiro-legacy-table-wrap" style="margin-top:16px;">
+                    <table class="financeiro-legacy-table">
                       <thead>
                         <tr>
                           <th>Conta contábil</th>
@@ -6761,230 +8246,102 @@
                                 <div class="table-muted">${escapeHtml(account?.name || "Conta contábil removida")}</div>
                               </td>
                               <td>${costCenter ? escapeHtml(`${costCenter.code} - ${costCenter.name}`) : `<span class="badge">Todos (padrão)</span>`}</td>
-                              <td>
-                                <button class="action-chip danger" type="button" data-action="remove-financial-nature-mapping" data-id="${escapeHtml(mapping.id)}">Remover</button>
-                              </td>
+                              <td><button class="action-chip danger" type="button" data-action="remove-financial-nature-mapping" data-id="${escapeHtml(mapping.id)}">Remover</button></td>
                             </tr>
                           `;
                         }).join("")}
                       </tbody>
                     </table>
                   </div>
-                </div>
-              ` : `
-                <div class="empty-card" style="margin-top:16px;">
-                  <strong>Nenhum vínculo cadastrado ainda.</strong>
-                  <p>Adicione ao menos um vínculo (de preferência um padrão, sem centro de custo) antes de salvar a natureza financeira.</p>
-                </div>
-              `}
-            </article>
-            <article class="table-card">
-              <div class="table-toolbar">
-                <div>
-                  <h4>Lista de naturezas financeiras</h4>
-                  <p class="page-subtitle">Pesquisa por código, nome, conta contábil ou centro de custo vinculado.</p>
-                </div>
-                <input class="search-input" data-search="financialNatures" placeholder="Pesquisar naturezas financeiras" value="${escapeHtml(searchTerm)}">
+                ` : `
+                  <div class="empty-card" style="margin-top:16px;">
+                    <strong>Nenhum vínculo cadastrado ainda.</strong>
+                    <p>Adicione ao menos um vínculo antes de salvar a natureza financeira.</p>
+                  </div>
+                `}
               </div>
-              ${records.length ? `
-                <div class="table-scroll">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Código</th>
-                        <th>Natureza financeira</th>
-                        <th>Cadastro Contábil</th>
-                        <th>Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${records.map((record) => {
-                        const mappings = record.accountMappings || [];
-                        return `
-                          <tr>
-                            <td class="mono">${escapeHtml(record.code)}</td>
-                            <td>${escapeHtml(record.name)}</td>
-                            <td>
-                              ${mappings.length ? mappings.map((mapping) => {
-                                const account = getChartAccountById(mapping.chartAccountId);
-                                const costCenter = mapping.costCenterId ? getCostCenterById(mapping.costCenterId) : null;
-                                const valid = isChartAccountAvailableForLinks(account);
-                                return `
-                                  <div class="badge-row" style="margin-bottom:4px;">
-                                    <span class="badge ${valid ? "" : "danger"}">${escapeHtml(account?.code || "Conta indisponível")}</span>
-                                    <span class="table-muted">${costCenter ? escapeHtml(costCenter.name) : "Todos (padrão)"}</span>
-                                  </div>
-                                `;
-                              }).join("") : `<span class="table-muted">Nenhum vínculo cadastrado</span>`}
-                            </td>
-                            <td>
-                              <div class="table-actions">
-                                <button class="action-chip" type="button" data-action="edit-financial-nature" data-id="${escapeHtml(record.id)}">Editar</button>
-                                <button class="action-chip danger" type="button" data-action="delete-financial-nature" data-id="${escapeHtml(record.id)}">Excluir</button>
-                              </div>
-                            </td>
-                          </tr>
-                        `;
-                      }).join("")}
-                    </tbody>
-                  </table>
-                </div>
-              ` : `
-                <div class="empty-card">
-                  <strong>Nenhuma natureza financeira encontrada.</strong>
-                  <p>${searchTerm ? "Nenhum registro combina com a pesquisa atual." : "Cadastre a primeira natureza financeira para liberar o cadastro de itens."}</p>
-                </div>
-              `}
-            </article>
-          </section>
+            </div>
+          </div>
         `;
       }
 
-      function renderItemsView() {
+      function renderItemModal() {
         const editing = getActiveEditRecord("items", state.ui.editing.itemId);
         const itemDraft = state.ui.itemFormDraft;
-        const searchTerm = state.ui.search.items;
         const selectableNatures = getSelectableFinancialNatures();
-        const records = filterRecords(
-          state.data.items,
-          searchTerm,
-          (record) => {
-            const nature = getFinancialNatureById(record.financialNatureId);
-            const mappingsText = nature ? (nature.accountMappings || []).map((mapping) => {
-              const account = getChartAccountById(mapping.chartAccountId);
-              return `${account?.code || ""} ${account?.name || ""}`;
-            }).join(" ") : "";
-            return `${record.code} ${record.name} ${record.description} ${nature?.name || ""} ${mappingsText}`;
-          }
-        );
         const canCreate = selectableNatures.length > 0;
         const selectedNatureId = state.ui.itemNaturePreviewId || itemDraft.financialNatureId || editing?.financialNatureId || "";
         const selectedNature = getFinancialNatureById(selectedNatureId);
         const selectedNatureMappings = selectedNature ? (selectedNature.accountMappings || []) : [];
         const selectedNatureDefaultAccount = selectedNature ? getFinancialNatureDefaultAccount(selectedNature) : null;
         const linkedAccountIsValid = selectedNature ? isFinancialNatureAvailableForLinks(selectedNature) : false;
-
         return `
-          ${!canCreate ? `
-            <section class="notice-card">
-              <div class="notice-icon">AT</div>
-              <div>
-                <strong>Cadastre primeiro a natureza financeira</strong>
-                <p>Itens só podem ser criados quando houver pelo menos uma natureza financeira vinculada a conta analítica ativa.</p>
-              </div>
-            </section>
-          ` : ""}
-          <section class="layout-grid">
-            <article class="card">
-              <div class="section-head">
+          <div class="modal-overlay">
+            <button class="modal-backdrop" type="button" data-action="close-item-modal" aria-label="Fechar modal"></button>
+            <div class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="item-modal-title">
+              <div class="modal-header">
                 <div>
-                  <h3>${editing ? "Editar item" : "Novo item"}</h3>
-                  <p>Cada item deve estar obrigatoriamente associado a uma natureza financeira, que por sua vez define a conta contábil vinculada.</p>
+                  <h3 class="modal-title" id="item-modal-title">${editing ? "Editar item" : "Novo item"}</h3>
+                  <p class="modal-subtitle">Cadastro em modal, mantendo a consulta de itens na tela principal.</p>
+                </div>
+                <div class="inline-actions">
+                  <button class="ghost-button" type="button" data-action="close-item-modal">Fechar</button>
                 </div>
               </div>
-              <form data-form="item" autocomplete="off">
-                <input type="hidden" name="id" value="${escapeHtml(itemDraft.id || editing?.id || "")}">
-                <div class="form-grid">
-                  <div class="field">
-                    <label for="item-name">Nome do item</label>
-                    <input id="item-name" name="name" maxlength="160" value="${escapeHtml(itemDraft.name || "")}" ${canCreate ? "required" : "disabled"}>
-                  </div>
-                  <div class="field">
-                    <label for="item-nature">Natureza financeira vinculada</label>
-                    <select id="item-nature" name="financialNatureId" ${canCreate ? "required" : "disabled"}>
-                      <option value="">Selecione uma natureza financeira</option>
-                      ${selectableNatures.map((nature) => {
-                        const defaultAccount = getFinancialNatureDefaultAccount(nature);
-                        return `
-                          <option value="${escapeHtml(nature.id)}" ${selectedNatureId === nature.id ? "selected" : ""}>
-                            ${escapeHtml(nature.code)} - ${escapeHtml(nature.name)}${defaultAccount ? ` | Padrão: ${escapeHtml(defaultAccount.code)}` : ` | ${(nature.accountMappings || []).length} vínculo(s) por centro de custo`}
-                          </option>
-                        `;
-                      }).join("")}
-                    </select>
-                  </div>
-                  <div class="field full">
-                    <label for="item-description">Descrição</label>
-                    <textarea id="item-description" name="description" maxlength="260" ${canCreate ? "" : "disabled"} placeholder="Detalhes adicionais do item">${escapeHtml(itemDraft.description || "")}</textarea>
-                  </div>
-                  <div class="field full">
-                    <label>Cadastro Contábil da natureza</label>
-                    <div class="field-readonly">
-                      ${selectedNature
-                        ? `${selectedNatureMappings.length} vínculo(s) cadastrado(s)${selectedNatureDefaultAccount ? ` | Padrão: ${escapeHtml(selectedNatureDefaultAccount.code)} - ${escapeHtml(selectedNatureDefaultAccount.name)}` : " | Sem vínculo padrão (é necessário um centro de custo compatível no lançamento)"}`
-                        : "O Cadastro Contábil será exibido conforme a natureza selecionada."}
+              <div class="modal-body">
+                ${!canCreate ? `
+                  <section class="notice-card" style="margin-bottom:16px;">
+                    <div class="notice-icon">AT</div>
+                    <div>
+                      <strong>Cadastre primeiro a natureza financeira</strong>
+                      <p>Itens só podem ser criados quando houver pelo menos uma natureza financeira vinculada a conta analítica ativa.</p>
                     </div>
-                    <span class="field-hint">A conta contábil usada em cada nota depende do centro de custo do lançamento; confira os vínculos em Naturezas financeiras.</span>
-                    ${selectedNature && !linkedAccountIsValid ? `<div class="inline-note warning">A natureza selecionada não possui nenhum vínculo contábil válido no momento.</div>` : ""}
+                  </section>
+                ` : ""}
+                <form data-form="item" autocomplete="off">
+                  <input type="hidden" name="id" value="${escapeHtml(itemDraft.id || editing?.id || "")}">
+                  <div class="form-grid">
+                    <div class="field">
+                      <label for="item-name-modal">Nome do item</label>
+                      <input id="item-name-modal" name="name" maxlength="160" value="${escapeHtml(itemDraft.name || "")}" ${canCreate ? "required" : "disabled"}>
+                    </div>
+                    <div class="field">
+                      <label for="item-nature-modal">Natureza financeira vinculada</label>
+                      <select id="item-nature-modal" name="financialNatureId" ${canCreate ? "required" : "disabled"}>
+                        <option value="">Selecione uma natureza financeira</option>
+                        ${selectableNatures.map((nature) => {
+                          const defaultAccount = getFinancialNatureDefaultAccount(nature);
+                          return `
+                            <option value="${escapeHtml(nature.id)}" ${selectedNatureId === nature.id ? "selected" : ""}>
+                              ${escapeHtml(nature.code)} - ${escapeHtml(nature.name)}${defaultAccount ? ` | Padrão: ${escapeHtml(defaultAccount.code)}` : ` | ${(nature.accountMappings || []).length} vínculo(s) por centro de custo`}
+                            </option>
+                          `;
+                        }).join("")}
+                      </select>
+                    </div>
+                    <div class="field full">
+                      <label for="item-description-modal">Descrição</label>
+                      <textarea id="item-description-modal" name="description" maxlength="260" ${canCreate ? "" : "disabled"} placeholder="Detalhes adicionais do item">${escapeHtml(itemDraft.description || "")}</textarea>
+                    </div>
+                    <div class="field full">
+                      <label>Cadastro Contábil da natureza</label>
+                      <div class="field-readonly">
+                        ${selectedNature
+                          ? `${selectedNatureMappings.length} vínculo(s) cadastrado(s)${selectedNatureDefaultAccount ? ` | Padrão: ${escapeHtml(selectedNatureDefaultAccount.code)} - ${escapeHtml(selectedNatureDefaultAccount.name)}` : " | Sem vínculo padrão (é necessário um centro de custo compatível no lançamento)"}`
+                          : "O Cadastro Contábil será exibido conforme a natureza selecionada."}
+                      </div>
+                      <span class="field-hint">A conta contábil usada em cada nota depende do centro de custo do lançamento; confira os vínculos em Naturezas financeiras.</span>
+                      ${selectedNature && !linkedAccountIsValid ? `<div class="inline-note warning">A natureza selecionada não possui nenhum vínculo contábil válido no momento.</div>` : ""}
+                    </div>
                   </div>
-                </div>
-                <div class="form-actions">
-                  <button class="primary-button" type="submit" ${canCreate ? "" : "disabled"}>${editing ? "Salvar alterações" : "Cadastrar item"}</button>
-                  ${editing ? `<button class="ghost-button" type="button" data-action="reset-item">Cancelar edição</button>` : ""}
-                </div>
-              </form>
-            </article>
-            <article class="table-card">
-              <div class="table-toolbar">
-                <div>
-                  <h4>Lista de itens</h4>
-                  <p class="page-subtitle">Pesquisa por código, nome, descrição, natureza financeira ou conta contábil.</p>
-                </div>
-                <input class="search-input" data-search="items" placeholder="Pesquisar itens" value="${escapeHtml(searchTerm)}">
+                  <div class="form-actions">
+                    <button class="primary-button" type="submit" ${canCreate ? "" : "disabled"}>${editing ? "Salvar alterações" : "Cadastrar item"}</button>
+                    <button class="ghost-button" type="button" data-action="close-item-modal">Cancelar</button>
+                  </div>
+                </form>
               </div>
-              ${records.length ? `
-                <div class="table-scroll">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Código</th>
-                        <th>Item</th>
-                        <th>Natureza financeira</th>
-                        <th>Cadastro Contábil</th>
-                        <th>Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${records.map((record) => {
-                        const nature = getFinancialNatureById(record.financialNatureId);
-                        const defaultAccount = nature ? getFinancialNatureDefaultAccount(nature) : null;
-                        const mappingsCount = nature ? (nature.accountMappings || []).length : 0;
-                        const natureValid = nature ? isFinancialNatureAvailableForLinks(nature) : false;
-                        return `
-                          <tr>
-                            <td class="mono">${escapeHtml(record.code)}</td>
-                            <td>
-                              <strong>${escapeHtml(record.name)}</strong>
-                              <div class="table-muted">${escapeHtml(record.description || "Sem descrição")}</div>
-                            </td>
-                            <td>${escapeHtml(nature?.name || "Natureza indisponível")}</td>
-                            <td>
-                              <div class="badge-row">
-                                <span class="badge">${escapeHtml(String(mappingsCount))} vínculo(s)</span>
-                                ${natureValid ? `<span class="badge positive">Vínculo liberado</span>` : `<span class="badge warning">Revisar vínculo</span>`}
-                              </div>
-                              <div class="table-muted">${defaultAccount ? `Padrão: ${escapeHtml(defaultAccount.code)} - ${escapeHtml(defaultAccount.name)}` : "Sem vínculo padrão (depende do centro de custo do lançamento)"}</div>
-                            </td>
-                            <td>
-                              <div class="table-actions">
-                                <button class="action-chip" type="button" data-action="edit-item" data-id="${escapeHtml(record.id)}">Editar</button>
-                                <button class="action-chip danger" type="button" data-action="delete-item" data-id="${escapeHtml(record.id)}">Excluir</button>
-                              </div>
-                            </td>
-                          </tr>
-                        `;
-                      }).join("")}
-                    </tbody>
-                  </table>
-                </div>
-              ` : `
-                <div class="empty-card">
-                  <strong>Nenhum item encontrado.</strong>
-                  <p>${searchTerm ? "Nenhum item foi localizado com os filtros atuais." : "Cadastre o primeiro item para utilizá-lo nas notas fiscais."}</p>
-                </div>
-              `}
-            </article>
-          </section>
+            </div>
+          </div>
         `;
       }
 
@@ -8331,6 +9688,112 @@
           const haystack = `${row.invoice.code} ${row.invoice.documentNumber || ""} ${row.invoice.type} ${supplier?.legalName || ""} ${row.installment.paymentMethod || ""}`.toLowerCase();
           return haystack.includes(term);
         });
+      }
+
+      function getFinanceiroRowCounterparty(row) {
+        if (row.source === "payroll") {
+          const employee = getPayrollEmployeeById(row.payrollTitle.employeeId);
+          return employee?.name || "Folha de Pagamento";
+        }
+        const supplier = getSupplierById(row.invoice.supplierId);
+        return supplier?.legalName || "Sem fornecedor";
+      }
+
+      function getFinanceiroRowDocument(row) {
+        if (row.source === "payroll") {
+          return `${row.payrollTitle.code} ${row.payrollTitle.description || ""} ${row.payrollTitle.competence || ""}`.trim();
+        }
+        return `${row.invoice.documentNumber || row.invoice.code} ${row.invoice.type || ""} ${row.invoice.code || ""}`.trim();
+      }
+
+      function getFinanceiroRowStatusClass(status) {
+        if (status === "Quitada") {
+          return "paid";
+        }
+        if (status === "Parcial") {
+          return "partial";
+        }
+        return "open";
+      }
+
+      function matchFinanceiroDateRange(value, start, end) {
+        if (!value) {
+          return !start && !end;
+        }
+        if (start && value < start) {
+          return false;
+        }
+        if (end && value > end) {
+          return false;
+        }
+        return true;
+      }
+
+      function getFinanceiroFilteredRows(searchTerm, filters) {
+        const rows = getAllInstallmentsWithStatus(searchTerm);
+        return rows.filter((row) => {
+          const documentText = getFinanceiroRowDocument(row).toLowerCase();
+          const counterpartyText = getFinanceiroRowCounterparty(row).toLowerCase();
+          const sourceMatch = filters.source === "all" || row.source === filters.source;
+          const statusMatch =
+            filters.status === "all"
+            || (filters.status === "open" && row.status === "Em aberto")
+            || (filters.status === "partial" && row.status === "Parcial")
+            || (filters.status === "paid" && row.status === "Quitada");
+          const creditorMatch = !filters.creditor || counterpartyText.includes(filters.creditor.toLowerCase().trim());
+          const dueMatch = matchFinanceiroDateRange(row.dueDate, filters.dueStart, filters.dueEnd);
+          const amountMin = toDecimal(filters.amountMin || 0);
+          const amountMax = toDecimal(filters.amountMax || 0);
+          const amountMinMatch = !filters.amountMin || row.amount >= amountMin;
+          const amountMaxMatch = !filters.amountMax || row.amount <= amountMax;
+          const documentMatch = !filters.general || documentText.includes(filters.general.toLowerCase().trim()) || counterpartyText.includes(filters.general.toLowerCase().trim());
+          return sourceMatch && statusMatch && creditorMatch && dueMatch && amountMinMatch && amountMaxMatch && documentMatch;
+        });
+      }
+
+      function includesFilterValue(value, filterValue) {
+        if (!filterValue) {
+          return true;
+        }
+        return String(value || "").toLowerCase().includes(String(filterValue).toLowerCase().trim());
+      }
+
+      function getFilteredSuppliers(filters) {
+        return state.data.suppliers.filter((record) => (
+          includesFilterValue(record.legalName, filters.legalName)
+          && includesFilterValue(record.document, filters.document)
+          && includesFilterValue(record.email, filters.email)
+          && includesFilterValue(record.phone, filters.phone)
+          && includesFilterValue(record.address, filters.address)
+        ));
+      }
+
+      function getFilteredFinancialNatures(filters) {
+        return state.data.financialNatures.filter((record) => {
+          const mappings = record.accountMappings || [];
+          const accountMatch = !filters.chartAccountId || mappings.some((mapping) => mapping.chartAccountId === filters.chartAccountId);
+          const costCenterMatch = !filters.costCenterId || mappings.some((mapping) => mapping.costCenterId === filters.costCenterId);
+          return includesFilterValue(record.name, filters.name) && accountMatch && costCenterMatch;
+        });
+      }
+
+      function getFilteredItems(filters) {
+        return state.data.items.filter((record) => (
+          includesFilterValue(record.name, filters.name)
+          && (!filters.financialNatureId || record.financialNatureId === filters.financialNatureId)
+          && includesFilterValue(record.description, filters.description)
+        ));
+      }
+
+      function getFilteredInvoices(filters) {
+        return state.data.invoices.filter((record) => (
+          includesFilterValue(record.type, filters.type)
+          && (!filters.supplierId || record.supplierId === filters.supplierId)
+          && includesFilterValue(record.documentNumber, filters.documentNumber)
+          && (!filters.issueDate || record.issueDate === filters.issueDate)
+          && (!filters.costCenterId || (record.costCenterId || "") === filters.costCenterId)
+          && includesFilterValue(record.description, filters.description)
+        ));
       }
 
 
@@ -10450,183 +11913,342 @@
       }
 
       function renderFinanceiroView() {
-        const searchTerm = state.ui.search.financeiro;
-        const rows = getAllInstallmentsWithStatus(searchTerm);
+        const filters = state.ui.financeiroFilters || createEmptyFinanceiroFilters();
+        const searchTerm = filters.general || state.ui.search.financeiro;
+        const rows = getFinanceiroFilteredRows(searchTerm, filters);
         const openCount = rows.filter((row) => row.status !== "Quitada").length;
+        const partialCount = rows.filter((row) => row.status === "Parcial").length;
+        const paidCount = rows.filter((row) => row.status === "Quitada").length;
         const totalOpen = roundCurrency(rows.reduce((sum, row) => sum + (row.status !== "Quitada" ? row.remaining : 0), 0));
+        const totalFiltered = roundCurrency(rows.reduce((sum, row) => sum + row.amount, 0));
 
         return `
-          <section class="card">
-            <div class="section-head">
-              <div>
-                <h3>Módulo financeiro</h3>
-                <p>Acompanhe parcelas geradas por notas fiscais e títulos financeiros da folha, fazendo a baixa pela mesma rotina de contas a pagar.</p>
-              </div>
+          <section class="financeiro-legacy-shell">
+            <div class="financeiro-legacy-head">
+              <h3 class="financeiro-legacy-title">Consulta de títulos a pagar</h3>
+              <p class="financeiro-legacy-note">Tela remodelada com estética inspirada em ERP clássico, mantendo a consulta e a baixa das parcelas do projeto.</p>
             </div>
-            <div class="summary-grid">
-              <article class="stats-card">
-                <span class="table-muted">Parcelas em aberto</span>
-                <strong>${escapeHtml(String(openCount))}</strong>
-              </article>
-              <article class="stats-card">
-                <span class="table-muted">Saldo total em aberto</span>
-                <strong>${escapeHtml(formatCurrency(totalOpen))}</strong>
-              </article>
+            <div class="financeiro-legacy-body">
+              <section class="financeiro-legacy-panel">
+                <h4 class="financeiro-legacy-section-title">Parâmetros da consulta</h4>
+                <form class="financeiro-legacy-form" data-form="financeiro-filters" autocomplete="off">
+                  <div class="financeiro-legacy-row">
+                    <span class="financeiro-legacy-label">Empresa:</span>
+                    <div class="financeiro-legacy-control-group single">
+                      <input class="financeiro-legacy-input" value="ERP Local" readonly>
+                    </div>
+                  </div>
+                  <div class="financeiro-legacy-row">
+                    <label class="financeiro-legacy-label" for="financeiro-general">Título:</label>
+                    <div class="financeiro-legacy-control-group">
+                      <input id="financeiro-general" class="financeiro-legacy-input" name="general" value="${escapeHtml(filters.general)}" placeholder="Documento, título, competência ou código">
+                      <span class="financeiro-legacy-icon">⌕</span>
+                    </div>
+                  </div>
+                  <div class="financeiro-legacy-row">
+                    <label class="financeiro-legacy-label" for="financeiro-creditor">Credor:</label>
+                    <div class="financeiro-legacy-control-group">
+                      <input id="financeiro-creditor" class="financeiro-legacy-input" name="creditor" value="${escapeHtml(filters.creditor)}" placeholder="Fornecedor ou funcionário">
+                      <span class="financeiro-legacy-icon">⌕</span>
+                    </div>
+                  </div>
+                  <div class="financeiro-legacy-row">
+                    <label class="financeiro-legacy-label" for="financeiro-source">Tipo de negócio:</label>
+                    <div class="financeiro-legacy-control-group single">
+                      <select id="financeiro-source" class="financeiro-legacy-select" name="source">
+                        <option value="all" ${filters.source === "all" ? "selected" : ""}>Todos</option>
+                        <option value="invoice" ${filters.source === "invoice" ? "selected" : ""}>Notas e lançamentos</option>
+                        <option value="payroll" ${filters.source === "payroll" ? "selected" : ""}>Folha de pagamento</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="financeiro-legacy-row dual">
+                    <label class="financeiro-legacy-label" for="financeiro-due-start">Vencimento:</label>
+                    <div class="financeiro-legacy-control-group">
+                      <input id="financeiro-due-start" class="financeiro-legacy-input" name="dueStart" type="date" value="${escapeHtml(filters.dueStart)}">
+                      <span class="financeiro-legacy-icon">📅</span>
+                    </div>
+                    <span class="financeiro-legacy-range-separator">a</span>
+                    <div class="financeiro-legacy-control-group">
+                      <input class="financeiro-legacy-input" name="dueEnd" type="date" value="${escapeHtml(filters.dueEnd)}">
+                      <span class="financeiro-legacy-icon">📅</span>
+                    </div>
+                  </div>
+                  <div class="financeiro-legacy-row dual">
+                    <label class="financeiro-legacy-label" for="financeiro-amount-min">Valor bruto:</label>
+                    <div class="financeiro-legacy-control-group single">
+                      <input id="financeiro-amount-min" class="financeiro-legacy-input" name="amountMin" type="number" min="0" step="0.01" value="${escapeHtml(filters.amountMin)}" placeholder="0,00">
+                    </div>
+                    <span class="financeiro-legacy-range-separator">a</span>
+                    <div class="financeiro-legacy-control-group single">
+                      <input class="financeiro-legacy-input" name="amountMax" type="number" min="0" step="0.01" value="${escapeHtml(filters.amountMax)}" placeholder="0,00">
+                    </div>
+                  </div>
+                  <div class="financeiro-legacy-row">
+                    <label class="financeiro-legacy-label" for="financeiro-status">Situação da parcela:</label>
+                    <div class="financeiro-legacy-control-group single">
+                      <select id="financeiro-status" class="financeiro-legacy-select" name="status">
+                        <option value="all" ${filters.status === "all" ? "selected" : ""}>[ Todas ]</option>
+                        <option value="open" ${filters.status === "open" ? "selected" : ""}>Em aberto</option>
+                        <option value="partial" ${filters.status === "partial" ? "selected" : ""}>Parcial</option>
+                        <option value="paid" ${filters.status === "paid" ? "selected" : ""}>Quitada</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="financeiro-legacy-actions">
+                    <button class="financeiro-legacy-button" type="submit">Consultar</button>
+                    <button class="financeiro-legacy-button secondary" type="button" data-action="reset-financeiro-filters">Limpar</button>
+                  </div>
+                </form>
+              </section>
+
+              <section class="financeiro-legacy-panel">
+                <h4 class="financeiro-legacy-section-title">Resultado da consulta</h4>
+                <div class="financeiro-legacy-summary">
+                  <article class="financeiro-legacy-stat">
+                    <span>Parcelas em aberto</span>
+                    <strong>${escapeHtml(String(openCount))}</strong>
+                    <small>Saldo em aberto atual</small>
+                  </article>
+                  <article class="financeiro-legacy-stat">
+                    <span>Saldo total</span>
+                    <strong>${escapeHtml(formatCurrency(totalOpen))}</strong>
+                    <small>Valores ainda pendentes</small>
+                  </article>
+                  <article class="financeiro-legacy-stat">
+                    <span>Baixas parciais</span>
+                    <strong>${escapeHtml(String(partialCount))}</strong>
+                    <small>Parcelas com liquidação parcial</small>
+                  </article>
+                  <article class="financeiro-legacy-stat">
+                    <span>Total filtrado</span>
+                    <strong>${escapeHtml(formatCurrency(totalFiltered))}</strong>
+                    <small>${escapeHtml(String(paidCount))} parcela(s) já quitada(s)</small>
+                  </article>
+                </div>
+                ${rows.length ? `
+                  <div class="financeiro-legacy-table-wrap">
+                    <table class="financeiro-legacy-table">
+                      <thead>
+                        <tr>
+                          <th>Documento</th>
+                          <th>Credor</th>
+                          <th>Parcela</th>
+                          <th>Vencimento</th>
+                          <th>Valor</th>
+                          <th>Baixado</th>
+                          <th>Saldo</th>
+                          <th>Situação</th>
+                          <th>Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${rows.map((row) => {
+                          const statusClass = getFinanceiroRowStatusClass(row.status);
+                          const actionAttributes = row.source === "payroll"
+                            ? `data-action="open-settlement-modal" data-payroll-title-id="${escapeHtml(row.payrollTitle.id)}"`
+                            : `data-action="open-settlement-modal" data-invoice-id="${escapeHtml(row.invoice.id)}" data-installment-id="${escapeHtml(row.installment.id)}"`;
+                          return `
+                            <tr>
+                              <td>
+                                <strong class="mono">${escapeHtml(row.source === "payroll" ? row.payrollTitle.code : (row.invoice.documentNumber || row.invoice.code))}</strong>
+                                <div class="table-muted">${escapeHtml(row.source === "payroll" ? `Folha ${row.payrollTitle.competence || ""}` : row.invoice.type)}</div>
+                              </td>
+                              <td class="table-muted">${escapeHtml(getFinanceiroRowCounterparty(row))}</td>
+                              <td class="mono">${escapeHtml(String(row.source === "payroll" ? 1 : row.installment.installmentNumber))}</td>
+                              <td>${escapeHtml(formatDate(row.dueDate))}</td>
+                              <td class="mono">${escapeHtml(formatCurrency(row.amount))}</td>
+                              <td class="mono">${escapeHtml(formatCurrency(row.settled))}</td>
+                              <td class="mono">${escapeHtml(formatCurrency(row.remaining))}</td>
+                              <td><span class="financeiro-legacy-status ${statusClass}">${escapeHtml(row.status)}</span></td>
+                              <td>
+                                <div class="table-actions">
+                                  <button class="action-chip" type="button" ${actionAttributes} ${row.status === "Quitada" ? "disabled" : ""}>Dar baixa</button>
+                                </div>
+                              </td>
+                            </tr>
+                          `;
+                        }).join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                ` : `
+                  <div class="empty-card" style="border-radius:4px;">
+                    <strong>Nenhuma parcela encontrada.</strong>
+                    <p>Ajuste os parâmetros da consulta ou registre notas fiscais e títulos financeiros para que apareçam aqui.</p>
+                  </div>
+                `}
+              </section>
             </div>
-          </section>
-          <section class="table-card">
-            <div class="table-toolbar">
-              <div>
-                <h4>Contas a pagar</h4>
-                <p class="page-subtitle">Pesquise por documento, fornecedor, funcionário, competência ou título da folha.</p>
-              </div>
-              <input class="search-input" data-search="financeiro" placeholder="Pesquisar parcelas" value="${escapeHtml(searchTerm)}">
-            </div>
-            ${rows.length ? `
-              <div class="table-scroll">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Documento</th>
-                      <th>Fornecedor</th>
-                      <th>Parcela</th>
-                      <th>Vencimento</th>
-                      <th>Valor</th>
-                      <th>Baixado</th>
-                      <th>Saldo</th>
-                      <th>Situação</th>
-                      <th>Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${rows.map((row) => renderFinanceiroPayableRow(row)).join("")}
-                  </tbody>
-                </table>
-              </div>
-            ` : `
-              <div class="empty-card">
-                <strong>Nenhuma parcela encontrada.</strong>
-                <p>Lance uma nota fiscal ou feche uma folha para que parcelas e títulos a pagar apareçam aqui.</p>
-              </div>
-            `}
           </section>
         `;
       }
 
       function renderFiscalView() {
-
-
-
-        const searchTerm = state.ui.search.invoices;
+        const filters = state.ui.invoiceFilters || createEmptyInvoiceFilters();
         const selectableItems = getSelectableItems();
-        const records = filterRecords(
-          state.data.invoices,
-          searchTerm,
-          (record) => {
-            const recordSupplier = getSupplierById(record.supplierId);
-            return `${record.code} ${record.type} ${record.description} ${recordSupplier?.legalName || ""} ${record.issueDate}`;
-          }
-        );
+        const records = getFilteredInvoices(filters);
         const canLaunch = state.data.suppliers.length > 0 && selectableItems.length > 0;
+        const launchingsCount = state.data.invoices.filter((record) => record.kind === "lancamento").length;
+        const invoicesCount = state.data.invoices.length - launchingsCount;
+        const totalItems = state.data.invoices.reduce((sum, record) => sum + record.items.length, 0);
+        const totalInstallments = state.data.invoices.reduce((sum, record) => sum + record.installments.length, 0);
+        const hasFilters = Object.values(filters).some((value) => String(value || "").trim() !== "");
 
         return `
-          ${!canLaunch ? `
-            <section class="notice-card">
-              <div class="notice-icon">PR</div>
-              <div>
-                <strong>Pré-requisitos para lançar notas fiscais</strong>
-                <p>Você precisa ter pelo menos um fornecedor e um item vinculado a natureza financeira com conta contábil analítica ativa.</p>
-              </div>
-            </section>
-          ` : ""}
-          <section class="card">
-            <div class="section-head">
-              <div>
-                <h3>Notas fiscais e lançamentos</h3>
-                <p>Ao entrar no módulo fiscal, a tela mostra primeiro a listagem. O cadastro ou a edição abrem em modal, separados por abas.</p>
-              </div>
-              <div class="inline-actions">
-                <button class="secondary-button" type="button" data-action="new-lancamento" ${canLaunch ? "" : "disabled"}>Novo lançamento</button>
-                <button class="primary-button" type="button" data-action="new-invoice" ${canLaunch ? "" : "disabled"}>Nova nota fiscal</button>
-              </div>
+          <section class="financeiro-legacy-shell">
+            <div class="financeiro-legacy-head">
+              <h3 class="financeiro-legacy-title">Notas fiscais e lançamentos</h3>
+              <p class="financeiro-legacy-note">Bloco superior com os parâmetros do módulo e, abaixo, o resultado da consulta fiscal.</p>
             </div>
-            <div class="subtle-panel">
-              <ul class="subtle-list">
-                <li>Use a listagem para pesquisar, editar e excluir notas e lançamentos já registrados.</li>
-                <li>"Nova nota fiscal" lança notas de serviço ou produto. "Novo lançamento" registra outros documentos cadastrados em Configurações.</li>
-                <li>O salvamento continua validando a conciliação entre itens e parcelas.</li>
-              </ul>
-            </div>
-          </section>
-          <section class="table-card">
-            <div class="table-toolbar">
-              <div>
-                <h4>Notas fiscais e lançamentos</h4>
-                <p class="page-subtitle">Pesquise, edite ou exclua registros já lançados localmente.</p>
-              </div>
-              <input class="search-input" data-search="invoices" placeholder="Pesquisar notas e lançamentos" value="${escapeHtml(searchTerm)}">
-            </div>
-            ${records.length ? `
-              <div class="table-scroll">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Código</th>
-                      <th>Número</th>
-                      <th>Tipo / fornecedor</th>
-                      <th>Emissão</th>
-                      <th>Descrição</th>
-                      <th>Itens</th>
-                      <th>Parcelas</th>
-                      <th>Total</th>
-                      <th>Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${records.map((record) => {
-                      const supplierRecord = getSupplierById(record.supplierId);
-                      const difference = roundCurrency(record.totalItemsAmount - record.totalInstallmentsAmount);
-                      return `
-                        <tr>
-                          <td class="mono">${escapeHtml(record.code)}</td>
-                          <td class="mono">${escapeHtml(record.documentNumber || "-")}</td>
-                          <td>
-                            <strong>${escapeHtml(record.type)}</strong>
-                            <div class="table-muted">${supplierRecord ? escapeHtml(supplierRecord.legalName) : (record.kind === "lancamento" ? "Sem fornecedor" : "Fornecedor indisponível")}</div>
-                            ${record.kind === "lancamento" ? `<span class="badge">Lançamento</span>` : ""}
-                          </td>
-                          <td>${escapeHtml(formatDate(record.issueDate))}</td>
-                          <td class="table-muted">${escapeHtml(record.description || "Sem descrição")}</td>
-                          <td class="mono">${escapeHtml(String(record.items.length))}</td>
-                          <td>
-                            <div class="mono">${escapeHtml(String(record.installments.length))}</div>
-                            <div class="badge-row" style="margin-top:8px;">
-                              <span class="badge ${Math.abs(difference) <= 0.009 ? "positive" : "warning"}">${Math.abs(difference) <= 0.009 ? "Conciliada" : "Divergente"}</span>
-                            </div>
-                          </td>
-                          <td class="mono">${escapeHtml(formatCurrency(record.totalItemsAmount))}</td>
-                          <td>
-                            <div class="table-actions">
-                              <button class="action-chip" type="button" data-action="edit-invoice" data-id="${escapeHtml(record.id)}">Editar</button>
-                              <button class="action-chip danger" type="button" data-action="delete-invoice" data-id="${escapeHtml(record.id)}">Excluir</button>
-                            </div>
-                          </td>
-                        </tr>
-                      `;
-                    }).join("")}
-                  </tbody>
-                </table>
-              </div>
-            ` : `
-              <div class="empty-card">
-                <strong>Nenhuma nota fiscal ou lançamento encontrado.</strong>
-                <p>${searchTerm ? "Nenhum registro corresponde ao termo pesquisado." : "Depois de cadastrar fornecedores e itens, use os botões acima para lançar uma nota ou um lançamento avulso."}</p>
-                <div class="inline-actions">
-                  <button class="primary-button" type="button" data-action="new-invoice" ${canLaunch ? "" : "disabled"}>Nova nota fiscal</button>
-                  <button class="secondary-button" type="button" data-action="new-lancamento" ${canLaunch ? "" : "disabled"}>Novo lançamento</button>
+            <div class="financeiro-legacy-body">
+              ${!canLaunch ? `
+                <section class="notice-card">
+                  <div class="notice-icon">PR</div>
+                  <div>
+                    <strong>Pré-requisitos para lançar notas fiscais</strong>
+                    <p>Você precisa ter pelo menos um fornecedor e um item vinculado a natureza financeira com conta contábil analítica ativa.</p>
+                  </div>
+                </section>
+              ` : ""}
+
+              <section class="financeiro-legacy-panel">
+                <div class="financeiro-legacy-toolbar">
+                  <div>
+                    <h4 class="financeiro-legacy-section-title">Parâmetros do módulo</h4>
+                    <p class="page-subtitle">Os parâmetros de consulta seguem os campos-base do cadastro de nota fiscal e lançamento.</p>
+                  </div>
+                  <div class="inline-actions">
+                    <button class="secondary-button" type="button" data-action="reset-invoice-filters">Limpar</button>
+                    <button class="secondary-button" type="button" data-action="new-lancamento" ${canLaunch ? "" : "disabled"}>Novo lançamento</button>
+                    <button class="primary-button" type="button" data-action="new-invoice" ${canLaunch ? "" : "disabled"}>Nova nota fiscal</button>
+                  </div>
                 </div>
-              </div>
-            `}
+                <form data-form="invoice-filters" autocomplete="off">
+                  <div class="form-grid">
+                    <div class="field">
+                      <label for="invoice-filter-type">Tipo</label>
+                      <input id="invoice-filter-type" name="type" maxlength="120" value="${escapeHtml(filters.type)}" placeholder="Filtrar por tipo">
+                    </div>
+                    <div class="field">
+                      <label for="invoice-filter-supplier">Fornecedor</label>
+                      <select id="invoice-filter-supplier" name="supplierId">
+                        <option value="">Todos</option>
+                        ${state.data.suppliers.map((record) => `
+                          <option value="${escapeHtml(record.id)}" ${filters.supplierId === record.id ? "selected" : ""}>
+                            ${escapeHtml(record.code)} - ${escapeHtml(record.legalName)}
+                          </option>
+                        `).join("")}
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="invoice-filter-document-number">Número do documento</label>
+                      <input id="invoice-filter-document-number" name="documentNumber" maxlength="80" value="${escapeHtml(filters.documentNumber)}" placeholder="Filtrar por número">
+                    </div>
+                    <div class="field">
+                      <label for="invoice-filter-issue-date">Data de emissão</label>
+                      <input id="invoice-filter-issue-date" name="issueDate" type="date" value="${escapeHtml(filters.issueDate)}">
+                    </div>
+                    <div class="field">
+                      <label for="invoice-filter-cost-center">Centro de custo</label>
+                      <select id="invoice-filter-cost-center" name="costCenterId">
+                        <option value="">Todos</option>
+                        ${state.data.costCenters.map((record) => `
+                          <option value="${escapeHtml(record.id)}" ${filters.costCenterId === record.id ? "selected" : ""}>
+                            ${escapeHtml(record.code)} - ${escapeHtml(record.name)}
+                          </option>
+                        `).join("")}
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="invoice-filter-description">Descrição</label>
+                      <input id="invoice-filter-description" name="description" maxlength="260" value="${escapeHtml(filters.description)}" placeholder="Filtrar por descrição">
+                    </div>
+                  </div>
+                  <div class="form-actions">
+                    <button class="primary-button" type="submit">Consultar</button>
+                  </div>
+                </form>
+                <div class="financeiro-legacy-subpanel">
+                  <strong>Visão rápida</strong>
+                  <ul class="financeiro-legacy-list">
+                    <li>Total de registros: ${escapeHtml(String(state.data.invoices.length))}.</li>
+                    <li>Notas fiscais: ${escapeHtml(String(invoicesCount))}. Lançamentos: ${escapeHtml(String(launchingsCount))}.</li>
+                    <li>Itens lançados: ${escapeHtml(String(totalItems))}. Parcelas lançadas: ${escapeHtml(String(totalInstallments))}.</li>
+                  </ul>
+                </div>
+              </section>
+
+              <section class="financeiro-legacy-panel">
+                <div class="financeiro-legacy-toolbar">
+                  <div>
+                    <h4 class="financeiro-legacy-section-title">Resultado da consulta</h4>
+                    <p class="page-subtitle">Notas fiscais e lançamentos já registrados localmente.</p>
+                  </div>
+                </div>
+                ${records.length ? `
+                  <div class="financeiro-legacy-table-wrap">
+                    <table class="financeiro-legacy-table">
+                      <thead>
+                        <tr>
+                          <th>Código</th>
+                          <th>Número</th>
+                          <th>Tipo / fornecedor</th>
+                          <th>Emissão</th>
+                          <th>Descrição</th>
+                          <th>Itens</th>
+                          <th>Parcelas</th>
+                          <th>Total</th>
+                          <th>Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${records.map((record) => {
+                          const supplierRecord = getSupplierById(record.supplierId);
+                          const difference = roundCurrency(record.totalItemsAmount - record.totalInstallmentsAmount);
+                          return `
+                            <tr>
+                              <td class="mono">${escapeHtml(record.code)}</td>
+                              <td class="mono">${escapeHtml(record.documentNumber || "-")}</td>
+                              <td>
+                                <strong>${escapeHtml(record.type)}</strong>
+                                <div class="table-muted">${supplierRecord ? escapeHtml(supplierRecord.legalName) : (record.kind === "lancamento" ? "Sem fornecedor" : "Fornecedor indisponível")}</div>
+                                ${record.kind === "lancamento" ? `<span class="badge">Lançamento</span>` : ""}
+                              </td>
+                              <td>${escapeHtml(formatDate(record.issueDate))}</td>
+                              <td class="table-muted">${escapeHtml(record.description || "Sem descrição")}</td>
+                              <td class="mono">${escapeHtml(String(record.items.length))}</td>
+                              <td>
+                                <div class="mono">${escapeHtml(String(record.installments.length))}</div>
+                                <div class="badge-row" style="margin-top:8px;">
+                                  <span class="badge ${Math.abs(difference) <= 0.009 ? "positive" : "warning"}">${Math.abs(difference) <= 0.009 ? "Conciliada" : "Divergente"}</span>
+                                </div>
+                              </td>
+                              <td class="mono">${escapeHtml(formatCurrency(record.totalItemsAmount))}</td>
+                              <td>
+                                <div class="table-actions">
+                                  <button class="action-chip" type="button" data-action="edit-invoice" data-id="${escapeHtml(record.id)}">Editar</button>
+                                  <button class="action-chip danger" type="button" data-action="delete-invoice" data-id="${escapeHtml(record.id)}">Excluir</button>
+                                </div>
+                              </td>
+                            </tr>
+                          `;
+                        }).join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                ` : `
+                  <div class="empty-card" style="border-radius:4px;">
+                    <strong>Nenhuma nota fiscal ou lançamento encontrado.</strong>
+                    <p>${hasFilters ? "Nenhum registro corresponde aos parâmetros informados." : "Depois de cadastrar fornecedores e itens, use os botões acima para lançar uma nota ou um lançamento avulso."}</p>
+                    <div class="inline-actions">
+                      <button class="primary-button" type="button" data-action="new-invoice" ${canLaunch ? "" : "disabled"}>Nova nota fiscal</button>
+                      <button class="secondary-button" type="button" data-action="new-lancamento" ${canLaunch ? "" : "disabled"}>Novo lançamento</button>
+                    </div>
+                  </div>
+                `}
+              </section>
+            </div>
           </section>
         `;
       }
