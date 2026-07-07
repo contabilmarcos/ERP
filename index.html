@@ -3087,9 +3087,15 @@
           settlementTarget: null,
           settlementFormDraft: createEmptySettlementDraft(),
           payrollPanel: "dashboard",
+          payrollEmployeeFilters: createEmptyPayrollEmployeeFilters(),
           payrollEmployeeDraft: createEmptyPayrollEmployeeDraft(),
+          payrollEmployeeModalOpen: false,
+          payrollPositionFilters: createEmptyPayrollPositionFilters(),
           payrollPositionDraft: createEmptyPayrollPositionDraft(),
+          payrollPositionModalOpen: false,
+          payrollDepartmentFilters: createEmptyPayrollDepartmentFilters(),
           payrollDepartmentDraft: createEmptyPayrollDepartmentDraft(),
+          payrollDepartmentModalOpen: false,
           payrollEventDraft: createEmptyPayrollEventDraft(),
           payrollParameterDraft: createEmptyPayrollParameterDraft(),
           payrollInssDraft: createEmptyPayrollTableDraft("INSS"),
@@ -3760,11 +3766,30 @@
           case "reset-payroll-employee":
             state.ui.editing.payrollEmployeeId = null;
             state.ui.payrollEmployeeDraft = createEmptyPayrollEmployeeDraft();
+            state.ui.payrollEmployeeModalOpen = false;
+            renderApp();
+            break;
+          case "new-payroll-employee":
+            state.ui.editing.payrollEmployeeId = null;
+            state.ui.payrollEmployeeDraft = createEmptyPayrollEmployeeDraft();
+            state.ui.payrollEmployeeModalOpen = true;
+            state.ui.payrollPanel = "employees";
+            renderApp();
+            break;
+          case "close-payroll-employee-modal":
+            state.ui.editing.payrollEmployeeId = null;
+            state.ui.payrollEmployeeDraft = createEmptyPayrollEmployeeDraft();
+            state.ui.payrollEmployeeModalOpen = false;
+            renderApp();
+            break;
+          case "reset-payroll-employee-filters":
+            state.ui.payrollEmployeeFilters = createEmptyPayrollEmployeeFilters();
             renderApp();
             break;
           case "edit-payroll-employee":
             state.ui.editing.payrollEmployeeId = id;
             state.ui.payrollEmployeeDraft = createEmptyPayrollEmployeeDraft(getPayrollEmployeeById(id));
+            state.ui.payrollEmployeeModalOpen = true;
             renderApp();
             break;
           case "delete-payroll-employee":
@@ -3773,11 +3798,30 @@
           case "reset-payroll-position":
             state.ui.editing.payrollPositionId = null;
             state.ui.payrollPositionDraft = createEmptyPayrollPositionDraft();
+            state.ui.payrollPositionModalOpen = false;
+            renderApp();
+            break;
+          case "new-payroll-position":
+            state.ui.editing.payrollPositionId = null;
+            state.ui.payrollPositionDraft = createEmptyPayrollPositionDraft();
+            state.ui.payrollPositionModalOpen = true;
+            state.ui.payrollPanel = "positions";
+            renderApp();
+            break;
+          case "close-payroll-position-modal":
+            state.ui.editing.payrollPositionId = null;
+            state.ui.payrollPositionDraft = createEmptyPayrollPositionDraft();
+            state.ui.payrollPositionModalOpen = false;
+            renderApp();
+            break;
+          case "reset-payroll-position-filters":
+            state.ui.payrollPositionFilters = createEmptyPayrollPositionFilters();
             renderApp();
             break;
           case "edit-payroll-position":
             state.ui.editing.payrollPositionId = id;
             state.ui.payrollPositionDraft = createEmptyPayrollPositionDraft(getPayrollPositionById(id));
+            state.ui.payrollPositionModalOpen = true;
             renderApp();
             break;
           case "delete-payroll-position":
@@ -3786,11 +3830,30 @@
           case "reset-payroll-department":
             state.ui.editing.payrollDepartmentId = null;
             state.ui.payrollDepartmentDraft = createEmptyPayrollDepartmentDraft();
+            state.ui.payrollDepartmentModalOpen = false;
+            renderApp();
+            break;
+          case "new-payroll-department":
+            state.ui.editing.payrollDepartmentId = null;
+            state.ui.payrollDepartmentDraft = createEmptyPayrollDepartmentDraft();
+            state.ui.payrollDepartmentModalOpen = true;
+            state.ui.payrollPanel = "departments";
+            renderApp();
+            break;
+          case "close-payroll-department-modal":
+            state.ui.editing.payrollDepartmentId = null;
+            state.ui.payrollDepartmentDraft = createEmptyPayrollDepartmentDraft();
+            state.ui.payrollDepartmentModalOpen = false;
+            renderApp();
+            break;
+          case "reset-payroll-department-filters":
+            state.ui.payrollDepartmentFilters = createEmptyPayrollDepartmentFilters();
             renderApp();
             break;
           case "edit-payroll-department":
             state.ui.editing.payrollDepartmentId = id;
             state.ui.payrollDepartmentDraft = createEmptyPayrollDepartmentDraft(getPayrollDepartmentById(id));
+            state.ui.payrollDepartmentModalOpen = true;
             renderApp();
             break;
           case "delete-payroll-department":
@@ -4446,6 +4509,11 @@
           case "payroll-report-filters":
             submitPayrollAnalyticalReport(new FormData(form));
             break;
+          case "payroll-employee-filters":
+          case "payroll-position-filters":
+          case "payroll-department-filters":
+            renderApp();
+            break;
           case "supplier-filters":
             renderApp();
             break;
@@ -4543,6 +4611,17 @@
           if (["costCenterId", "positionId", "departmentId", "eventId", "type", "calculationType", "tableType", "employeeScope"].includes(fieldName)) {
             renderApp();
           }
+          return;
+        }
+
+        const payrollFilterMap = {
+          "payroll-employee-filters": "payrollEmployeeFilters",
+          "payroll-position-filters": "payrollPositionFilters",
+          "payroll-department-filters": "payrollDepartmentFilters"
+        };
+
+        if (payrollFilterMap[formType]) {
+          state.ui[payrollFilterMap[formType]][fieldName] = target.value;
           return;
         }
 
@@ -6555,6 +6634,9 @@
         const hasOpenModal = Boolean(
           state.ui.invoiceModalOpen
           || state.ui.supplierModalOpen
+          || state.ui.payrollEmployeeModalOpen
+          || state.ui.payrollPositionModalOpen
+          || state.ui.payrollDepartmentModalOpen
           || state.ui.chartAccountsModalOpen
           || state.ui.chartAccountChildModalOpen
           || state.ui.financialNatureModalOpen
@@ -6608,6 +6690,9 @@
           </div>
           ${state.ui.invoiceModalOpen ? renderInvoiceModal() : ""}
           ${state.ui.supplierModalOpen ? renderSupplierModal() : ""}
+          ${state.ui.payrollEmployeeModalOpen ? renderPayrollEmployeeModal() : ""}
+          ${state.ui.payrollPositionModalOpen ? renderPayrollPositionModal() : ""}
+          ${state.ui.payrollDepartmentModalOpen ? renderPayrollDepartmentModal() : ""}
           ${state.ui.chartAccountsModalOpen ? renderChartAccountsModal() : ""}
           ${state.ui.chartAccountChildModalOpen ? renderChartAccountChildModal() : ""}
           ${state.ui.financialNatureModalOpen ? renderFinancialNatureModal() : ""}
@@ -9796,6 +9881,46 @@
         ));
       }
 
+      function getFilteredPayrollEmployees(filters) {
+        return state.data.payrollEmployees.filter((item) => (
+          includesFilterValue(item.name, filters.name)
+          && includesFilterValue(normalizeCpf(item.cpf), normalizeCpf(filters.cpf))
+          && includesFilterValue(item.registration, filters.registration)
+          && (!filters.admissionDate || item.admissionDate === filters.admissionDate)
+          && (!filters.terminationDate || item.terminationDate === filters.terminationDate)
+          && (!filters.positionId || item.positionId === filters.positionId)
+          && (!filters.departmentId || item.departmentId === filters.departmentId)
+          && (!filters.costCenterId || item.costCenterId === filters.costCenterId)
+          && includesFilterValue(String(item.salaryBase ?? ""), filters.salaryBase)
+          && (!filters.salaryType || item.salaryType === filters.salaryType)
+          && includesFilterValue(String(item.monthlyJourney ?? ""), filters.monthlyJourney)
+          && (!filters.status || item.status === filters.status)
+          && includesFilterValue(item.bankData, filters.bankData)
+          && includesFilterValue(item.notes, filters.notes)
+        ));
+      }
+
+      function getFilteredPayrollPositions(filters) {
+        return state.data.payrollPositions.filter((item) => (
+          includesFilterValue(item.name, filters.name)
+          && includesFilterValue(item.cbo, filters.cbo)
+          && includesFilterValue(String(item.suggestedSalary ?? ""), filters.suggestedSalary)
+          && (!filters.departmentId || item.departmentId === filters.departmentId)
+          && (!filters.costCenterId || item.costCenterId === filters.costCenterId)
+          && (!filters.chartAccountId || item.chartAccountId === filters.chartAccountId)
+          && (!filters.status || item.status === filters.status)
+        ));
+      }
+
+      function getFilteredPayrollDepartments(filters) {
+        return state.data.payrollDepartments.filter((item) => (
+          includesFilterValue(item.name, filters.name)
+          && (!filters.costCenterId || item.costCenterId === filters.costCenterId)
+          && includesFilterValue(item.manager, filters.manager)
+          && (!filters.status || item.status === filters.status)
+        ));
+      }
+
 
       const PAYROLL_PANELS = [
         { key: "dashboard", label: "Resumo" },
@@ -9842,6 +9967,25 @@
         };
       }
 
+      function createEmptyPayrollEmployeeFilters() {
+        return {
+          name: "",
+          cpf: "",
+          registration: "",
+          admissionDate: "",
+          terminationDate: "",
+          positionId: "",
+          departmentId: "",
+          costCenterId: "",
+          salaryBase: "",
+          salaryType: "",
+          monthlyJourney: "",
+          status: "",
+          bankData: "",
+          notes: ""
+        };
+      }
+
       function createEmptyPayrollPositionDraft(position) {
         return {
           id: position?.id || null,
@@ -9856,6 +10000,18 @@
         };
       }
 
+      function createEmptyPayrollPositionFilters() {
+        return {
+          name: "",
+          cbo: "",
+          suggestedSalary: "",
+          departmentId: "",
+          costCenterId: "",
+          chartAccountId: "",
+          status: ""
+        };
+      }
+
       function createEmptyPayrollDepartmentDraft(department) {
         return {
           id: department?.id || null,
@@ -9864,6 +10020,15 @@
           costCenterId: department?.costCenterId || "",
           manager: department?.manager || "",
           status: department?.status || "Ativo"
+        };
+      }
+
+      function createEmptyPayrollDepartmentFilters() {
+        return {
+          name: "",
+          costCenterId: "",
+          manager: "",
+          status: ""
         };
       }
 
@@ -10250,6 +10415,7 @@
         }
         state.ui.editing.payrollEmployeeId = null;
         state.ui.payrollEmployeeDraft = createEmptyPayrollEmployeeDraft();
+        state.ui.payrollEmployeeModalOpen = false;
         notify("success", "Funcionário", "Cadastro salvo com sucesso.");
         renderApp();
       }
@@ -10264,6 +10430,7 @@
         upsertRecord("payrollPositions", record);
         state.ui.editing.payrollPositionId = null;
         state.ui.payrollPositionDraft = createEmptyPayrollPositionDraft();
+        state.ui.payrollPositionModalOpen = false;
         notify("success", "Cargo", "Cadastro salvo com sucesso.");
         renderApp();
       }
@@ -10276,6 +10443,7 @@
         upsertRecord("payrollDepartments", record);
         state.ui.editing.payrollDepartmentId = null;
         state.ui.payrollDepartmentDraft = createEmptyPayrollDepartmentDraft();
+        state.ui.payrollDepartmentModalOpen = false;
         notify("success", "Departamento", "Cadastro salvo com sucesso.");
         renderApp();
       }
@@ -11061,49 +11229,112 @@
       }
 
       function renderPayrollEmployeesPanel() {
-        const draft = state.ui.payrollEmployeeDraft;
-        const employees = filterRecords(state.data.payrollEmployees, state.ui.search.payrollEmployees, (item) => `${item.code} ${item.name} ${item.cpf} ${item.registration}`);
+        const filters = state.ui.payrollEmployeeFilters || createEmptyPayrollEmployeeFilters();
+        const employees = getFilteredPayrollEmployees(filters);
+        const hasFilters = Object.values(filters).some((value) => String(value || "").trim() !== "");
         return `
-          <div class="layout-grid">
-            <form class="card" data-form="payroll-employee">
-              <div class="section-head"><div><h3>${state.ui.editing.payrollEmployeeId ? "Editar funcionário" : "Novo funcionário"}</h3><p>Valida CPF e matrícula duplicados, centro de custo e salário base.</p></div></div>
-              <div class="form-grid">
-                ${renderPayrollInput("name", "Nome", draft.name, "Maria Silva")}
-                ${renderPayrollInput("cpf", "CPF", draft.cpf, "000.000.000-00")}
-                ${renderPayrollInput("registration", "Matrícula", draft.registration, "MAT-001")}
-                ${renderPayrollInput("admissionDate", "Data de admissão", draft.admissionDate, "", "date")}
-                ${renderPayrollInput("terminationDate", "Data de demissão", draft.terminationDate, "", "date")}
-                ${renderPayrollSelect("positionId", "Cargo", draft.positionId, state.data.payrollPositions.map((item) => [item.id, `${item.code} - ${item.name}`]), "Selecione")}
-                ${renderPayrollSelect("departmentId", "Departamento", draft.departmentId, state.data.payrollDepartments.map((item) => [item.id, `${item.code} - ${item.name}`]), "Selecione")}
-                ${renderPayrollSelect("costCenterId", "Centro de custo", draft.costCenterId, state.data.costCenters.map((item) => [item.id, `${item.code} - ${item.name}`]), "Selecione")}
-                ${renderPayrollInput("salaryBase", "Salário base", draft.salaryBase, "0,00")}
-                ${renderPayrollSelect("salaryType", "Tipo de salário", draft.salaryType, ["Mensalista", "Horista", "Diarista", "Comissionado"].map((x) => [x, x]))}
-                ${renderPayrollInput("monthlyJourney", "Jornada mensal", draft.monthlyJourney, "220")}
-                ${renderPayrollSelect("status", "Situação", draft.status, PAYROLL_EMPLOYEE_STATUS.map((x) => [x, x]))}
-                ${renderPayrollTextarea("bankData", "Dados bancários opcionais", draft.bankData, "Banco, agência e conta")}
-                ${renderPayrollTextarea("notes", "Observações", draft.notes, "Observações internas")}
-              </div>
-              ${renderPayrollFormActions("reset-payroll-employee")}
-            </form>
-            <section class="table-card">${renderPayrollTableHeader("Funcionários", "payrollEmployees", "Pesquisar por nome, CPF ou matrícula")}
-              <div class="table-scroll"><table><thead><tr><th>Código</th><th>Nome</th><th>CPF</th><th>Cargo</th><th>Salário</th><th>Status</th><th>Ações</th></tr></thead><tbody>
-              ${employees.length ? employees.map((item) => `<tr><td><strong>${escapeHtml(item.code)}</strong></td><td>${escapeHtml(item.name)}<div class="table-muted">Matrícula ${escapeHtml(item.registration)}</div></td><td>${escapeHtml(formatCpf(item.cpf))}</td><td>${escapeHtml(getPayrollPositionById(item.positionId)?.name || "-")}</td><td>${formatCurrency(item.salaryBase)}</td><td>${renderStatusBadge(item.status)}</td><td>${renderPayrollRowActions("payroll-employee", item.id)}</td></tr>`).join("") : renderPayrollEmptyRow(7, "Nenhum funcionário cadastrado.")}
-              </tbody></table></div>
-            </section>
-          </div>`;
+          <section class="financeiro-legacy-shell">
+            <div class="financeiro-legacy-head">
+              <h3 class="financeiro-legacy-title">Funcionários</h3>
+              <p class="financeiro-legacy-note">Parâmetros para consulta com os mesmos campos do cadastro e listagem logo abaixo.</p>
+            </div>
+            <div class="financeiro-legacy-body">
+              <section class="financeiro-legacy-panel">
+                <div class="financeiro-legacy-toolbar">
+                  <div>
+                    <h4 class="financeiro-legacy-section-title">Parâmetros para consulta</h4>
+                    <p class="page-subtitle">Os filtros abaixo espelham os campos do cadastro de funcionários.</p>
+                  </div>
+                  <div class="inline-actions">
+                    <button class="secondary-button" type="button" data-action="reset-payroll-employee-filters">Limpar</button>
+                    <button class="primary-button" type="button" data-action="new-payroll-employee">Novo</button>
+                  </div>
+                </div>
+                <form data-form="payroll-employee-filters" autocomplete="off">
+                  <div class="form-grid">
+                    ${renderPayrollInput("name", "Nome", filters.name, "Maria Silva")}
+                    ${renderPayrollInput("cpf", "CPF", filters.cpf, "000.000.000-00")}
+                    ${renderPayrollInput("registration", "Matrícula", filters.registration, "MAT-001")}
+                    ${renderPayrollInput("admissionDate", "Data de admissão", filters.admissionDate, "", "date")}
+                    ${renderPayrollInput("terminationDate", "Data de demissão", filters.terminationDate, "", "date")}
+                    ${renderPayrollSelect("positionId", "Cargo", filters.positionId, state.data.payrollPositions.map((item) => [item.id, `${item.code} - ${item.name}`]), "Todos")}
+                    ${renderPayrollSelect("departmentId", "Departamento", filters.departmentId, state.data.payrollDepartments.map((item) => [item.id, `${item.code} - ${item.name}`]), "Todos")}
+                    ${renderPayrollSelect("costCenterId", "Centro de custo", filters.costCenterId, state.data.costCenters.map((item) => [item.id, `${item.code} - ${item.name}`]), "Todos")}
+                    ${renderPayrollInput("salaryBase", "Salário base", filters.salaryBase, "0,00")}
+                    ${renderPayrollSelect("salaryType", "Tipo de salário", filters.salaryType, ["Mensalista", "Horista", "Diarista", "Comissionado"].map((x) => [x, x]), "Todos")}
+                    ${renderPayrollInput("monthlyJourney", "Jornada mensal", filters.monthlyJourney, "220")}
+                    ${renderPayrollSelect("status", "Situação", filters.status, PAYROLL_EMPLOYEE_STATUS.map((x) => [x, x]), "Todas")}
+                    ${renderPayrollTextarea("bankData", "Dados bancários opcionais", filters.bankData, "Banco, agência e conta")}
+                    ${renderPayrollTextarea("notes", "Observações", filters.notes, "Observações internas")}
+                  </div>
+                  <div class="form-actions">
+                    <button class="primary-button" type="submit">Consultar</button>
+                  </div>
+                </form>
+              </section>
+              <section class="financeiro-legacy-panel">
+                <div class="financeiro-legacy-toolbar">
+                  <div>
+                    <h4 class="financeiro-legacy-section-title">Resultado da consulta</h4>
+                    <p class="page-subtitle">Funcionários cadastrados na folha de pagamento.</p>
+                  </div>
+                </div>
+                ${employees.length ? `<div class="financeiro-legacy-table-wrap"><table class="financeiro-legacy-table"><thead><tr><th>Código</th><th>Nome</th><th>CPF</th><th>Cargo</th><th>Salário</th><th>Status</th><th>Ações</th></tr></thead><tbody>
+                ${employees.map((item) => `<tr><td><strong>${escapeHtml(item.code)}</strong></td><td>${escapeHtml(item.name)}<div class="table-muted">Matrícula ${escapeHtml(item.registration)}</div></td><td>${escapeHtml(formatCpf(item.cpf))}</td><td>${escapeHtml(getPayrollPositionById(item.positionId)?.name || "-")}</td><td>${formatCurrency(item.salaryBase)}</td><td>${renderStatusBadge(item.status)}</td><td>${renderPayrollRowActions("payroll-employee", item.id)}</td></tr>`).join("")}
+                </tbody></table></div>` : `<div class="empty-card"><strong>Nenhum funcionário encontrado.</strong><p>${hasFilters ? "Nenhum funcionário corresponde aos parâmetros informados." : "Nenhum funcionário cadastrado."}</p></div>`}
+              </section>
+            </div>
+          </section>`;
       }
 
       function renderPayrollPositionsPanel() {
-        const draft = state.ui.payrollPositionDraft;
-        const rows = filterRecords(state.data.payrollPositions, state.ui.search.payrollPositions, (item) => `${item.code} ${item.name} ${item.cbo}`);
-        return `<div class="layout-grid"><form class="card" data-form="payroll-position"><div class="section-head"><div><h3>${state.ui.editing.payrollPositionId ? "Editar cargo" : "Novo cargo"}</h3><p>Cargo, CBO, salário sugerido e vínculos padrão.</p></div></div><div class="form-grid">
-          ${renderPayrollInput("name", "Nome do cargo", draft.name, "Analista contábil")}${renderPayrollInput("cbo", "CBO", draft.cbo, "")}${renderPayrollInput("suggestedSalary", "Salário base sugerido", draft.suggestedSalary, "0,00")}${renderPayrollSelect("departmentId", "Departamento", draft.departmentId, state.data.payrollDepartments.map((item) => [item.id, `${item.code} - ${item.name}`]), "Selecione")}${renderPayrollSelect("costCenterId", "Centro de custo padrão", draft.costCenterId, state.data.costCenters.map((item) => [item.id, `${item.code} - ${item.name}`]), "Selecione")}${renderPayrollSelect("chartAccountId", "Conta contábil padrão", draft.chartAccountId, getSelectableChartAccounts().map((item) => [item.id, `${item.code} - ${item.name}`]), "Opcional")}${renderPayrollSelect("status", "Status", draft.status, [["Ativo", "Ativo"], ["Inativo", "Inativo"]])}</div>${renderPayrollFormActions("reset-payroll-position")}</form><section class="table-card">${renderPayrollTableHeader("Cargos", "payrollPositions", "Pesquisar cargo")}<div class="table-scroll"><table><thead><tr><th>Código</th><th>Cargo</th><th>CBO</th><th>Salário</th><th>Status</th><th>Ações</th></tr></thead><tbody>${rows.length ? rows.map((item) => `<tr><td><strong>${escapeHtml(item.code)}</strong></td><td>${escapeHtml(item.name)}</td><td>${escapeHtml(item.cbo || "-")}</td><td>${formatCurrency(item.suggestedSalary)}</td><td>${renderStatusBadge(item.status)}</td><td>${renderPayrollRowActions("payroll-position", item.id)}</td></tr>`).join("") : renderPayrollEmptyRow(6, "Nenhum cargo cadastrado.")}</tbody></table></div></section></div>`;
+        const filters = state.ui.payrollPositionFilters || createEmptyPayrollPositionFilters();
+        const rows = getFilteredPayrollPositions(filters);
+        const hasFilters = Object.values(filters).some((value) => String(value || "").trim() !== "");
+        return `<section class="financeiro-legacy-shell"><div class="financeiro-legacy-head"><h3 class="financeiro-legacy-title">Cargos</h3><p class="financeiro-legacy-note">Parâmetros para consulta com os mesmos campos do cadastro e listagem logo abaixo.</p></div><div class="financeiro-legacy-body">
+          <section class="financeiro-legacy-panel"><div class="financeiro-legacy-toolbar"><div><h4 class="financeiro-legacy-section-title">Parâmetros para consulta</h4><p class="page-subtitle">Os filtros abaixo espelham os campos do cadastro de cargos.</p></div><div class="inline-actions"><button class="secondary-button" type="button" data-action="reset-payroll-position-filters">Limpar</button><button class="primary-button" type="button" data-action="new-payroll-position">Novo</button></div></div>
+          <form data-form="payroll-position-filters" autocomplete="off"><div class="form-grid">
+          ${renderPayrollInput("name", "Nome do cargo", filters.name, "Analista contábil")}${renderPayrollInput("cbo", "CBO", filters.cbo, "")}${renderPayrollInput("suggestedSalary", "Salário base sugerido", filters.suggestedSalary, "0,00")}${renderPayrollSelect("departmentId", "Departamento", filters.departmentId, state.data.payrollDepartments.map((item) => [item.id, `${item.code} - ${item.name}`]), "Todos")}${renderPayrollSelect("costCenterId", "Centro de custo padrão", filters.costCenterId, state.data.costCenters.map((item) => [item.id, `${item.code} - ${item.name}`]), "Todos")}${renderPayrollSelect("chartAccountId", "Conta contábil padrão", filters.chartAccountId, getSelectableChartAccounts().map((item) => [item.id, `${item.code} - ${item.name}`]), "Todas")}${renderPayrollSelect("status", "Status", filters.status, [["Ativo", "Ativo"], ["Inativo", "Inativo"]], "Todos")}
+          </div><div class="form-actions"><button class="primary-button" type="submit">Consultar</button></div></form></section>
+          <section class="financeiro-legacy-panel"><div class="financeiro-legacy-toolbar"><div><h4 class="financeiro-legacy-section-title">Resultado da consulta</h4><p class="page-subtitle">Cargos cadastrados na folha de pagamento.</p></div></div>
+          ${rows.length ? `<div class="financeiro-legacy-table-wrap"><table class="financeiro-legacy-table"><thead><tr><th>Código</th><th>Cargo</th><th>CBO</th><th>Salário</th><th>Status</th><th>Ações</th></tr></thead><tbody>${rows.map((item) => `<tr><td><strong>${escapeHtml(item.code)}</strong></td><td>${escapeHtml(item.name)}</td><td>${escapeHtml(item.cbo || "-")}</td><td>${formatCurrency(item.suggestedSalary)}</td><td>${renderStatusBadge(item.status)}</td><td>${renderPayrollRowActions("payroll-position", item.id)}</td></tr>`).join("")}</tbody></table></div>` : `<div class="empty-card"><strong>Nenhum cargo encontrado.</strong><p>${hasFilters ? "Nenhum cargo corresponde aos parâmetros informados." : "Nenhum cargo cadastrado."}</p></div>`}
+          </section></div></section>`;
       }
 
       function renderPayrollDepartmentsPanel() {
+        const filters = state.ui.payrollDepartmentFilters || createEmptyPayrollDepartmentFilters();
+        const rows = getFilteredPayrollDepartments(filters);
+        const hasFilters = Object.values(filters).some((value) => String(value || "").trim() !== "");
+        return `<section class="financeiro-legacy-shell"><div class="financeiro-legacy-head"><h3 class="financeiro-legacy-title">Departamentos</h3><p class="financeiro-legacy-note">Parâmetros para consulta com os mesmos campos do cadastro e listagem logo abaixo.</p></div><div class="financeiro-legacy-body">
+          <section class="financeiro-legacy-panel"><div class="financeiro-legacy-toolbar"><div><h4 class="financeiro-legacy-section-title">Parâmetros para consulta</h4><p class="page-subtitle">Os filtros abaixo espelham os campos do cadastro de departamentos.</p></div><div class="inline-actions"><button class="secondary-button" type="button" data-action="reset-payroll-department-filters">Limpar</button><button class="primary-button" type="button" data-action="new-payroll-department">Novo</button></div></div>
+          <form data-form="payroll-department-filters" autocomplete="off"><div class="form-grid">${renderPayrollInput("name", "Nome", filters.name, "Administrativo")}${renderPayrollSelect("costCenterId", "Centro de custo vinculado", filters.costCenterId, state.data.costCenters.map((item) => [item.id, `${item.code} - ${item.name}`]), "Todos")}${renderPayrollInput("manager", "Responsável", filters.manager, "")}${renderPayrollSelect("status", "Status", filters.status, [["Ativo", "Ativo"], ["Inativo", "Inativo"]], "Todos")}</div><div class="form-actions"><button class="primary-button" type="submit">Consultar</button></div></form></section>
+          <section class="financeiro-legacy-panel"><div class="financeiro-legacy-toolbar"><div><h4 class="financeiro-legacy-section-title">Resultado da consulta</h4><p class="page-subtitle">Departamentos cadastrados na folha de pagamento.</p></div></div>
+          ${rows.length ? `<div class="financeiro-legacy-table-wrap"><table class="financeiro-legacy-table"><thead><tr><th>Código</th><th>Nome</th><th>Centro de custo</th><th>Responsável</th><th>Status</th><th>Ações</th></tr></thead><tbody>${rows.map((item) => `<tr><td><strong>${escapeHtml(item.code)}</strong></td><td>${escapeHtml(item.name)}</td><td>${escapeHtml(getCostCenterById(item.costCenterId)?.name || "-")}</td><td>${escapeHtml(item.manager || "-")}</td><td>${renderStatusBadge(item.status)}</td><td>${renderPayrollRowActions("payroll-department", item.id)}</td></tr>`).join("")}</tbody></table></div>` : `<div class="empty-card"><strong>Nenhum departamento encontrado.</strong><p>${hasFilters ? "Nenhum departamento corresponde aos parâmetros informados." : "Nenhum departamento cadastrado."}</p></div>`}
+          </section></div></section>`;
+      }
+
+      function renderPayrollEmployeeModal() {
+        const draft = state.ui.payrollEmployeeDraft;
+        const editing = Boolean(state.ui.editing.payrollEmployeeId);
+        return `<div class="modal-overlay"><button class="modal-backdrop" type="button" data-action="close-payroll-employee-modal" aria-label="Fechar modal"></button><div class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="payroll-employee-modal-title"><div class="modal-header"><div><h3 class="modal-title" id="payroll-employee-modal-title">${editing ? "Editar funcionário" : "Novo funcionário"}</h3><p class="modal-subtitle">Cadastro de funcionário em modal.</p></div><div class="inline-actions"><button class="ghost-button" type="button" data-action="close-payroll-employee-modal">Fechar</button></div></div><div class="modal-body"><form data-form="payroll-employee" autocomplete="off"><div class="form-grid">
+        ${renderPayrollInput("name", "Nome", draft.name, "Maria Silva")}${renderPayrollInput("cpf", "CPF", draft.cpf, "000.000.000-00")}${renderPayrollInput("registration", "Matrícula", draft.registration, "MAT-001")}${renderPayrollInput("admissionDate", "Data de admissão", draft.admissionDate, "", "date")}${renderPayrollInput("terminationDate", "Data de demissão", draft.terminationDate, "", "date")}${renderPayrollSelect("positionId", "Cargo", draft.positionId, state.data.payrollPositions.map((item) => [item.id, `${item.code} - ${item.name}`]), "Selecione")}${renderPayrollSelect("departmentId", "Departamento", draft.departmentId, state.data.payrollDepartments.map((item) => [item.id, `${item.code} - ${item.name}`]), "Selecione")}${renderPayrollSelect("costCenterId", "Centro de custo", draft.costCenterId, state.data.costCenters.map((item) => [item.id, `${item.code} - ${item.name}`]), "Selecione")}${renderPayrollInput("salaryBase", "Salário base", draft.salaryBase, "0,00")}${renderPayrollSelect("salaryType", "Tipo de salário", draft.salaryType, ["Mensalista", "Horista", "Diarista", "Comissionado"].map((x) => [x, x]))}${renderPayrollInput("monthlyJourney", "Jornada mensal", draft.monthlyJourney, "220")}${renderPayrollSelect("status", "Situação", draft.status, PAYROLL_EMPLOYEE_STATUS.map((x) => [x, x]))}${renderPayrollTextarea("bankData", "Dados bancários opcionais", draft.bankData, "Banco, agência e conta")}${renderPayrollTextarea("notes", "Observações", draft.notes, "Observações internas")}
+        </div><div class="form-actions"><button class="primary-button" type="submit">Salvar</button><button class="ghost-button" type="button" data-action="close-payroll-employee-modal">Cancelar</button></div></form></div></div></div>`;
+      }
+
+      function renderPayrollPositionModal() {
+        const draft = state.ui.payrollPositionDraft;
+        const editing = Boolean(state.ui.editing.payrollPositionId);
+        return `<div class="modal-overlay"><button class="modal-backdrop" type="button" data-action="close-payroll-position-modal" aria-label="Fechar modal"></button><div class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="payroll-position-modal-title"><div class="modal-header"><div><h3 class="modal-title" id="payroll-position-modal-title">${editing ? "Editar cargo" : "Novo cargo"}</h3><p class="modal-subtitle">Cadastro de cargo em modal.</p></div><div class="inline-actions"><button class="ghost-button" type="button" data-action="close-payroll-position-modal">Fechar</button></div></div><div class="modal-body"><form data-form="payroll-position" autocomplete="off"><div class="form-grid">
+        ${renderPayrollInput("name", "Nome do cargo", draft.name, "Analista contábil")}${renderPayrollInput("cbo", "CBO", draft.cbo, "")}${renderPayrollInput("suggestedSalary", "Salário base sugerido", draft.suggestedSalary, "0,00")}${renderPayrollSelect("departmentId", "Departamento", draft.departmentId, state.data.payrollDepartments.map((item) => [item.id, `${item.code} - ${item.name}`]), "Selecione")}${renderPayrollSelect("costCenterId", "Centro de custo padrão", draft.costCenterId, state.data.costCenters.map((item) => [item.id, `${item.code} - ${item.name}`]), "Selecione")}${renderPayrollSelect("chartAccountId", "Conta contábil padrão", draft.chartAccountId, getSelectableChartAccounts().map((item) => [item.id, `${item.code} - ${item.name}`]), "Opcional")}${renderPayrollSelect("status", "Status", draft.status, [["Ativo", "Ativo"], ["Inativo", "Inativo"]])}
+        </div><div class="form-actions"><button class="primary-button" type="submit">Salvar</button><button class="ghost-button" type="button" data-action="close-payroll-position-modal">Cancelar</button></div></form></div></div></div>`;
+      }
+
+      function renderPayrollDepartmentModal() {
         const draft = state.ui.payrollDepartmentDraft;
-        const rows = filterRecords(state.data.payrollDepartments, state.ui.search.payrollDepartments, (item) => `${item.code} ${item.name} ${item.manager}`);
-        return `<div class="layout-grid"><form class="card" data-form="payroll-department"><div class="section-head"><div><h3>${state.ui.editing.payrollDepartmentId ? "Editar departamento" : "Novo departamento"}</h3><p>Departamento com centro de custo obrigatório e responsável.</p></div></div><div class="form-grid">${renderPayrollInput("name", "Nome", draft.name, "Administrativo")}${renderPayrollSelect("costCenterId", "Centro de custo vinculado", draft.costCenterId, state.data.costCenters.map((item) => [item.id, `${item.code} - ${item.name}`]), "Selecione")}${renderPayrollInput("manager", "Responsável", draft.manager, "")}${renderPayrollSelect("status", "Status", draft.status, [["Ativo", "Ativo"], ["Inativo", "Inativo"]])}</div>${renderPayrollFormActions("reset-payroll-department")}</form><section class="table-card">${renderPayrollTableHeader("Departamentos", "payrollDepartments", "Pesquisar departamento")}<div class="table-scroll"><table><thead><tr><th>Código</th><th>Nome</th><th>Centro de custo</th><th>Responsável</th><th>Status</th><th>Ações</th></tr></thead><tbody>${rows.length ? rows.map((item) => `<tr><td><strong>${escapeHtml(item.code)}</strong></td><td>${escapeHtml(item.name)}</td><td>${escapeHtml(getCostCenterById(item.costCenterId)?.name || "-")}</td><td>${escapeHtml(item.manager || "-")}</td><td>${renderStatusBadge(item.status)}</td><td>${renderPayrollRowActions("payroll-department", item.id)}</td></tr>`).join("") : renderPayrollEmptyRow(6, "Nenhum departamento cadastrado.")}</tbody></table></div></section></div>`;
+        const editing = Boolean(state.ui.editing.payrollDepartmentId);
+        return `<div class="modal-overlay"><button class="modal-backdrop" type="button" data-action="close-payroll-department-modal" aria-label="Fechar modal"></button><div class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="payroll-department-modal-title"><div class="modal-header"><div><h3 class="modal-title" id="payroll-department-modal-title">${editing ? "Editar departamento" : "Novo departamento"}</h3><p class="modal-subtitle">Cadastro de departamento em modal.</p></div><div class="inline-actions"><button class="ghost-button" type="button" data-action="close-payroll-department-modal">Fechar</button></div></div><div class="modal-body"><form data-form="payroll-department" autocomplete="off"><div class="form-grid">
+        ${renderPayrollInput("name", "Nome", draft.name, "Administrativo")}${renderPayrollSelect("costCenterId", "Centro de custo vinculado", draft.costCenterId, state.data.costCenters.map((item) => [item.id, `${item.code} - ${item.name}`]), "Selecione")}${renderPayrollInput("manager", "Responsável", draft.manager, "")}${renderPayrollSelect("status", "Status", draft.status, [["Ativo", "Ativo"], ["Inativo", "Inativo"]])}
+        </div><div class="form-actions"><button class="primary-button" type="submit">Salvar</button><button class="ghost-button" type="button" data-action="close-payroll-department-modal">Cancelar</button></div></form></div></div></div>`;
       }
 
       function renderPayrollEventsPanel() {
