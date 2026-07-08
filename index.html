@@ -12563,6 +12563,9 @@
                           const actionAttributes = row.source === "payroll"
                             ? `data-action="open-settlement-modal" data-payroll-title-id="${escapeHtml(row.payrollTitle.id)}"`
                             : `data-action="open-settlement-modal" data-invoice-id="${escapeHtml(row.invoice.id)}" data-installment-id="${escapeHtml(row.installment.id)}"`;
+                          const undoActionAttributes = row.source === "payroll"
+                            ? `data-action="undo-settlement" data-payroll-title-id="${escapeHtml(row.payrollTitle.id)}"`
+                            : `data-action="undo-settlement" data-invoice-id="${escapeHtml(row.invoice.id)}" data-installment-id="${escapeHtml(row.installment.id)}"`;
                           return `
                             <tr>
                               <td>
@@ -12579,6 +12582,7 @@
                               <td>
                                 <div class="table-actions">
                                   <button class="action-chip" type="button" ${actionAttributes} ${row.status === "Quitada" ? "disabled" : ""}>Dar baixa</button>
+                                  <button class="action-chip danger" type="button" ${undoActionAttributes} ${row.settled > 0 ? "" : "disabled"}>Desfazer baixa</button>
                                 </div>
                               </td>
                             </tr>
