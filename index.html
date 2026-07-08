@@ -5408,6 +5408,151 @@
         renderApp();
       }
 
+      function submitInvoiceLine(formData) {
+        const draft = state.ui.invoiceDraft;
+        const itemId = clean(formData.get("itemId"));
+        const quantity = toDecimal(formData.get("quantity"));
+        const unitPrice = roundCurrency(toDecimal(formData.get("unitPrice")));
+        const item = getItemById(itemId);
+
+        if (!item) {
+          notify("error", "Item da nota", "Selecione um item válido.");
+          return;
+        }
+
+        if (!quantity || quantity <= 0) {
+          notify("error", "Item da nota", "Informe uma quantidade maior que zero.");
+          return;
+        }
+
+        if (!unitPrice || unitPrice <= 0) {
+          notify("error", "Item da nota", "Informe um valor unitário maior que zero.");
+          return;
+        }
+
+        const nature = getFinancialNatureById(item.financialNatureId);
+        if (!nature) {
+          notify("error", "Item da nota", "A natureza financeira do item não foi encontrada.");
+          return;
+        }
+
+        const chartAccount = getFinancialNatureAccountForCostCenter(nature, draft.costCenterId);
+        if (!chartAccount || !isChartAccountAvailableForLinks(chartAccount)) {
+          notify("error", "Item da nota", draft.costCenterId
+            ? "Não existe contabilização válida para a natureza desse item no centro de custo selecionado."
+            : "Não existe contabilização padrão válida para a natureza desse item. Informe um centro de custo compatível ou ajuste a natureza.");
+          return;
+        }
+
+        const line = {
+          id: generateId(),
+          itemId: item.id,
+          itemCode: item.code,
+          itemName: item.name,
+          financialNatureId: nature.id,
+          financialNatureName: nature.name,
+          chartAccountId: chartAccount.id,
+          chartAccountCode: chartAccount.code,
+          chartAccountName: chartAccount.name,
+          chartAccountType: chartAccount.type,
+          chartAccountGroup: chartAccount.group,
+          chartAccountBalanceNature: chartAccount.balanceNature,
+          quantity: roundCurrency(quantity),
+          unitPrice,
+          totalPrice: roundCurrency(quantity * unitPrice),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        draft.items.push(line);
+        draft.lineForm = {
+          itemId: "",
+          quantity: 1,
+          unitPrice: ""
+        };
+        notify("success", "Item da nota", "Item adicionado com sucesso.");
+        renderApp();
+      }
+
+      function removeInvoiceLine(lineId) {
+        const draft = state.ui.invoiceDraft;
+        const initialLength = draft.items.length;
+        draft.items = draft.items.filter((item) => item.id !== lineId);
+        if (draft.items.length === initialLength) {
+          notify("error", "Item da nota", "Item não encontrado para remoção.");
+          return;
+        }
+        notify("success", "Item da nota", "Item removido com sucesso.");
+        renderApp();
+      }
+
+      function submitInstallment(formData) {
+        const draft = state.ui.invoiceDraft;
+        const installmentNumber = parseInt(clean(formData.get("installmentNumber")) || "0", 10);
+        const dueDate = clean(formData.get("dueDate"));
+        const amount = roundCurrency(toDecimal(formData.get("amount")));
+        const paymentMethod = clean(formData.get("paymentMethod"));
+        const status = clean(formData.get("status")) || "Em aberto";
+
+        if (!Number.isInteger(installmentNumber) || installmentNumber <= 0) {
+          notify("error", "Parcela", "Informe um número de parcela válido.");
+          return;
+        }
+
+        if (draft.installments.some((item) => Number(item.installmentNumber) === installmentNumber)) {
+          notify("error", "Parcela", "Já existe uma parcela com esse número.");
+          return;
+        }
+
+        if (!dueDate) {
+          notify("error", "Parcela", "Informe a data de vencimento.");
+          return;
+        }
+
+        if (!amount || amount <= 0) {
+          notify("error", "Parcela", "Informe um valor de parcela maior que zero.");
+          return;
+        }
+
+        if (!paymentMethod) {
+          notify("error", "Parcela", "Informe a forma de pagamento.");
+          return;
+        }
+
+        draft.installments.push({
+          id: generateId(),
+          installmentNumber,
+          dueDate,
+          amount,
+          paymentMethod,
+          status,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+        draft.installmentForm = {
+          installmentNumber: draft.installments.length + 1,
+          dueDate: "",
+          amount: "",
+          paymentMethod: "",
+          status: "Em aberto"
+        };
+        notify("success", "Parcela", "Parcela adicionada com sucesso.");
+        renderApp();
+      }
+
+      function removeInstallment(installmentId) {
+        const draft = state.ui.invoiceDraft;
+        const initialLength = draft.installments.length;
+        draft.installments = draft.installments.filter((installment) => installment.id !== installmentId);
+        if (draft.installments.length === initialLength) {
+          notify("error", "Parcela", "Parcela não encontrada para remoção.");
+          return;
+        }
+        draft.installmentForm.installmentNumber = draft.installments.length + 1;
+        notify("success", "Parcela", "Parcela removida com sucesso.");
+        renderApp();
+      }
+
       function syncAccountingEventEntries(invoice) {
         const prefix = `auto-event-${invoice.id}-`;
         const currentLineIds = new Set(invoice.items.map((line) => line.id));
@@ -8796,7 +8941,10 @@
         const totals = getInvoiceTotals(draft);
         const supplier = getSupplierById(draft.supplierId);
         const selectableItems = getSelectableItems();
-        const canLaunch = state.data.suppliers.length > 0 && selectableItems.length > 0;
+        const isLancamento = draft.kind === "lancamento";
+        const canLaunch = isLancamento
+          ? selectableItems.length > 0
+          : state.data.suppliers.length > 0 && selectableItems.length > 0;
         const lineItem = getItemById(draft.lineForm.itemId);
         const lineNature = lineItem ? getFinancialNatureById(lineItem.financialNatureId) : null;
         const lineAccount = lineNature ? getFinancialNatureAccountForCostCenter(lineNature, draft.costCenterId) : null;
@@ -8825,11 +8973,11 @@
             <div class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="invoice-modal-title">
               <div class="modal-header">
                 <div>
-                  <h3 class="modal-title" id="invoice-modal-title">${draft.id ? `Edição da nota ${escapeHtml(draft.code)}` : "Nova nota fiscal"}</h3>
+                  <h3 class="modal-title" id="invoice-modal-title">${draft.id ? `Edição do ${draft.kind === "lancamento" ? "lançamento" : "nota fiscal"} ${escapeHtml(draft.code)}` : `Novo ${draft.kind === "lancamento" ? "lançamento" : "nota fiscal"}`}</h3>
                   <p class="modal-subtitle">A listagem continua visível no módulo fiscal e o cadastro acontece em etapas dentro deste modal.</p>
                 </div>
                 <div class="inline-actions">
-                  ${draft.id ? `<button class="ghost-button" type="button" data-action="new-invoice">Novo rascunho</button>` : ""}
+                  ${draft.id ? `<button class="ghost-button" type="button" data-action="${draft.kind === "lancamento" ? "new-lancamento" : "new-invoice"}">Novo rascunho</button>` : ""}
                   <button class="ghost-button" type="button" data-action="close-invoice-modal">Fechar</button>
                 </div>
               </div>
@@ -8838,8 +8986,8 @@
                   <section class="notice-card">
                     <div class="notice-icon">PR</div>
                     <div>
-                      <strong>Pré-requisitos para lançar notas fiscais</strong>
-                      <p>Você precisa ter pelo menos um fornecedor e um item vinculado a natureza financeira com conta contábil analítica ativa.</p>
+                      <strong>Pré-requisitos para lançar no fiscal</strong>
+                      <p>${draft.kind === "lancamento" ? "Você precisa ter pelo menos um item vinculado a natureza financeira com conta contábil analítica ativa." : "Você precisa ter pelo menos um fornecedor e um item vinculado a natureza financeira com conta contábil analítica ativa."}</p>
                     </div>
                   </section>
                 ` : ""}
@@ -12363,7 +12511,8 @@
         const filters = state.ui.invoiceFilters || createEmptyInvoiceFilters();
         const selectableItems = getSelectableItems();
         const records = getFilteredInvoices(filters);
-        const canLaunch = state.data.suppliers.length > 0 && selectableItems.length > 0;
+        const canLaunchInvoice = state.data.suppliers.length > 0 && selectableItems.length > 0;
+        const canLaunchLancamento = selectableItems.length > 0;
         const launchingsCount = state.data.invoices.filter((record) => record.kind === "lancamento").length;
         const invoicesCount = state.data.invoices.length - launchingsCount;
         const totalItems = state.data.invoices.reduce((sum, record) => sum + record.items.length, 0);
@@ -12377,12 +12526,12 @@
               <p class="financeiro-legacy-note">Bloco superior com os parâmetros do módulo e, abaixo, o resultado da consulta fiscal.</p>
             </div>
             <div class="financeiro-legacy-body">
-              ${!canLaunch ? `
+              ${!canLaunchLancamento ? `
                 <section class="notice-card">
                   <div class="notice-icon">PR</div>
                   <div>
-                    <strong>Pré-requisitos para lançar notas fiscais</strong>
-                    <p>Você precisa ter pelo menos um fornecedor e um item vinculado a natureza financeira com conta contábil analítica ativa.</p>
+                    <strong>Pré-requisitos para lançar no fiscal</strong>
+                    <p>Você precisa ter pelo menos um item vinculado a natureza financeira com conta contábil analítica ativa. Para nota fiscal, além disso, também é necessário ter um fornecedor cadastrado.</p>
                   </div>
                 </section>
               ` : ""}
@@ -12395,8 +12544,8 @@
                   </div>
                   <div class="inline-actions">
                     <button class="secondary-button" type="button" data-action="reset-invoice-filters">Limpar</button>
-                    <button class="secondary-button" type="button" data-action="new-lancamento" ${canLaunch ? "" : "disabled"}>Novo lançamento</button>
-                    <button class="primary-button" type="button" data-action="new-invoice" ${canLaunch ? "" : "disabled"}>Nova nota fiscal</button>
+                    <button class="secondary-button" type="button" data-action="new-lancamento" ${canLaunchLancamento ? "" : "disabled"}>Novo lançamento</button>
+                    <button class="primary-button" type="button" data-action="new-invoice" ${canLaunchInvoice ? "" : "disabled"}>Nova nota fiscal</button>
                   </div>
                 </div>
                 <form data-form="invoice-filters" autocomplete="off">
@@ -12515,10 +12664,10 @@
                 ` : `
                   <div class="empty-card" style="border-radius:4px;">
                     <strong>Nenhuma nota fiscal ou lançamento encontrado.</strong>
-                    <p>${hasFilters ? "Nenhum registro corresponde aos parâmetros informados." : "Depois de cadastrar fornecedores e itens, use os botões acima para lançar uma nota ou um lançamento avulso."}</p>
+                    <p>${hasFilters ? "Nenhum registro corresponde aos parâmetros informados." : "Depois de cadastrar itens, você já pode fazer lançamentos avulsos. Para nota fiscal, cadastre também um fornecedor."}</p>
                     <div class="inline-actions">
-                      <button class="primary-button" type="button" data-action="new-invoice" ${canLaunch ? "" : "disabled"}>Nova nota fiscal</button>
-                      <button class="secondary-button" type="button" data-action="new-lancamento" ${canLaunch ? "" : "disabled"}>Novo lançamento</button>
+                      <button class="primary-button" type="button" data-action="new-invoice" ${canLaunchInvoice ? "" : "disabled"}>Nova nota fiscal</button>
+                      <button class="secondary-button" type="button" data-action="new-lancamento" ${canLaunchLancamento ? "" : "disabled"}>Novo lançamento</button>
                     </div>
                   </div>
                 `}
