@@ -4271,6 +4271,16 @@
               renderApp();
             }
             break;
+          case "undo-settlement":
+            {
+              const payrollTitleId = target.dataset.payrollTitleId;
+              if (payrollTitleId) {
+                undoPayrollSettlement(payrollTitleId);
+              } else {
+                undoInvoiceSettlement(target.dataset.invoiceId, target.dataset.installmentId);
+              }
+            }
+            break;
           case "close-settlement-modal":
             state.ui.settlementModalOpen = false;
             state.ui.settlementTarget = null;
@@ -5408,6 +5418,28 @@
         renderApp();
       }
 
+      function startInvoiceEdit(id) {
+        const invoice = state.data.invoices.find((record) => record.id === id);
+        if (!invoice) {
+          notify("error", "Fiscal", "Registro fiscal não encontrado.");
+          return;
+        }
+        state.ui.invoiceDraft = createEmptyInvoiceDraft(invoice);
+        state.ui.invoiceModalOpen = true;
+        state.ui.activeInvoiceTab = "dados";
+        navigate("fiscal");
+      }
+
+      function deleteInvoice(id) {
+        const invoice = state.data.invoices.find((record) => record.id === id);
+        if (!invoice) {
+          notify("error", "Fiscal", "Registro fiscal não encontrado.");
+          return;
+        }
+        removeInvoiceGeneratedEntries(id);
+        deleteRecord("invoices", id, invoice.kind === "lancamento" ? "Lançamento" : "Nota fiscal", "Registro fiscal excluído com sucesso.");
+      }
+
       function submitInvoiceLine(formData) {
         const draft = state.ui.invoiceDraft;
         const itemId = clean(formData.get("itemId"));
@@ -5858,12 +5890,70 @@
         return roundCurrency(getPayrollTitleSettlements(payrollFinancialEntryId).reduce((sum, record) => sum + Number(record.amount || 0), 0));
       }
 
+      function removeAccountingEntriesBySettlementId(settlementId) {
+        saveCollection("accountingEntries", state.data.accountingEntries.filter((entry) => entry.sourceSettlementId !== settlementId));
+      }
+
+      function undoInvoiceSettlement(invoiceId, installmentId) {
+        const invoice = state.data.invoices.find((record) => record.id === invoiceId);
+        const installment = invoice?.installments.find((item) => item.id === installmentId);
+        if (!invoice || !installment) {
+          notify("error", "Desfazer baixa", "Parcela não encontrada.");
+          return;
+        }
+
+        const settlement = getInstallmentSettlements(invoiceId, installmentId)
+          .slice()
+          .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))[0];
+        if (!settlement) {
+          notify("error", "Desfazer baixa", "Não existe baixa registrada para essa parcela.");
+          return;
+        }
+
+        saveCollection("settlements", state.data.settlements.filter((record) => record.id !== settlement.id));
+        removeAccountingEntriesBySettlementId(settlement.id);
+        notify("success", "Desfazer baixa", `Baixa da parcela ${installment.installmentNumber} desfeita com sucesso.`);
+        renderApp();
+      }
+
+      function undoPayrollSettlement(payrollTitleId) {
+        const payrollTitle = state.data.payrollFinancialEntries.find((record) => record.id === payrollTitleId);
+        if (!payrollTitle) {
+          notify("error", "Desfazer baixa", "Título financeiro da folha não encontrado.");
+          return;
+        }
+
+        const settlement = getPayrollTitleSettlements(payrollTitleId)
+          .slice()
+          .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))[0];
+        if (!settlement) {
+          notify("error", "Desfazer baixa", "Não existe baixa registrada para esse título.");
+          return;
+        }
+
+        saveCollection("settlements", state.data.settlements.filter((record) => record.id !== settlement.id));
+        removeAccountingEntriesBySettlementId(settlement.id);
+
+        const newSettled = getPayrollTitleSettledAmount(payrollTitleId);
+        const amount = roundCurrency(toDecimal(payrollTitle.amount));
+        const remainingAmount = Math.max(0, roundCurrency(amount - newSettled));
+        upsertRecord("payrollFinancialEntries", {
+          ...payrollTitle,
+          status: remainingAmount <= 0.009 ? "Quitada" : (newSettled > 0 ? "Parcial" : "Em aberto"),
+          paidAmount: newSettled,
+          remainingAmount,
+          lastSettlementDate: "",
+          payingAccountId: "",
+          updatedAt: payrollNow()
+        });
+
+        notify("success", "Desfazer baixa", "Baixa do título financeiro da folha desfeita com sucesso.");
+        renderApp();
+      }
+
       function getFilteredAccountingEntries() {
         const filters = state.ui.accountingEntryFilters;
         return state.data.accountingEntries.filter((record) => {
-          if (record.origin) {
-            return false;
-          }
           const matchesStartDate = !filters.startDate || record.entryDate >= filters.startDate;
           const matchesEndDate = !filters.endDate || record.entryDate <= filters.endDate;
           const matchesAmount = !filters.amount || roundCurrency(record.amount) === roundCurrency(filters.amount);
@@ -9008,7 +9098,7 @@
 
 
       function renderAccountingEntriesView() {
-        const reportCount = state.data.accountingEntries.filter((entry) => !entry.origin).length;
+        const reportCount = state.data.accountingEntries.length;
         const costCenterCount = state.data.costCenters.length;
         const accountCount = getSelectableChartAccounts().length;
         const eventEntriesCount = state.data.accountingEntries.filter((entry) => entry.origin === "accounting-event").length;
@@ -12306,6 +12396,7 @@
               <td>
                 <div class="table-actions">
                   <button class="action-chip" type="button" data-action="open-settlement-modal" data-payroll-title-id="${escapeHtml(title.id)}" ${row.status === "Quitada" ? "disabled" : ""}>Dar baixa</button>
+                  <button class="action-chip danger" type="button" data-action="undo-settlement" data-payroll-title-id="${escapeHtml(title.id)}" ${row.settled > 0 ? "" : "disabled"}>Desfazer baixa</button>
                 </div>
               </td>
             </tr>
@@ -12329,6 +12420,7 @@
             <td>
               <div class="table-actions">
                 <button class="action-chip" type="button" data-action="open-settlement-modal" data-invoice-id="${escapeHtml(row.invoice.id)}" data-installment-id="${escapeHtml(row.installment.id)}" ${row.status === "Quitada" ? "disabled" : ""}>Dar baixa</button>
+                <button class="action-chip danger" type="button" data-action="undo-settlement" data-invoice-id="${escapeHtml(row.invoice.id)}" data-installment-id="${escapeHtml(row.installment.id)}" ${row.settled > 0 ? "" : "disabled"}>Desfazer baixa</button>
               </div>
             </td>
           </tr>
