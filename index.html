@@ -1,7 +1,3 @@
-
-
-
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -3361,6 +3357,38 @@
         };
       }
 
+      function generateNextPayrollRegistration() {
+        const registrations = state.data.payrollEmployees
+          .map((employee) => String(employee.registration || "").trim().toUpperCase())
+          .filter(Boolean);
+        const maxNumber = registrations.reduce((highest, registration) => {
+          const digits = registration.match(/(\d+)/g);
+          if (!digits) {
+            return highest;
+          }
+          const numeric = Number(digits.join(""));
+          return Number.isFinite(numeric) && numeric > highest ? numeric : highest;
+        }, 0);
+        const maxDigits = registrations.reduce((highest, registration) => {
+          const digits = registration.match(/(\d+)/g);
+          const size = digits ? digits.join("").length : 0;
+          return size > highest ? size : highest;
+        }, 3);
+        return `MAT-${String(maxNumber + 1).padStart(Math.max(maxDigits, 3), "0")}`;
+      }
+
+      function syncPayrollEmployeeDraftFromPosition() {
+        const draft = state.ui.payrollEmployeeDraft;
+        if (!draft) {
+          return;
+        }
+        if (!draft.registration) {
+          draft.registration = generateNextPayrollRegistration();
+        }
+        const position = getPayrollPositionById(draft.positionId);
+        draft.salaryBase = position ? (position.suggestedSalary ?? "") : "";
+      }
+
       function createEmptyCostCenterClassificationDraft(record) {
         return {
           id: record?.id || "",
@@ -4608,6 +4636,9 @@
           } else {
             draft[fieldName] = target.value;
           }
+          if (formType === "payroll-employee" && fieldName === "positionId") {
+            syncPayrollEmployeeDraftFromPosition();
+          }
           if (["costCenterId", "positionId", "departmentId", "eventId", "type", "calculationType", "tableType", "employeeScope"].includes(fieldName)) {
             renderApp();
           }
@@ -5162,13 +5193,13 @@
 
         const mappings = state.ui.financialNatureFormDraft.accountMappings || [];
         if (!mappings.length) {
-          notify("error", "Natureza financeira", "Cadastre pelo menos um vínculo no Cadastro Contábil (conta contábil x centro de custo) antes de salvar.");
+          notify("error", "Natureza financeira", "Cadastre pelo menos uma contabilização (débito x centro de custo) antes de salvar.");
           return;
         }
 
         const invalidMapping = mappings.find((mapping) => !isChartAccountAvailableForLinks(getChartAccountById(mapping.chartAccountId)));
         if (invalidMapping) {
-          notify("error", "Natureza financeira", "Existe um vínculo do Cadastro Contábil com conta contábil inativa, inválida ou não analítica. Remova ou corrija antes de salvar.");
+          notify("error", "Natureza financeira", "Existe uma contabilização com conta contábil inativa, inválida ou não analítica. Remova ou corrija antes de salvar.");
           return;
         }
 
@@ -5190,26 +5221,26 @@
         renderApp();
       }
 
-      // Adiciona um vínculo (conta contábil x centro de custo) ao rascunho da natureza financeira em edição.
-      // Um centro de custo em branco representa o vínculo padrão, usado quando não há um vínculo específico.
+      // Adiciona uma contabilização (débito x centro de custo) ao rascunho da natureza financeira em edição.
+      // Um centro de custo em branco representa a contabilização padrão, usada quando não há uma regra específica.
       function submitFinancialNatureMapping(formData) {
         const chartAccountId = clean(formData.get("chartAccountId"));
         const costCenterId = clean(formData.get("costCenterId"));
 
         const account = getChartAccountById(chartAccountId);
         if (!account || !isChartAccountAvailableForLinks(account)) {
-          notify("error", "Cadastro contábil", "Selecione uma conta contábil analítica, ativa e válida.");
+          notify("error", "Contabilização", "Selecione uma conta contábil de débito analítica, ativa e válida.");
           return;
         }
 
         if (costCenterId && !getCostCenterById(costCenterId)) {
-          notify("error", "Cadastro contábil", "Selecione um centro de custo válido ou deixe em branco para o vínculo padrão.");
+          notify("error", "Contabilização", "Selecione um centro de custo válido ou deixe em branco para a contabilização padrão.");
           return;
         }
 
         const duplicate = state.ui.financialNatureFormDraft.accountMappings.find((mapping) => (mapping.costCenterId || "") === (costCenterId || ""));
         if (duplicate) {
-          notify("error", "Cadastro contábil", costCenterId ? "Já existe uma conta vinculada a esse centro de custo." : "Já existe um vínculo padrão cadastrado (sem centro de custo).");
+          notify("error", "Contabilização", costCenterId ? "Já existe uma contabilização para esse centro de custo." : "Já existe uma contabilização padrão cadastrada (sem centro de custo).");
           return;
         }
 
@@ -5224,13 +5255,13 @@
           costCenterId: ""
         };
 
-        notify("success", "Cadastro contábil", "Vínculo adicionado à natureza financeira.");
+        notify("success", "Contabilização", "Contabilização adicionada à natureza financeira.");
         renderApp();
       }
 
       function removeFinancialNatureMapping(mappingId) {
         state.ui.financialNatureFormDraft.accountMappings = state.ui.financialNatureFormDraft.accountMappings.filter((mapping) => mapping.id !== mappingId);
-        notify("success", "Cadastro contábil", "Vínculo removido da natureza financeira.");
+        notify("success", "Contabilização", "Contabilização removida da natureza financeira.");
         renderApp();
       }
 
@@ -5252,7 +5283,7 @@
         }
 
         if (!isFinancialNatureAvailableForLinks(financialNature)) {
-          notify("error", "Item", "A natureza financeira precisa possuir ao menos um vínculo contábil válido (conta analítica e ativa) no Cadastro Contábil.");
+          notify("error", "Item", "A natureza financeira precisa possuir ao menos uma contabilização válida (conta analítica e ativa) para uso nos lançamentos.");
           return;
         }
 
@@ -6190,7 +6221,7 @@
         return sortAccountsByCode(state.data.chartAccounts.filter((account) => isChartAccountAvailableForLinks(account)));
       }
 
-      // Retorna o vínculo padrão (sem centro de custo) do Cadastro Contábil da natureza, se existir.
+      // Retorna a contabilização padrão (sem centro de custo) da natureza, se existir.
       function getFinancialNatureDefaultAccount(nature) {
         if (!nature) {
           return null;
@@ -6200,8 +6231,8 @@
         return fallback ? getChartAccountById(fallback.chartAccountId) : null;
       }
 
-      // Resolve a conta contábil de uma natureza financeira para um centro de custo específico:
-      // usa o vínculo exato daquele centro de custo e, se não existir, cai para o vínculo padrão.
+      // Resolve a conta contábil de débito de uma natureza financeira para um centro de custo específico:
+      // usa a contabilização exata daquele centro de custo e, se não existir, cai para a contabilização padrão.
       function getFinancialNatureAccountForCostCenter(nature, costCenterId) {
         if (!nature) {
           return null;
@@ -7937,7 +7968,7 @@
                   <div class="notice-icon">AT</div>
                   <div>
                     <strong>Cadastre primeiro as contas contábeis</strong>
-                    <p>O Cadastro Contábil da natureza financeira depende de contas analíticas ativas. Crie ou ajuste ao menos uma conta válida antes de montar os vínculos.</p>
+                    <p>A contabilização da natureza financeira depende de contas analíticas ativas. Crie ou ajuste ao menos uma conta válida antes de montar as regras de débito por centro de custo.</p>
                   </div>
                 </section>
               ` : ""}
@@ -8002,7 +8033,7 @@
                         <tr>
                           <th>Código</th>
                           <th>Natureza financeira</th>
-                          <th>Cadastro Contábil</th>
+                          <th>Contabilização</th>
                           <th>Ações</th>
                         </tr>
                       </thead>
@@ -8024,7 +8055,7 @@
                                       <span class="table-muted">${costCenter ? escapeHtml(costCenter.name) : "Todos (padrão)"}</span>
                                     </div>
                                   `;
-                                }).join("") : `<span class="table-muted">Nenhum vínculo cadastrado</span>`}
+                                }).join("") : `<span class="table-muted">Nenhuma contabilização cadastrada</span>`}
                               </td>
                               <td>
                                 <div class="table-actions">
@@ -8127,7 +8158,7 @@
                           <th>Código</th>
                           <th>Item</th>
                           <th>Natureza financeira</th>
-                          <th>Cadastro Contábil</th>
+                          <th>Contabilização</th>
                           <th>Ações</th>
                         </tr>
                       </thead>
@@ -8147,10 +8178,10 @@
                               <td>${escapeHtml(nature?.name || "Natureza indisponível")}</td>
                               <td>
                                 <div class="badge-row">
-                                  <span class="badge">${escapeHtml(String(mappingsCount))} vínculo(s)</span>
-                                  ${natureValid ? `<span class="badge positive">Vínculo liberado</span>` : `<span class="badge warning">Revisar vínculo</span>`}
+                                  <span class="badge">${escapeHtml(String(mappingsCount))} contabilização(ões)</span>
+                                  ${natureValid ? `<span class="badge positive">Contabilização OK</span>` : `<span class="badge warning">Revisar contabilização</span>`}
                                 </div>
-                                <div class="table-muted">${defaultAccount ? `Padrão: ${escapeHtml(defaultAccount.code)} - ${escapeHtml(defaultAccount.name)}` : "Sem vínculo padrão (depende do centro de custo do lançamento)"}</div>
+                                <div class="table-muted">${defaultAccount ? `Débito padrão: ${escapeHtml(defaultAccount.code)} - ${escapeHtml(defaultAccount.name)}` : "Sem contabilização padrão (depende do centro de custo do lançamento)"}</div>
                               </td>
                               <td>
                                 <div class="table-actions">
@@ -8240,7 +8271,7 @@
               <div class="modal-header">
                 <div>
                   <h3 class="modal-title" id="financial-nature-modal-title">${editing ? "Editar natureza financeira" : "Nova natureza financeira"}</h3>
-                  <p class="modal-subtitle">Cadastro em modal com a montagem completa do Cadastro Contábil.</p>
+                  <p class="modal-subtitle">Cadastro em modal com a montagem completa da contabilização da natureza.</p>
                 </div>
                 <div class="inline-actions">
                   <button class="ghost-button" type="button" data-action="close-financial-nature-modal">Fechar</button>
@@ -8252,7 +8283,7 @@
                     <div class="notice-icon">AT</div>
                     <div>
                       <strong>Cadastre primeiro as contas contábeis</strong>
-                      <p>O Cadastro Contábil da natureza financeira depende de contas analíticas ativas.</p>
+                      <p>A contabilização da natureza financeira depende de contas analíticas ativas.</p>
                     </div>
                   </section>
                 ` : ""}
@@ -8265,8 +8296,8 @@
                     </div>
                   </div>
                   <div class="financeiro-legacy-subpanel">
-                    <strong>Cadastro Contábil</strong>
-                    <p>Cada linha define qual conta contábil será usada em um centro de custo. Deixe o centro de custo em branco para criar o vínculo padrão.</p>
+                    <strong>Contabilização</strong>
+                    <p>Cada linha define a conta contábil de débito usada em um centro de custo. Deixe o centro de custo em branco para criar a contabilização padrão.</p>
                   </div>
                   <div class="form-actions">
                     <button class="primary-button" type="submit" ${canCreate || draftMappings.length ? "" : "disabled"}>${editing ? "Salvar alterações" : "Cadastrar natureza financeira"}</button>
@@ -8274,12 +8305,12 @@
                 </form>
 
                 <div class="financeiro-legacy-subpanel">
-                  <strong>Adicionar vínculo</strong>
-                  <p>Monte a combinação conta contábil x centro de custo antes de salvar a natureza.</p>
+                  <strong>Adicionar contabilização</strong>
+                  <p>Monte a combinação débito x centro de custo antes de salvar a natureza.</p>
                   <form data-form="financial-nature-mapping" autocomplete="off" style="margin-top:12px;">
                     <div class="form-grid">
                       <div class="field">
-                        <label for="financial-nature-mapping-account-modal">Conta contábil</label>
+                        <label for="financial-nature-mapping-account-modal">Débito</label>
                         <select id="financial-nature-mapping-account-modal" name="chartAccountId" ${canCreate ? "required" : "disabled"}>
                           <option value="">Selecione uma conta contábil</option>
                           ${selectableAccounts.map((account) => `
@@ -8302,7 +8333,7 @@
                       </div>
                     </div>
                     <div class="form-actions">
-                      <button class="secondary-button" type="submit" ${canCreate ? "" : "disabled"}>Adicionar vínculo</button>
+                      <button class="secondary-button" type="submit" ${canCreate ? "" : "disabled"}>Adicionar contabilização</button>
                     </div>
                   </form>
                 </div>
@@ -8312,7 +8343,7 @@
                     <table class="financeiro-legacy-table">
                       <thead>
                         <tr>
-                          <th>Conta contábil</th>
+                          <th>Débito</th>
                           <th>Centro de custo</th>
                           <th>Ações</th>
                         </tr>
@@ -8340,8 +8371,8 @@
                   </div>
                 ` : `
                   <div class="empty-card" style="margin-top:16px;">
-                    <strong>Nenhum vínculo cadastrado ainda.</strong>
-                    <p>Adicione ao menos um vínculo antes de salvar a natureza financeira.</p>
+                    <strong>Nenhuma contabilização cadastrada ainda.</strong>
+                    <p>Adicione ao menos uma contabilização antes de salvar a natureza financeira.</p>
                   </div>
                 `}
               </div>
@@ -8398,7 +8429,7 @@
                           const defaultAccount = getFinancialNatureDefaultAccount(nature);
                           return `
                             <option value="${escapeHtml(nature.id)}" ${selectedNatureId === nature.id ? "selected" : ""}>
-                              ${escapeHtml(nature.code)} - ${escapeHtml(nature.name)}${defaultAccount ? ` | Padrão: ${escapeHtml(defaultAccount.code)}` : ` | ${(nature.accountMappings || []).length} vínculo(s) por centro de custo`}
+                              ${escapeHtml(nature.code)} - ${escapeHtml(nature.name)}${defaultAccount ? ` | Débito padrão: ${escapeHtml(defaultAccount.code)}` : ` | ${(nature.accountMappings || []).length} contabilização(ões) por centro de custo`}
                             </option>
                           `;
                         }).join("")}
@@ -8409,14 +8440,14 @@
                       <textarea id="item-description-modal" name="description" maxlength="260" ${canCreate ? "" : "disabled"} placeholder="Detalhes adicionais do item">${escapeHtml(itemDraft.description || "")}</textarea>
                     </div>
                     <div class="field full">
-                      <label>Cadastro Contábil da natureza</label>
+                      <label>Contabilização da natureza</label>
                       <div class="field-readonly">
                         ${selectedNature
-                          ? `${selectedNatureMappings.length} vínculo(s) cadastrado(s)${selectedNatureDefaultAccount ? ` | Padrão: ${escapeHtml(selectedNatureDefaultAccount.code)} - ${escapeHtml(selectedNatureDefaultAccount.name)}` : " | Sem vínculo padrão (é necessário um centro de custo compatível no lançamento)"}`
-                          : "O Cadastro Contábil será exibido conforme a natureza selecionada."}
+                          ? `${selectedNatureMappings.length} contabilização(ões) cadastrada(s)${selectedNatureDefaultAccount ? ` | Débito padrão: ${escapeHtml(selectedNatureDefaultAccount.code)} - ${escapeHtml(selectedNatureDefaultAccount.name)}` : " | Sem contabilização padrão (é necessário um centro de custo compatível no lançamento)"}`
+                          : "A contabilização será exibida conforme a natureza selecionada."}
                       </div>
-                      <span class="field-hint">A conta contábil usada em cada nota depende do centro de custo do lançamento; confira os vínculos em Naturezas financeiras.</span>
-                      ${selectedNature && !linkedAccountIsValid ? `<div class="inline-note warning">A natureza selecionada não possui nenhum vínculo contábil válido no momento.</div>` : ""}
+                      <span class="field-hint">A conta contábil de débito usada em cada nota depende do centro de custo do lançamento; confira a contabilização em Naturezas financeiras.</span>
+                      ${selectedNature && !linkedAccountIsValid ? `<div class="inline-note warning">A natureza selecionada não possui nenhuma contabilização válida no momento.</div>` : ""}
                     </div>
                   </div>
                   <div class="form-actions">
@@ -8510,7 +8541,7 @@
             <div class="section-head">
               <div>
                 <h3>Itens da nota</h3>
-                <p>Selecione um item cadastrado para carregar automaticamente sua natureza financeira e a conta contábil vinculada.</p>
+                <p>Selecione um item cadastrado para carregar automaticamente sua natureza financeira e a conta contábil de débito da contabilização.</p>
               </div>
               <div class="inline-actions">
                 <button class="ghost-button" type="button" data-invoice-tab="dados">Voltar aos dados</button>
@@ -8528,7 +8559,7 @@
                       const account = nature ? getFinancialNatureAccountForCostCenter(nature, draft.costCenterId) : null;
                       return `
                         <option value="${escapeHtml(item.id)}" ${draft.lineForm.itemId === item.id ? "selected" : ""}>
-                          ${escapeHtml(item.code)} - ${escapeHtml(item.name)}${nature ? ` | ${escapeHtml(nature.name)}` : ""}${account ? ` | ${escapeHtml(account.code)}` : " | sem conta p/ este centro de custo"}
+                          ${escapeHtml(item.code)} - ${escapeHtml(item.name)}${nature ? ` | ${escapeHtml(nature.name)}` : ""}${account ? ` | Débito ${escapeHtml(account.code)}` : " | sem débito p/ este centro de custo"}
                         </option>
                       `;
                     }).join("")}
@@ -8543,13 +8574,13 @@
                   <input id="invoice-line-unit-price" type="number" name="unitPrice" min="0.01" step="0.01" value="${escapeHtml(String(draft.lineForm.unitPrice || ""))}" ${canLaunch ? "required" : "disabled"}>
                 </div>
                 <div class="field full">
-                  <label>Natureza financeira e conta contábil</label>
+                  <label>Natureza financeira e débito contábil</label>
                   <div class="field-readonly">
                     ${lineItem && lineNature
                       ? (lineAccount
-                          ? `${escapeHtml(lineNature.code)} - ${escapeHtml(lineNature.name)} | ${escapeHtml(lineAccount.code)} - ${escapeHtml(lineAccount.name)} | ${escapeHtml(lineAccount.group)} | ${escapeHtml(lineAccount.balanceNature)}`
-                          : "Nenhuma conta contábil configurada para o centro de custo desta nota (nem um vínculo padrão). Ajuste o centro de custo na aba Dados ou cadastre o vínculo na natureza financeira.")
-                      : "Selecione um item para visualizar os vínculos automáticos."}
+                          ? `${escapeHtml(lineNature.code)} - ${escapeHtml(lineNature.name)} | Débito ${escapeHtml(lineAccount.code)} - ${escapeHtml(lineAccount.name)} | ${escapeHtml(lineAccount.group)} | ${escapeHtml(lineAccount.balanceNature)}`
+                          : "Nenhuma conta contábil de débito configurada para o centro de custo desta nota (nem uma contabilização padrão). Ajuste o centro de custo na aba Dados ou cadastre a contabilização na natureza financeira.")
+                      : "Selecione um item para visualizar a contabilização automática."}
                   </div>
                 </div>
               </div>
@@ -9947,6 +9978,7 @@
       const PAYROLL_ACCOUNTING_BATCH_NAME = "Lançamentos da folha";
 
       function createEmptyPayrollEmployeeDraft(employee) {
+        const position = employee?.positionId ? getPayrollPositionById(employee.positionId) : null;
         return {
           id: employee?.id || null,
           code: employee?.code || "",
@@ -9958,7 +9990,7 @@
           positionId: employee?.positionId || "",
           departmentId: employee?.departmentId || "",
           costCenterId: employee?.costCenterId || "",
-          salaryBase: employee?.salaryBase ?? "",
+          salaryBase: employee?.salaryBase ?? (position?.suggestedSalary ?? ""),
           salaryType: employee?.salaryType || "Mensalista",
           monthlyJourney: employee?.monthlyJourney ?? "220",
           status: employee?.status || "Ativo",
@@ -10377,38 +10409,49 @@
       function submitPayrollEmployee(formData) {
         const draft = state.ui.payrollEmployeeDraft;
         const id = state.ui.editing.payrollEmployeeId;
+        const previous = getPayrollEmployeeById(id);
         const cpf = normalizeCpf(formData.get("cpf"));
+        const positionId = formData.get("positionId") || "";
+        const position = getPayrollPositionById(positionId);
+        const salaryBaseFromPosition = roundCurrency(Number(position?.suggestedSalary || 0));
         const record = {
           id: id || generateId(),
           code: draft.code || generateCode("payrollEmployees"),
           name: clean(formData.get("name")),
           cpf,
-          registration: clean(formData.get("registration")),
+          registration: String(previous?.registration || clean(formData.get("registration")) || generateNextPayrollRegistration()).trim().toUpperCase(),
           admissionDate: formData.get("admissionDate") || "",
           terminationDate: formData.get("terminationDate") || "",
-          positionId: formData.get("positionId") || "",
+          positionId,
           departmentId: formData.get("departmentId") || "",
           costCenterId: formData.get("costCenterId") || "",
-          salaryBase: roundCurrency(toDecimal(formData.get("salaryBase"))),
+          salaryBase: salaryBaseFromPosition > 0 ? salaryBaseFromPosition : roundCurrency(toDecimal(formData.get("salaryBase"))),
           salaryType: formData.get("salaryType") || "Mensalista",
           monthlyJourney: toDecimal(formData.get("monthlyJourney")) || 220,
           status: formData.get("status") || "Ativo",
           bankData: clean(formData.get("bankData")),
           notes: clean(formData.get("notes"))
         };
-        if (!record.name || cpf.length !== 11 || !record.registration || !record.admissionDate || !record.costCenterId || record.salaryBase <= 0) {
-          notify("error", "Funcionário", "Preencha nome, CPF válido, matrícula, admissão, centro de custo e salário base.");
+        if (!record.name || cpf.length !== 11 || !record.registration || !record.admissionDate || !record.positionId || !record.costCenterId) {
+          notify("error", "Funcionário", "Preencha nome, CPF válido, admissão, cargo e centro de custo.");
+          return;
+        }
+        if (!position) {
+          notify("error", "Funcionário", "Selecione um cargo válido para carregar o salário automaticamente.");
+          return;
+        }
+        if (salaryBaseFromPosition <= 0) {
+          notify("error", "Funcionário", "O cargo selecionado não possui salário cadastrado. Ajuste o salário no cadastro de cargos.");
           return;
         }
         if (state.data.payrollEmployees.some((item) => item.id !== record.id && normalizeCpf(item.cpf) === cpf)) {
           notify("error", "CPF duplicado", "Já existe funcionário com este CPF.");
           return;
         }
-        if (state.data.payrollEmployees.some((item) => item.id !== record.id && item.registration === record.registration)) {
+        if (state.data.payrollEmployees.some((item) => item.id !== record.id && String(item.registration || "").trim().toUpperCase() === record.registration)) {
           notify("error", "Matrícula duplicada", "Já existe funcionário com esta matrícula.");
           return;
         }
-        const previous = getPayrollEmployeeById(id);
         upsertRecord("payrollEmployees", { ...previous, ...record, updatedAt: payrollNow(), createdAt: previous?.createdAt || payrollNow() });
         if (!previous || Number(previous.salaryBase) !== Number(record.salaryBase)) {
           upsertRecord("payrollSalaryHistory", { id: generateId(), code: generateCode("payrollSalaryHistory"), employeeId: record.id, salaryBase: record.salaryBase, salaryType: record.salaryType, effectiveDate: record.admissionDate, reason: previous ? "Alteração salarial" : "Salário inicial", createdAt: payrollNow(), updatedAt: payrollNow(), status: "Ativo" });
@@ -11316,8 +11359,9 @@
       function renderPayrollEmployeeModal() {
         const draft = state.ui.payrollEmployeeDraft;
         const editing = Boolean(state.ui.editing.payrollEmployeeId);
+        const selectedPosition = getPayrollPositionById(draft.positionId);
         return `<div class="modal-overlay"><button class="modal-backdrop" type="button" data-action="close-payroll-employee-modal" aria-label="Fechar modal"></button><div class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="payroll-employee-modal-title"><div class="modal-header"><div><h3 class="modal-title" id="payroll-employee-modal-title">${editing ? "Editar funcionário" : "Novo funcionário"}</h3><p class="modal-subtitle">Cadastro de funcionário em modal.</p></div><div class="inline-actions"><button class="ghost-button" type="button" data-action="close-payroll-employee-modal">Fechar</button></div></div><div class="modal-body"><form data-form="payroll-employee" autocomplete="off"><div class="form-grid">
-        ${renderPayrollInput("name", "Nome", draft.name, "Maria Silva")}${renderPayrollInput("cpf", "CPF", draft.cpf, "000.000.000-00")}${renderPayrollInput("registration", "Matrícula", draft.registration, "MAT-001")}${renderPayrollInput("admissionDate", "Data de admissão", draft.admissionDate, "", "date")}${renderPayrollInput("terminationDate", "Data de demissão", draft.terminationDate, "", "date")}${renderPayrollSelect("positionId", "Cargo", draft.positionId, state.data.payrollPositions.map((item) => [item.id, `${item.code} - ${item.name}`]), "Selecione")}${renderPayrollSelect("departmentId", "Departamento", draft.departmentId, state.data.payrollDepartments.map((item) => [item.id, `${item.code} - ${item.name}`]), "Selecione")}${renderPayrollSelect("costCenterId", "Centro de custo", draft.costCenterId, state.data.costCenters.map((item) => [item.id, `${item.code} - ${item.name}`]), "Selecione")}${renderPayrollInput("salaryBase", "Salário base", draft.salaryBase, "0,00")}${renderPayrollSelect("salaryType", "Tipo de salário", draft.salaryType, ["Mensalista", "Horista", "Diarista", "Comissionado"].map((x) => [x, x]))}${renderPayrollInput("monthlyJourney", "Jornada mensal", draft.monthlyJourney, "220")}${renderPayrollSelect("status", "Situação", draft.status, PAYROLL_EMPLOYEE_STATUS.map((x) => [x, x]))}${renderPayrollTextarea("bankData", "Dados bancários opcionais", draft.bankData, "Banco, agência e conta")}${renderPayrollTextarea("notes", "Observações", draft.notes, "Observações internas")}
+        ${renderPayrollInput("name", "Nome", draft.name, "Maria Silva")}${renderPayrollInput("cpf", "CPF", draft.cpf, "000.000.000-00")}<div class="field"><label for="payroll-registration">Matrícula</label><input id="payroll-registration" name="registration" value="${escapeHtml(draft.registration || generateNextPayrollRegistration())}" placeholder="Gerada automaticamente" readonly><p class="field-hint">A matrícula é gerada automaticamente pelo sistema.</p></div>${renderPayrollInput("admissionDate", "Data de admissão", draft.admissionDate, "", "date")}${renderPayrollInput("terminationDate", "Data de demissão", draft.terminationDate, "", "date")}${renderPayrollSelect("positionId", "Cargo", draft.positionId, state.data.payrollPositions.map((item) => [item.id, `${item.code} - ${item.name}`]), "Selecione")}${renderPayrollSelect("departmentId", "Departamento", draft.departmentId, state.data.payrollDepartments.map((item) => [item.id, `${item.code} - ${item.name}`]), "Selecione")}${renderPayrollSelect("costCenterId", "Centro de custo", draft.costCenterId, state.data.costCenters.map((item) => [item.id, `${item.code} - ${item.name}`]), "Selecione")}<div class="field"><label for="payroll-salaryBase">Salário base</label><input id="payroll-salaryBase" name="salaryBase" value="${escapeHtml(draft.salaryBase ?? "")}" placeholder="Selecione um cargo" readonly><p class="field-hint">${selectedPosition ? `Salário carregado automaticamente do cargo ${escapeHtml(selectedPosition.name)}.` : "Selecione um cargo para carregar o salário automaticamente."}</p></div>${renderPayrollSelect("salaryType", "Tipo de salário", draft.salaryType, ["Mensalista", "Horista", "Diarista", "Comissionado"].map((x) => [x, x]))}${renderPayrollInput("monthlyJourney", "Jornada mensal", draft.monthlyJourney, "220")}${renderPayrollSelect("status", "Situação", draft.status, PAYROLL_EMPLOYEE_STATUS.map((x) => [x, x]))}${renderPayrollTextarea("bankData", "Dados bancários opcionais", draft.bankData, "Banco, agência e conta")}${renderPayrollTextarea("notes", "Observações", draft.notes, "Observações internas")}
         </div><div class="form-actions"><button class="primary-button" type="submit">Salvar</button><button class="ghost-button" type="button" data-action="close-payroll-employee-modal">Cancelar</button></div></form></div></div></div>`;
       }
 
