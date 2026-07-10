@@ -3222,6 +3222,189 @@
       .operation-toolbar { align-items: flex-start; }
     }
 
+
+
+    /* Componente reutilizável de seleção de contas contábeis */
+    .account-lookup-native {
+      display: none !important;
+    }
+
+    .account-lookup-component {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .account-lookup-row {
+      display: grid;
+      grid-template-columns: minmax(90px, 150px) 38px;
+      gap: 7px;
+      align-items: stretch;
+    }
+
+    .account-lookup-code {
+      width: 100%;
+      min-height: 38px;
+      border: 1px solid var(--border-2);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--ink);
+      padding: 9px 11px;
+      font-family: var(--mono);
+      transition: border-color .14s ease, box-shadow .14s ease;
+    }
+
+    .account-lookup-code:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .account-lookup-code.invalid {
+      border-color: var(--danger);
+      box-shadow: 0 0 0 3px var(--danger-soft);
+    }
+
+    .account-lookup-button {
+      width: 38px;
+      min-height: 38px;
+      border: 1px solid var(--border-2);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--ink-2);
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .account-lookup-button:hover {
+      background: var(--surface-3);
+      color: var(--accent);
+    }
+
+    .account-lookup-description {
+      min-height: 35px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface-3);
+      color: var(--ink-2);
+      font-size: .8rem;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    .account-lookup-description strong {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .account-lookup-error {
+      min-height: 17px;
+      color: var(--danger);
+      font-size: .73rem;
+      line-height: 1.35;
+    }
+
+    .account-picker-shell {
+      width: min(1180px, calc(100vw - 28px));
+      max-height: min(92vh, 900px);
+    }
+
+    .account-picker-filters {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(130px, 1fr));
+      gap: 12px;
+    }
+
+    .account-picker-results {
+      min-height: 330px;
+    }
+
+    .account-picker-table {
+      min-width: 980px;
+    }
+
+    .account-picker-table th button {
+      appearance: none;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      padding: 0;
+      font: inherit;
+      text-transform: inherit;
+      letter-spacing: inherit;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .account-picker-table tbody tr {
+      cursor: pointer;
+    }
+
+    .account-picker-table tbody tr.selected {
+      background: var(--accent-soft-2);
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
+
+    .account-picker-table tbody tr.blocked {
+      opacity: .7;
+    }
+
+    .account-picker-pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .account-picker-pagination .page-buttons {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+    .account-picker-summary {
+      color: var(--ink-2);
+      font-size: .8rem;
+    }
+
+    .account-picker-code-cell {
+      font-family: var(--mono);
+      font-weight: 600;
+    }
+
+    .reduced-code-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 38px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-ink);
+      font-family: var(--mono);
+      font-size: .74rem;
+      font-weight: 700;
+    }
+
+    @media (max-width: 900px) {
+      .account-picker-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 560px) {
+      .account-picker-filters {
+        grid-template-columns: 1fr;
+      }
+      .account-lookup-row {
+        grid-template-columns: minmax(0, 1fr) 38px;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -3469,6 +3652,19 @@
           accountingPanel: "menu",
           accountingEntriesModalOpen: false,
           accountingEntryFormModalOpen: false,
+          accountLookup: {
+            open: false,
+            targetKey: "",
+            label: "Conta contábil",
+            selectedId: "",
+            page: 1,
+            pageSize: 20,
+            sortField: "reducedCode",
+            sortDirection: "asc",
+            filters: { reducedCode: "", code: "", description: "", nature: "", type: "", status: "" },
+            scope: { companyName: "", branchName: "", planName: "" }
+          },
+          accountLookupFocusNextKey: "",
           trialBalanceFilters: createEmptyTrialBalanceFilters(),
           trialBalanceModalOpen: false,
           trialBalanceReportModalOpen: false,
@@ -3726,8 +3922,12 @@
       function createEmptyChartAccountDraft(account) {
         return {
           id: account?.id || "",
+          reducedCode: normalizeReducedCode(account?.reducedCode),
           code: account?.code || "",
           name: account?.name || "",
+          companyName: account?.companyName || "Empresa Principal",
+          branchName: account?.branchName || "Matriz",
+          planName: account?.planName || "Plano Padrão",
           type: account?.type || "Sintética",
           balanceNature: account?.balanceNature || "Devedora",
           status: account?.isActive === false ? "Inativa" : "Ativa"
@@ -3744,8 +3944,12 @@
         const groupDigit = clean(code).charAt(0);
         return {
           id: "",
+          reducedCode: generateNextReducedCode(),
           code,
           name: "",
+          companyName: parentAccount.companyName || "Empresa Principal",
+          branchName: parentAccount.branchName || "Matriz",
+          planName: parentAccount.planName || "Plano Padrão",
           type: level >= 5 ? "Analítica" : "Sintética",
           balanceNature: parentAccount.balanceNature || CHART_ACCOUNT_BALANCE_DEFAULTS[groupDigit] || "Devedora",
           status: "Ativa"
@@ -4174,6 +4378,9 @@
         document.addEventListener("submit", handleSubmit);
         document.addEventListener("input", handleInputOrChange);
         document.addEventListener("change", handleInputOrChange);
+        document.addEventListener("focusout", handleAccountLookupFocusOut);
+        document.addEventListener("keydown", handleAccountLookupKeyDown);
+        document.addEventListener("dblclick", handleAccountLookupDoubleClick);
       }
 
       function handleClick(event) {
@@ -4201,6 +4408,30 @@
         const { action, id } = target.dataset;
 
         switch (action) {
+          case "open-account-lookup":
+            openAccountLookup(target.dataset.key || "");
+            break;
+          case "close-account-lookup":
+            closeAccountLookup();
+            break;
+          case "search-account-lookup":
+            state.ui.accountLookup.page = 1;
+            refreshAccountLookupModal();
+            break;
+          case "account-lookup-row":
+            state.ui.accountLookup.selectedId = id || "";
+            refreshAccountLookupModal();
+            break;
+          case "account-lookup-select":
+            confirmAccountLookupSelection();
+            break;
+          case "account-lookup-page":
+            state.ui.accountLookup.page = Math.max(1, parseInt(target.dataset.page || "1", 10));
+            refreshAccountLookupModal();
+            break;
+          case "account-lookup-sort":
+            setAccountLookupSort(target.dataset.sort || "reducedCode");
+            break;
           case "switch-payroll-panel":
             state.ui.payrollPanel = target.dataset.panel || "dashboard";
             renderApp();
@@ -4959,6 +5190,16 @@
 
         event.preventDefault();
 
+        const invalidAccountField = [...form.querySelectorAll('select.account-lookup-native[data-account-required="true"]')].find((select) => !select.value);
+        if (invalidAccountField) {
+          const key = invalidAccountField.dataset.accountLookupKey || "";
+          setAccountLookupFieldMessage(key, "Selecione uma conta contábil válida.", true);
+          notify("error", "Conta contábil", "Existe um campo obrigatório de conta contábil sem preenchimento válido.");
+          const component = [...document.querySelectorAll("[data-account-component-key]")].find((node) => node.dataset.accountComponentKey === key);
+          component?.querySelector("[data-account-reduced-input]")?.focus();
+          return;
+        }
+
         switch (formType) {
           case "cost-center":
             submitCostCenter(new FormData(form));
@@ -5088,6 +5329,19 @@
       function handleInputOrChange(event) {
         const target = event.target;
         if (!(target instanceof HTMLElement)) {
+          return;
+        }
+
+        if (target.dataset.accountReducedInput) {
+          handleAccountReducedCodeInput(target);
+          return;
+        }
+
+        if (target.dataset.accountLookupFilter) {
+          const field = target.dataset.accountLookupFilter;
+          state.ui.accountLookup.filters[field] = target.value || "";
+          state.ui.accountLookup.page = 1;
+          scheduleAccountLookupRefresh();
           return;
         }
 
@@ -5352,6 +5606,40 @@
         renderApp();
       }
 
+      function startAccountingEntryEdit(id) {
+        const entry = state.data.accountingEntries.find((record) => record.id === id);
+        if (!entry) {
+          notify("error", "Lançamento contábil", "O lançamento selecionado não foi encontrado.");
+          return;
+        }
+        state.ui.editing.accountingEntryId = entry.id;
+        state.ui.accountingEntryDraft = createEmptyAccountingEntryDraft(entry);
+        state.ui.accountingEntriesModalOpen = false;
+        state.ui.eventEntriesModalOpen = false;
+        state.ui.payrollAccountingLotModalOpen = false;
+        state.ui.payableEntriesModalOpen = false;
+        state.ui.accountingEntryFormModalOpen = true;
+        renderApp();
+      }
+
+      function deleteAccountingEntry(id) {
+        const entry = state.data.accountingEntries.find((record) => record.id === id);
+        if (!entry) {
+          notify("error", "Lançamento contábil", "O lançamento selecionado não foi encontrado.");
+          return;
+        }
+        const origin = getAccountingEntryOriginLabel(entry);
+        const message = entry.origin
+          ? `Este lançamento foi gerado automaticamente (${origin}). Deseja realmente excluí-lo do lote contábil?`
+          : "Deseja realmente excluir este lançamento contábil?";
+        if (!window.confirm(message)) return;
+        const deleted = deleteRecord("accountingEntries", id, "Lançamento contábil", "Lançamento contábil excluído com sucesso.");
+        if (deleted) {
+          state.ui.editing.accountingEntryId = null;
+          state.ui.accountingEntryDraft = createEmptyAccountingEntryDraft();
+        }
+      }
+
       function submitAccountingEntry(formData) {
         const id = clean(formData.get("id"));
         const entryDate = clean(formData.get("entryDate"));
@@ -5391,6 +5679,7 @@
 
         const existing = state.data.accountingEntries.find((record) => record.id === id);
         const record = {
+          ...(existing || {}),
           id: existing?.id || generateId(),
           code: existing?.code || generateCode("accountingEntries"),
           entryDate,
@@ -5651,6 +5940,10 @@
         const id = clean(formData.get("id"));
         const code = formatAccountCode(clean(formData.get("code")));
         const name = clean(formData.get("name"));
+        const reducedCode = normalizeReducedCode(formData.get("reducedCode")) || generateNextReducedCode();
+        const companyName = clean(formData.get("companyName")) || "Empresa Principal";
+        const branchName = clean(formData.get("branchName")) || "Matriz";
+        const planName = clean(formData.get("planName")) || "Plano Padrão";
         const type = clean(formData.get("type"));
         const balanceNature = clean(formData.get("balanceNature"));
         const isActive = clean(formData.get("status")) !== "Inativa";
@@ -5661,6 +5954,11 @@
         }
 
         const existing = state.data.chartAccounts.find((record) => record.id === id);
+        const duplicateReducedCode = state.data.chartAccounts.find((record) => record.id !== id && normalizeReducedCode(record.reducedCode) === reducedCode);
+        if (duplicateReducedCode) {
+          notify("error", "Conta contábil", `O código reduzido ${reducedCode} já pertence à conta ${duplicateReducedCode.code} - ${duplicateReducedCode.name}.`);
+          return null;
+        }
         const validation = validateChartAccount({
           id,
           code,
@@ -5681,8 +5979,11 @@
           id: existing?.id || generateId(),
           code: validation.record.code,
           normalizedCode: validation.record.normalizedCode,
-          reducedCode: existing?.reducedCode || generateNextReducedCode(),
+          reducedCode,
           name,
+          companyName,
+          branchName,
+          planName,
           type,
           level: validation.record.level,
           parentCode: validation.record.parentCode,
@@ -7101,25 +7402,49 @@
         };
       }
 
+      function normalizeReducedCode(value) {
+        const digits = String(value ?? "").replace(/\D/g, "");
+        if (!digits) return "";
+        const numeric = parseInt(digits, 10);
+        return Number.isFinite(numeric) && numeric > 0 ? String(numeric) : "";
+      }
+
+      function getChartAccountByReducedCode(value, scope = {}) {
+        const reducedCode = normalizeReducedCode(value);
+        if (!reducedCode) return null;
+        return state.data.chartAccounts.find((account) => {
+          if (normalizeReducedCode(account.reducedCode) !== reducedCode) return false;
+          if (scope.companyName && account.companyName && account.companyName !== scope.companyName) return false;
+          if (scope.branchName && account.branchName && account.branchName !== scope.branchName) return false;
+          if (scope.planName && account.planName && account.planName !== scope.planName) return false;
+          return true;
+        }) || null;
+      }
+
       function generateNextReducedCode() {
         const maxCode = state.data.chartAccounts.reduce((max, account) => {
-          const numeric = parseInt(account.reducedCode, 10);
+          const numeric = parseInt(normalizeReducedCode(account.reducedCode), 10);
           return Number.isFinite(numeric) && numeric > max ? numeric : max;
         }, 0);
-        return String(maxCode + 1).padStart(6, "0");
+        return String(maxCode + 1);
       }
 
       function migrateChartAccounts(accounts) {
         const migrated = sortAccountsByCode(accounts.map((account) => migrateChartAccountRecord(account)));
-        let nextReducedCode = migrated.reduce((max, account) => {
-          const numeric = parseInt(account.reducedCode, 10);
-          return Number.isFinite(numeric) && numeric > max ? numeric : max;
-        }, 0) + 1;
+        const used = new Set();
+        let nextReducedCode = 1;
         migrated.forEach((account) => {
-          if (!account.reducedCode) {
-            account.reducedCode = String(nextReducedCode).padStart(6, "0");
-            nextReducedCode += 1;
+          let reducedCode = normalizeReducedCode(account.reducedCode);
+          if (!reducedCode || used.has(reducedCode)) {
+            while (used.has(String(nextReducedCode))) nextReducedCode += 1;
+            reducedCode = String(nextReducedCode);
           }
+          account.reducedCode = reducedCode;
+          account.companyName = account.companyName || "Empresa Principal";
+          account.branchName = account.branchName || "Matriz";
+          account.planName = account.planName || "Plano Padrão";
+          used.add(reducedCode);
+          nextReducedCode = Math.max(nextReducedCode, parseInt(reducedCode, 10) + 1);
         });
         return migrated;
       }
@@ -7146,6 +7471,10 @@
           code: validCode ? formattedCode : clean(account.code),
           normalizedCode: normalizeAccountCode(account.code),
           name: account.name || "",
+          reducedCode: normalizeReducedCode(account.reducedCode),
+          companyName: account.companyName || "Empresa Principal",
+          branchName: account.branchName || "Matriz",
+          planName: account.planName || "Plano Padrão",
           type: resolvedType,
           level,
           parentCode: validCode ? getParentAccountCode(formattedCode) : "",
@@ -7197,6 +7526,10 @@
             code: formattedCode,
             normalizedCode,
             name: seed.name,
+            reducedCode: String(virtualAccounts.reduce((max, account) => Math.max(max, parseInt(normalizeReducedCode(account.reducedCode), 10) || 0), 0) + 1),
+            companyName: "Empresa Principal",
+            branchName: "Matriz",
+            planName: "Plano Padrão",
             type: seed.type,
             level: getAccountLevel(formattedCode),
             parentCode,
@@ -7424,6 +7757,410 @@
         }
       }
 
+
+      let accountLookupSearchTimer = null;
+
+      function getAccountLookupSelectByKey(key) {
+        return [...document.querySelectorAll("select[data-account-lookup-key]")].find((select) => select.dataset.accountLookupKey === key) || null;
+      }
+
+      function getAccountLookupScope(select) {
+        const form = select?.closest("form");
+        const read = (name) => clean(form?.querySelector(`[name="${name}"]`)?.value || "");
+        return {
+          companyName: read("companyName"),
+          branchName: read("branchName"),
+          planName: read("planName") || read("chartPlanName")
+        };
+      }
+
+      function validateAccountForLookup(account, scope = {}) {
+        if (!account) return "Conta contábil não encontrada.";
+        if (account.isActive === false) return "A conta selecionada está inativa e não pode ser utilizada.";
+        if (!isAnalyticalAccount(account)) return "A conta selecionada é sintética. Utilize uma conta analítica para lançamentos e vínculos contábeis.";
+        if (account.requiresCodeAdjustment) return "A conta selecionada possui código estrutural pendente de ajuste.";
+        if (scope.companyName && account.companyName && account.companyName !== scope.companyName) return `A conta pertence à empresa ${account.companyName}.`;
+        if (scope.branchName && account.branchName && account.branchName !== scope.branchName) return `A conta pertence à filial ${account.branchName}.`;
+        if (scope.planName && account.planName && account.planName !== scope.planName) return `A conta pertence ao plano ${account.planName}.`;
+        return "";
+      }
+
+      function accountLookupFieldLabel(select) {
+        const label = select.closest(".field")?.querySelector("label");
+        if (label?.textContent?.trim()) return label.textContent.trim();
+        const map = {
+          debitAccountId: "Conta débito",
+          creditAccountId: "Conta crédito",
+          payingAccountId: "Conta de pagamento",
+          chartAccountId: "Conta contábil",
+          salaryPayableAccountId: "Conta de salários a pagar",
+          chargesPayableAccountId: "Conta de encargos a recolher"
+        };
+        return map[select.name] || "Conta contábil";
+      }
+
+      function enhanceAccountLookupFields(root = document) {
+        const selects = [...root.querySelectorAll('select[name*="AccountId"]')].filter((select) => !select.dataset.accountLookupEnhanced);
+        const counters = {};
+        selects.forEach((select) => {
+          const formType = select.closest("form")?.dataset.form || "global";
+          const base = `${formType}::${select.name}`;
+          counters[base] = (counters[base] || 0) + 1;
+          const key = `${base}::${counters[base]}`;
+          const selectId = select.id || `account-native-${Math.random().toString(36).slice(2, 9)}`;
+          select.id = selectId;
+          select.dataset.accountLookupEnhanced = "true";
+          select.dataset.accountLookupKey = key;
+          select.classList.add("account-lookup-native");
+          select.tabIndex = -1;
+          const account = getChartAccountById(select.value);
+          const reducedCode = normalizeReducedCode(account?.reducedCode);
+          const inputId = `${selectId}-reduced`;
+          const disabled = select.disabled ? "disabled" : "";
+          const firstOptionText = select.options?.[0]?.textContent?.trim().toLocaleLowerCase("pt-BR") || "";
+          const optionalMarker = ["opcional", "todas", "todos", "nenhuma", "sem conta"].some((marker) => firstOptionText.includes(marker));
+          const inferredRequired = select.required || !optionalMarker;
+          select.required = false;
+          select.dataset.accountRequired = inferredRequired ? "true" : "false";
+          const required = inferredRequired ? "true" : "false";
+          const description = account
+            ? `<strong>${escapeHtml(account.code)}</strong> — ${escapeHtml(account.name)}`
+            : "Nenhuma conta selecionada.";
+          select.insertAdjacentHTML("afterend", `
+            <div class="account-lookup-component" data-account-component-key="${escapeHtml(key)}">
+              <div class="account-lookup-row">
+                <input id="${escapeHtml(inputId)}" class="account-lookup-code" inputmode="numeric" autocomplete="off"
+                  data-account-reduced-input="true" data-key="${escapeHtml(key)}" data-required="${required}"
+                  value="${escapeHtml(reducedCode)}" placeholder="Código reduzido" ${disabled}>
+                <button class="account-lookup-button" type="button" data-action="open-account-lookup" data-key="${escapeHtml(key)}"
+                  title="Pesquisar no plano de contas" aria-label="Pesquisar conta contábil" ${disabled}>⋯</button>
+              </div>
+              <div class="account-lookup-description" data-account-description="${escapeHtml(key)}">${description}</div>
+              <div class="account-lookup-error" data-account-error="${escapeHtml(key)}" aria-live="polite"></div>
+            </div>
+          `);
+          const label = select.closest(".field")?.querySelector(`label[for="${selectId}"]`) || select.closest(".field")?.querySelector("label");
+          if (label) label.htmlFor = inputId;
+        });
+        if (state.ui.accountLookupFocusNextKey) {
+          const key = state.ui.accountLookupFocusNextKey;
+          state.ui.accountLookupFocusNextKey = "";
+          window.setTimeout(() => focusNextAfterAccountField(key), 0);
+        }
+      }
+
+      function setAccountLookupFieldMessage(key, message = "", invalid = false) {
+        const component = [...document.querySelectorAll("[data-account-component-key]")].find((node) => node.dataset.accountComponentKey === key);
+        const input = component?.querySelector("[data-account-reduced-input]");
+        const error = component?.querySelector("[data-account-error]");
+        if (input) input.classList.toggle("invalid", Boolean(invalid));
+        if (error) error.textContent = message;
+      }
+
+      function handleAccountReducedCodeInput(input) {
+        const key = input.dataset.key || "";
+        const select = getAccountLookupSelectByKey(key);
+        if (!select) return;
+        const selected = getChartAccountById(select.value);
+        if (normalizeReducedCode(input.value) !== normalizeReducedCode(selected?.reducedCode)) {
+          select.value = "";
+          const description = [...document.querySelectorAll("[data-account-description]")].find((node) => node.dataset.accountDescription === key);
+          if (description) description.textContent = input.value ? "Código alterado. Aguardando validação..." : "Nenhuma conta selecionada.";
+          setAccountLookupFieldMessage(key, "", false);
+        }
+      }
+
+      function resolveAccountReducedCodeInput(input, moveNext = false) {
+        const key = input.dataset.key || "";
+        const select = getAccountLookupSelectByKey(key);
+        if (!select) return false;
+        const reducedCode = normalizeReducedCode(input.value);
+        const required = input.dataset.required === "true";
+        if (!reducedCode) {
+          select.value = "";
+          input.value = "";
+          setAccountLookupFieldMessage(key, required ? "Informe uma conta contábil." : "", required);
+          select.dispatchEvent(new Event("change", { bubbles: true }));
+          return !required;
+        }
+        const scope = getAccountLookupScope(select);
+        const account = getChartAccountByReducedCode(reducedCode, scope);
+        const validation = validateAccountForLookup(account, scope);
+        if (validation) {
+          select.value = "";
+          setAccountLookupFieldMessage(key, validation, true);
+          notify("error", "Conta contábil", validation);
+          select.dispatchEvent(new Event("change", { bubbles: true }));
+          return false;
+        }
+        input.value = normalizeReducedCode(account.reducedCode);
+        select.value = account.id;
+        const description = [...document.querySelectorAll("[data-account-description]")].find((node) => node.dataset.accountDescription === key);
+        if (description) description.innerHTML = `<strong>${escapeHtml(account.code)}</strong> — ${escapeHtml(account.name)}`;
+        state.ui.accountLookupFocusNextKey = moveNext ? key : "";
+        setAccountLookupFieldMessage(key, "", false);
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        return true;
+      }
+
+      function handleAccountLookupFocusOut(event) {
+        const input = event.target.closest?.("[data-account-reduced-input]");
+        if (!input) return;
+        const component = input.closest("[data-account-component-key]");
+        if (event.relatedTarget && component?.contains(event.relatedTarget)) return;
+        resolveAccountReducedCodeInput(input, false);
+      }
+
+      function handleAccountLookupKeyDown(event) {
+        const input = event.target.closest?.("[data-account-reduced-input]");
+        if (input && event.key === "Enter") {
+          event.preventDefault();
+          resolveAccountReducedCodeInput(input, true);
+          return;
+        }
+        if (event.target.dataset?.accountLookupFilter && event.key === "Enter") {
+          event.preventDefault();
+          state.ui.accountLookup.page = 1;
+          refreshAccountLookupModal();
+          return;
+        }
+        const row = event.target.closest?.("[data-account-lookup-row]");
+        if (row && event.key === "Enter") {
+          event.preventDefault();
+          state.ui.accountLookup.selectedId = row.dataset.id || "";
+          confirmAccountLookupSelection();
+          return;
+        }
+        if (state.ui.accountLookup.open && event.key === "Escape") {
+          event.preventDefault();
+          closeAccountLookup();
+        }
+      }
+
+      function handleAccountLookupDoubleClick(event) {
+        const row = event.target.closest?.("[data-account-lookup-row]");
+        if (!row) return;
+        state.ui.accountLookup.selectedId = row.dataset.id || "";
+        confirmAccountLookupSelection();
+      }
+
+      function openAccountLookup(key) {
+        const select = getAccountLookupSelectByKey(key);
+        if (!select) {
+          notify("error", "Plano de contas", "Não foi possível identificar o campo de origem.");
+          return;
+        }
+        state.ui.accountLookup = {
+          open: true,
+          targetKey: key,
+          label: accountLookupFieldLabel(select),
+          selectedId: select.value || "",
+          page: 1,
+          pageSize: 20,
+          sortField: "reducedCode",
+          sortDirection: "asc",
+          filters: { reducedCode: "", code: "", description: "", nature: "", type: "", status: "" },
+          scope: getAccountLookupScope(select)
+        };
+        renderApp();
+      }
+
+      function closeAccountLookup() {
+        const key = state.ui.accountLookup.targetKey;
+        state.ui.accountLookup.open = false;
+        renderApp();
+        window.setTimeout(() => {
+          const component = [...document.querySelectorAll("[data-account-component-key]")].find((node) => node.dataset.accountComponentKey === key);
+          component?.querySelector("[data-account-reduced-input]")?.focus();
+        }, 0);
+      }
+
+      function normalizedAccountSearchTerm(value) {
+        return clean(value).replace(/%/g, "").toLocaleLowerCase("pt-BR");
+      }
+
+      function getAccountLookupFilteredAccounts() {
+        const lookup = state.ui.accountLookup;
+        const filters = lookup.filters || {};
+        const reduced = normalizedAccountSearchTerm(filters.reducedCode);
+        const code = normalizedAccountSearchTerm(filters.code);
+        const description = normalizedAccountSearchTerm(filters.description);
+        let records = state.data.chartAccounts.filter((account) => {
+          const scope = lookup.scope || {};
+          if (scope.companyName && account.companyName && account.companyName !== scope.companyName) return false;
+          if (scope.branchName && account.branchName && account.branchName !== scope.branchName) return false;
+          if (scope.planName && account.planName && account.planName !== scope.planName) return false;
+          return (!reduced || normalizeReducedCode(account.reducedCode).includes(reduced))
+            && (!code || String(account.code || "").toLocaleLowerCase("pt-BR").includes(code))
+            && (!description || String(account.name || "").toLocaleLowerCase("pt-BR").includes(description))
+            && (!filters.nature || account.balanceNature === filters.nature)
+            && (!filters.type || account.type === filters.type)
+            && (!filters.status || (filters.status === "Ativa" ? account.isActive !== false : account.isActive === false));
+        });
+        const field = lookup.sortField || "reducedCode";
+        const direction = lookup.sortDirection === "desc" ? -1 : 1;
+        records.sort((a, b) => {
+          if (field === "reducedCode") return direction * ((parseInt(normalizeReducedCode(a.reducedCode), 10) || 0) - (parseInt(normalizeReducedCode(b.reducedCode), 10) || 0));
+          const left = field === "description" ? a.name : field === "nature" ? a.balanceNature : field === "status" ? (a.isActive === false ? "Inativa" : "Ativa") : a[field];
+          const right = field === "description" ? b.name : field === "nature" ? b.balanceNature : field === "status" ? (b.isActive === false ? "Inativa" : "Ativa") : b[field];
+          return direction * String(left || "").localeCompare(String(right || ""), "pt-BR", { numeric: true });
+        });
+        return records;
+      }
+
+      function setAccountLookupSort(field) {
+        if (state.ui.accountLookup.sortField === field) {
+          state.ui.accountLookup.sortDirection = state.ui.accountLookup.sortDirection === "asc" ? "desc" : "asc";
+        } else {
+          state.ui.accountLookup.sortField = field;
+          state.ui.accountLookup.sortDirection = "asc";
+        }
+        refreshAccountLookupModal();
+      }
+
+      function accountLookupSortIndicator(field) {
+        if (state.ui.accountLookup.sortField !== field) return "↕";
+        return state.ui.accountLookup.sortDirection === "asc" ? "↑" : "↓";
+      }
+
+      function renderAccountLookupResults() {
+        const lookup = state.ui.accountLookup;
+        const records = getAccountLookupFilteredAccounts();
+        const pageSize = lookup.pageSize || 20;
+        const totalPages = Math.max(1, Math.ceil(records.length / pageSize));
+        lookup.page = Math.min(Math.max(1, lookup.page || 1), totalPages);
+        const start = (lookup.page - 1) * pageSize;
+        const pageRecords = records.slice(start, start + pageSize);
+        const pages = [];
+        const from = Math.max(1, lookup.page - 2);
+        const to = Math.min(totalPages, lookup.page + 2);
+        for (let page = from; page <= to; page += 1) pages.push(page);
+        return `
+          <div class="account-picker-results">
+            <div class="table-scroll">
+              <table class="account-picker-table">
+                <thead><tr>
+                  <th><button type="button" data-action="account-lookup-sort" data-sort="reducedCode">Código reduzido ${accountLookupSortIndicator("reducedCode")}</button></th>
+                  <th><button type="button" data-action="account-lookup-sort" data-sort="code">Código contábil ${accountLookupSortIndicator("code")}</button></th>
+                  <th><button type="button" data-action="account-lookup-sort" data-sort="description">Descrição ${accountLookupSortIndicator("description")}</button></th>
+                  <th><button type="button" data-action="account-lookup-sort" data-sort="nature">Natureza ${accountLookupSortIndicator("nature")}</button></th>
+                  <th><button type="button" data-action="account-lookup-sort" data-sort="type">Tipo ${accountLookupSortIndicator("type")}</button></th>
+                  <th><button type="button" data-action="account-lookup-sort" data-sort="status">Status ${accountLookupSortIndicator("status")}</button></th>
+                </tr></thead>
+                <tbody>
+                  ${pageRecords.length ? pageRecords.map((account) => {
+                    const blocked = Boolean(validateAccountForLookup(account, lookup.scope));
+                    return `<tr tabindex="0" class="${lookup.selectedId === account.id ? "selected" : ""} ${blocked ? "blocked" : ""}"
+                      data-action="account-lookup-row" data-account-lookup-row="true" data-id="${escapeHtml(account.id)}">
+                      <td class="account-picker-code-cell">${escapeHtml(normalizeReducedCode(account.reducedCode) || "-")}</td>
+                      <td class="mono">${escapeHtml(account.code || "-")}</td>
+                      <td><strong>${escapeHtml(account.name || "-")}</strong>${blocked ? `<div class="table-muted">${escapeHtml(validateAccountForLookup(account, lookup.scope))}</div>` : ""}</td>
+                      <td>${escapeHtml(account.balanceNature || "-")}</td>
+                      <td>${escapeHtml(account.type || "-")}</td>
+                      <td>${renderStatusBadge(account.isActive === false ? "Inativa" : "Ativa")}</td>
+                    </tr>`;
+                  }).join("") : `<tr><td colspan="6"><div class="empty-card"><strong>Nenhuma conta encontrada.</strong><p>Altere os filtros ou use % para listar todas as contas disponíveis neste plano.</p></div></td></tr>`}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="account-picker-pagination">
+            <div class="account-picker-summary">${records.length ? `${start + 1}–${Math.min(start + pageSize, records.length)} de ${records.length} conta(s)` : "0 contas"}</div>
+            <div class="page-buttons">
+              <button class="ghost-button" type="button" data-action="account-lookup-page" data-page="${lookup.page - 1}" ${lookup.page <= 1 ? "disabled" : ""}>Anterior</button>
+              ${pages.map((page) => `<button class="${page === lookup.page ? "secondary-button" : "ghost-button"}" type="button" data-action="account-lookup-page" data-page="${page}">${page}</button>`).join("")}
+              <button class="ghost-button" type="button" data-action="account-lookup-page" data-page="${lookup.page + 1}" ${lookup.page >= totalPages ? "disabled" : ""}>Próxima</button>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderAccountLookupModal() {
+        const lookup = state.ui.accountLookup;
+        if (!lookup.open) return "";
+        const filters = lookup.filters || {};
+        return `
+          <div class="modal-overlay">
+            <button class="modal-backdrop" type="button" data-action="close-account-lookup" aria-label="Fechar pesquisa de contas"></button>
+            <div class="modal-shell account-picker-shell" role="dialog" aria-modal="true" aria-labelledby="account-lookup-title">
+              <div class="modal-header">
+                <div>
+                  <h3 class="modal-title" id="account-lookup-title">Plano de Contas Contábil</h3>
+                  <p class="modal-subtitle">Selecione ${escapeHtml(lookup.label || "uma conta contábil")}. Somente contas analíticas e ativas podem ser confirmadas.</p>
+                </div>
+                <button class="ghost-button" type="button" data-action="close-account-lookup">Fechar</button>
+              </div>
+              <div class="modal-body">
+                <section class="card">
+                  <div class="section-head"><div><h3>Pesquisa das contas</h3><p>Use correspondência parcial. Campo vazio ou % lista todas as contas do escopo atual.</p></div></div>
+                  <div class="account-picker-filters">
+                    <div class="field"><label>Código reduzido</label><input data-account-lookup-filter="reducedCode" value="${escapeHtml(filters.reducedCode || "")}" placeholder="Ex.: 100 ou %"></div>
+                    <div class="field"><label>Código contábil</label><input data-account-lookup-filter="code" value="${escapeHtml(filters.code || "")}" placeholder="Ex.: 1.1.01"></div>
+                    <div class="field"><label>Descrição</label><input data-account-lookup-filter="description" value="${escapeHtml(filters.description || "")}" placeholder="Ex.: Banco"></div>
+                    <div class="field"><label>Natureza</label><select data-account-lookup-filter="nature"><option value="">Todas</option><option value="Devedora" ${filters.nature === "Devedora" ? "selected" : ""}>Devedora</option><option value="Credora" ${filters.nature === "Credora" ? "selected" : ""}>Credora</option></select></div>
+                    <div class="field"><label>Tipo</label><select data-account-lookup-filter="type"><option value="">Todos</option><option value="Sintética" ${filters.type === "Sintética" ? "selected" : ""}>Sintética</option><option value="Analítica" ${filters.type === "Analítica" ? "selected" : ""}>Analítica</option></select></div>
+                    <div class="field"><label>Status</label><select data-account-lookup-filter="status"><option value="">Todos</option><option value="Ativa" ${filters.status === "Ativa" ? "selected" : ""}>Ativa</option><option value="Inativa" ${filters.status === "Inativa" ? "selected" : ""}>Inativa</option></select></div>
+                  </div>
+                  <div class="form-actions"><button class="primary-button" type="button" data-action="search-account-lookup">Pesquisar</button></div>
+                </section>
+                <section class="table-card account-lookup-results-host">${renderAccountLookupResults()}</section>
+              </div>
+              <div class="modal-header" style="border-top:1px solid var(--border); border-bottom:0;">
+                <div class="account-picker-summary">Dê duplo clique na linha ou pressione Enter para confirmar.</div>
+                <div class="inline-actions">
+                  <button class="primary-button" type="button" data-action="account-lookup-select" ${lookup.selectedId ? "" : "disabled"}>Selecionar</button>
+                  <button class="ghost-button" type="button" data-action="close-account-lookup">Cancelar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function refreshAccountLookupModal() {
+        const host = document.querySelector(".account-lookup-results-host");
+        if (host) host.innerHTML = renderAccountLookupResults();
+        const selectButton = document.querySelector('[data-action="account-lookup-select"]');
+        if (selectButton) selectButton.disabled = !state.ui.accountLookup.selectedId;
+      }
+
+      function scheduleAccountLookupRefresh() {
+        clearTimeout(accountLookupSearchTimer);
+        accountLookupSearchTimer = window.setTimeout(refreshAccountLookupModal, 280);
+      }
+
+      function confirmAccountLookupSelection() {
+        const lookup = state.ui.accountLookup;
+        const account = getChartAccountById(lookup.selectedId);
+        const validation = validateAccountForLookup(account, lookup.scope || {});
+        if (validation) {
+          notify("error", "Plano de contas", validation || "Selecione uma conta válida.");
+          return;
+        }
+        const select = getAccountLookupSelectByKey(lookup.targetKey);
+        if (!select) {
+          notify("error", "Plano de contas", "O campo de origem não está mais disponível.");
+          return;
+        }
+        const key = lookup.targetKey;
+        state.ui.accountLookup.open = false;
+        state.ui.accountLookupFocusNextKey = key;
+        select.value = account.id;
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        renderApp();
+      }
+
+      function focusNextAfterAccountField(key) {
+        const component = [...document.querySelectorAll("[data-account-component-key]")].find((node) => node.dataset.accountComponentKey === key);
+        const form = component?.closest("form");
+        if (!component || !form) return;
+        const controls = [...form.querySelectorAll('input:not([type="hidden"]):not([disabled]), select:not([disabled]):not(.account-lookup-native), textarea:not([disabled]), button:not([disabled])')];
+        const currentInput = component.querySelector("[data-account-reduced-input]");
+        const currentIndex = controls.indexOf(currentInput);
+        const next = controls.slice(currentIndex + 1).find((control) => !component.contains(control));
+        next?.focus();
+      }
+
       function renderApp() {
         const meta = VIEW_META[state.ui.activeView] || VIEW_META.dashboard;
         const app = document.getElementById("app");
@@ -7439,6 +8176,7 @@
           || state.ui.itemModalOpen
           || state.ui.accountingEntriesModalOpen
           || state.ui.accountingEntryFormModalOpen
+          || state.ui.accountLookup.open
           || state.ui.trialBalanceModalOpen
           || state.ui.trialBalanceReportModalOpen
           || state.ui.eventEntriesModalOpen
@@ -7495,6 +8233,7 @@
           ${state.ui.itemModalOpen ? renderItemModal() : ""}
           ${state.ui.accountingEntriesModalOpen ? renderAccountingEntriesModal() : ""}
           ${state.ui.accountingEntryFormModalOpen ? renderAccountingEntryFormModal() : ""}
+          ${state.ui.accountLookup.open ? renderAccountLookupModal() : ""}
           ${state.ui.trialBalanceModalOpen ? renderTrialBalanceModal() : ""}
           ${state.ui.trialBalanceReportModalOpen ? renderTrialBalanceReportModal() : ""}
           ${state.ui.eventEntriesModalOpen ? renderEventEntriesModal() : ""}
@@ -7502,6 +8241,7 @@
           ${state.ui.payableEntriesModalOpen ? renderPayableEntriesModal() : ""}
           ${state.ui.settlementModalOpen ? renderSettlementModal() : ""}
         `;
+        enhanceAccountLookupFields(app);
       }
 
       function renderSidebar() {
@@ -8474,7 +9214,7 @@
                         ${rows.map((record) => `
                           <div class="chart-blueprint-row ${isSyntheticAccount(record) ? "synthetic" : "analytical"} ${record.isActive === false ? "inactive" : ""}">
                             <div class="chart-blueprint-main">
-                              <div class="chart-blueprint-code mono">${escapeHtml(record.code)}</div>
+                              <div class="chart-blueprint-code mono"><span class="reduced-code-badge" title="Código reduzido">${escapeHtml(normalizeReducedCode(record.reducedCode) || "-")}</span> ${escapeHtml(record.code)}</div>
                               <div class="chart-blueprint-content">
                                 <div class="tree-account-line">
                                   ${Array.from({ length: Math.max(record.treeDepth || 0, 0) }).map(() => `<span class="tree-account-indent" aria-hidden="true"></span>`).join("")}
@@ -8559,6 +9299,10 @@
                   <input type="hidden" name="id" value="${escapeHtml(draft.id || "")}">
                   <div class="form-grid">
                     <div class="field">
+                      <label for="chart-account-child-reduced-code">Código reduzido</label>
+                      <input id="chart-account-child-reduced-code" name="reducedCode" value="${escapeHtml(draft.reducedCode || generateNextReducedCode())}" readonly>
+                    </div>
+                    <div class="field">
                       <label for="chart-account-child-code">Código da conta</label>
                       <input id="chart-account-child-code" name="code" maxlength="40" value="${escapeHtml(draft.code || "")}" placeholder="Ex.: 1.1.01.01" required>
                       <span class="field-hint">Pré-preenchido a partir do grupo selecionado. Você pode ajustar antes de salvar.</span>
@@ -8567,6 +9311,9 @@
                       <label for="chart-account-child-name">Nome da conta contábil</label>
                       <input id="chart-account-child-name" name="name" maxlength="160" value="${escapeHtml(draft.name || "")}" placeholder="Ex.: Numerários" required>
                     </div>
+                    <input type="hidden" name="companyName" value="${escapeHtml(draft.companyName || "Empresa Principal")}">
+                    <input type="hidden" name="branchName" value="${escapeHtml(draft.branchName || "Matriz")}">
+                    <input type="hidden" name="planName" value="${escapeHtml(draft.planName || "Plano Padrão")}">
                     <div class="field">
                       <label for="chart-account-child-type">Tipo da conta</label>
                       <select id="chart-account-child-type" name="type" required>
@@ -8653,6 +9400,11 @@
                 <input type="hidden" name="id" value="${escapeHtml(chartDraft.id || editing?.id || "")}">
                 <div class="form-grid">
                   <div class="field">
+                    <label for="chart-account-reduced-code">Código reduzido</label>
+                    <input id="chart-account-reduced-code" name="reducedCode" value="${escapeHtml(chartDraft.reducedCode || generateNextReducedCode())}" readonly>
+                    <span class="field-hint">Numeração automática sequencial iniciada em 1.</span>
+                  </div>
+                  <div class="field">
                     <label for="chart-account-code">Código da conta</label>
                     <input id="chart-account-code" name="code" maxlength="40" value="${escapeHtml(chartDraft.code || "")}" placeholder="Ex.: 1.1.01.01.001" required>
                     <span class="field-hint">Máscara contábil: 9.9.99.99.999</span>
@@ -8660,6 +9412,18 @@
                   <div class="field">
                     <label for="chart-account-name">Nome da conta contábil</label>
                     <input id="chart-account-name" name="name" maxlength="160" value="${escapeHtml(chartDraft.name || "")}" placeholder="Ex.: Caixa Geral" required>
+                  </div>
+                  <div class="field">
+                    <label for="chart-account-company">Empresa</label>
+                    <input id="chart-account-company" name="companyName" value="${escapeHtml(chartDraft.companyName || "Empresa Principal")}" required>
+                  </div>
+                  <div class="field">
+                    <label for="chart-account-branch">Filial</label>
+                    <input id="chart-account-branch" name="branchName" value="${escapeHtml(chartDraft.branchName || "Matriz")}" required>
+                  </div>
+                  <div class="field">
+                    <label for="chart-account-plan">Plano de contas</label>
+                    <input id="chart-account-plan" name="planName" value="${escapeHtml(chartDraft.planName || "Plano Padrão")}" required>
                   </div>
                   <div class="field">
                     <label for="chart-account-type">Tipo da conta</label>
@@ -9731,6 +10495,7 @@
                   <th>Débito</th>
                   <th>Crédito</th>
                   <th>Valor</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -9751,14 +10516,15 @@
                       </td>
                       <td>${escapeHtml(costCenter?.name || "-")}</td>
                       <td>
-                        <strong>${escapeHtml(debit?.code || "-")}</strong>
+                        <strong>${escapeHtml(normalizeReducedCode(debit?.reducedCode) || "-")} · ${escapeHtml(debit?.code || "-")}</strong>
                         <div class="table-muted">${escapeHtml(debit?.name || "Conta removida")}</div>
                       </td>
                       <td>
-                        <strong>${escapeHtml(credit?.code || "-")}</strong>
+                        <strong>${escapeHtml(normalizeReducedCode(credit?.reducedCode) || "-")} · ${escapeHtml(credit?.code || "-")}</strong>
                         <div class="table-muted">${escapeHtml(credit?.name || "Conta removida")}</div>
                       </td>
                       <td class="mono">${escapeHtml(formatCurrency(record.amount))}</td>
+                      <td><div class="table-actions"><button class="action-chip" type="button" data-action="edit-accounting-entry" data-id="${escapeHtml(record.id)}">Editar</button><button class="action-chip danger" type="button" data-action="delete-accounting-entry" data-id="${escapeHtml(record.id)}">Excluir</button></div></td>
                     </tr>
                   `;
                 }).join("")}
@@ -10036,20 +10802,19 @@
                                   <div class="table-muted">${escapeHtml(costCenter?.code || "Sem código")}</div>
                                 </td>
                                 <td>
-                                  <strong>${escapeHtml(debit?.code || "Conta indisponível")}</strong>
+                                  <strong>${escapeHtml(normalizeReducedCode(debit?.reducedCode) || "-")} · ${escapeHtml(debit?.code || "Conta indisponível")}</strong>
                                   <div class="table-muted">${escapeHtml(debit?.name || "Conta removida")}</div>
                                 </td>
                                 <td>
-                                  <strong>${escapeHtml(credit?.code || "Conta indisponível")}</strong>
+                                  <strong>${escapeHtml(normalizeReducedCode(credit?.reducedCode) || "-")} · ${escapeHtml(credit?.code || "Conta indisponível")}</strong>
                                   <div class="table-muted">${escapeHtml(credit?.name || "Conta removida")}</div>
                                 </td>
                                 <td class="mono">${escapeHtml(formatCurrency(record.amount))}</td>
                                 <td>
                                   <div class="table-actions">
-                                    ${record.origin ? `<span class="badge">Automático</span>` : `
-                                      <button class="action-chip" type="button" data-action="edit-accounting-entry" data-id="${escapeHtml(record.id)}">Editar</button>
-                                      <button class="action-chip danger" type="button" data-action="delete-accounting-entry" data-id="${escapeHtml(record.id)}">Excluir</button>
-                                    `}
+                                    ${record.origin ? `<span class="badge">Automático</span>` : ""}
+                                    <button class="action-chip" type="button" data-action="edit-accounting-entry" data-id="${escapeHtml(record.id)}">Editar</button>
+                                    <button class="action-chip danger" type="button" data-action="delete-accounting-entry" data-id="${escapeHtml(record.id)}">Excluir</button>
                                   </div>
                                 </td>
                               </tr>
