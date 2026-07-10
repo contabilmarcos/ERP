@@ -3405,6 +3405,133 @@
       }
     }
 
+  
+
+    /* Aprimoramentos do processamento da folha */
+    .payroll-process-flow {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(120px, 1fr));
+      gap: 8px;
+    }
+    .payroll-process-step {
+      position: relative;
+      min-height: 78px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface-2);
+    }
+    .payroll-process-step small {
+      display: block;
+      color: var(--ink-3);
+      font-size: .68rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 6px;
+    }
+    .payroll-process-step strong { display: block; font-size: .82rem; }
+    .payroll-process-step span { display: block; color: var(--ink-3); font-size: .72rem; margin-top: 4px; line-height: 1.35; }
+    .payroll-process-step.done { background: var(--success-soft); border-color: transparent; }
+    .payroll-process-step.done small, .payroll-process-step.done strong { color: var(--success); }
+    .payroll-process-step.current { background: var(--accent-soft); border-color: var(--accent-soft-2); }
+    .payroll-process-step.current small, .payroll-process-step.current strong { color: var(--accent-ink); }
+    .payroll-process-step.error { background: var(--danger-soft); border-color: transparent; }
+    .payroll-process-step.error small, .payroll-process-step.error strong { color: var(--danger); }
+
+    .payroll-readiness-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(260px, .8fr);
+      gap: 14px;
+    }
+    .payroll-issue-list { display: flex; flex-direction: column; gap: 7px; }
+    .payroll-issue {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      padding: 9px 11px;
+      border-radius: var(--radius-sm);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      font-size: .79rem;
+      line-height: 1.4;
+    }
+    .payroll-issue::before {
+      content: "✓";
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      background: var(--success-soft);
+      color: var(--success);
+      font-size: .68rem;
+      font-weight: 700;
+    }
+    .payroll-issue.error::before { content: "!"; background: var(--danger-soft); color: var(--danger); }
+    .payroll-issue.warning::before { content: "!"; background: var(--warning-soft); color: var(--warning); }
+    .payroll-issue.error { color: var(--danger); }
+    .payroll-issue.warning { color: var(--warning); }
+
+    .payroll-bulk-toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      margin-top: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface-2);
+    }
+    .payroll-bulk-toolbar .toolbar-group { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+    .payroll-file-label { display: inline-flex; align-items: center; }
+    .payroll-file-label input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+    .payroll-attendance-table input { min-width: 78px; }
+    .payroll-attendance-table .employee-cell { min-width: 220px; }
+    .payroll-service-limit { margin-top: 4px; color: var(--ink-3); font-size: .7rem; line-height: 1.35; }
+    .payroll-service-limit.admission { color: var(--accent-ink); }
+
+    .payroll-employee-summary-table tbody tr { cursor: pointer; }
+    .payroll-employee-summary-table tbody tr:hover { background: var(--accent-soft); }
+    .payroll-variance-positive { color: var(--danger); font-weight: 600; }
+    .payroll-variance-negative { color: var(--success); font-weight: 600; }
+    .payroll-variance-neutral { color: var(--ink-3); }
+    .payroll-comparison-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .payroll-comparison-card { padding: 13px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-2); }
+    .payroll-comparison-card small { color: var(--ink-3); font-size: .72rem; }
+    .payroll-comparison-card strong { display: block; margin-top: 6px; font-size: 1rem; }
+    .payroll-comparison-card span { display: block; margin-top: 4px; font-size: .72rem; }
+
+    .payroll-close-checklist { display: flex; flex-direction: column; gap: 8px; }
+    .payroll-close-check {
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr);
+      gap: 9px;
+      align-items: start;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface-2);
+    }
+    .payroll-close-check .mark { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 999px; font-weight: 700; font-size: .7rem; background: var(--success-soft); color: var(--success); }
+    .payroll-close-check.error .mark { background: var(--danger-soft); color: var(--danger); }
+    .payroll-close-check.warning .mark { background: var(--warning-soft); color: var(--warning); }
+    .payroll-close-check strong { display: block; font-size: .8rem; }
+    .payroll-close-check p { margin: 3px 0 0; color: var(--ink-2); font-size: .75rem; line-height: 1.4; }
+    .payroll-close-preview-shell { width: min(1080px, 100%); }
+
+    @media (max-width: 1120px) {
+      .payroll-process-flow { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .payroll-readiness-grid { grid-template-columns: 1fr; }
+      .payroll-comparison-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 680px) {
+      .payroll-process-flow { grid-template-columns: 1fr 1fr; }
+      .payroll-comparison-cards { grid-template-columns: 1fr; }
+    }
+
   </style>
 </head>
 <body>
@@ -3710,6 +3837,9 @@
           payrollProvisionAccountingConfigOpen: false,
           payrollReportFilters: createEmptyPayrollReportFilters(),
           payrollSelectedRunId: "",
+          payrollSelectedRunEmployeeId: "",
+          payrollClosePreviewRunId: "",
+          payrollProcessingImportName: "",
           editing: {
             costCenterId: null,
             costCenterClassificationId: null,
@@ -4626,6 +4756,38 @@
           case "payroll-process-run":
             processPayrollRun();
             break;
+          case "payroll-apply-auto-days":
+            applyAutomaticPayrollWorkDays();
+            break;
+          case "payroll-copy-previous-attendance":
+            copyPreviousPayrollAttendance();
+            break;
+          case "payroll-zero-work-column":
+            zeroPayrollWorkColumn(target.dataset.field || "");
+            break;
+          case "payroll-download-attendance-template":
+            downloadPayrollAttendanceTemplate();
+            break;
+          case "payroll-view-run-employee":
+            state.ui.payrollSelectedRunEmployeeId = id || "";
+            renderApp();
+            break;
+          case "payroll-previous-run-employee":
+          case "payroll-next-run-employee":
+            state.ui.payrollSelectedRunEmployeeId = id || state.ui.payrollSelectedRunEmployeeId;
+            renderApp();
+            break;
+          case "payroll-close-run-employee":
+            state.ui.payrollSelectedRunEmployeeId = "";
+            renderApp();
+            break;
+          case "payroll-cancel-close-preview":
+            state.ui.payrollClosePreviewRunId = "";
+            renderApp();
+            break;
+          case "payroll-confirm-close-run":
+            closePayrollRun(id, true);
+            break;
           case "payroll-select-run":
             state.ui.payrollSelectedRunId = id || "";
             renderApp();
@@ -5368,6 +5530,17 @@
           return;
         }
 
+        const payrollAttendanceImport = target.dataset.payrollAttendanceImport;
+        if (payrollAttendanceImport && target instanceof HTMLInputElement && target.type === "file") {
+          const file = target.files?.[0];
+          importPayrollAttendanceFile(file).catch((error) => {
+            console.error("Erro ao importar apuração da folha:", error);
+            notify("error", "Importação da apuração", error.message || "Não foi possível importar o arquivo.");
+          });
+          target.value = "";
+          return;
+        }
+
         const payrollTableImportKind = target.dataset.payrollTableImport;
         if (payrollTableImportKind && target instanceof HTMLInputElement && target.type === "file") {
           const file = target.files?.[0];
@@ -5415,7 +5588,11 @@
           if (formType === "payroll-employee" && fieldName === "positionId") {
             syncPayrollEmployeeDraftFromPosition();
           }
-          if (["costCenterId", "positionId", "departmentId", "eventId", "type", "calculationType", "tableType", "employeeScope"].includes(fieldName)) {
+          if (formType === "payroll-run" && fieldName === "competence") {
+            draft.employeeInputs = {};
+            state.ui.payrollSelectedRunEmployeeId = "";
+          }
+          if (["costCenterId", "positionId", "departmentId", "eventId", "type", "calculationType", "tableType", "employeeScope", "competence", "payrollType"].includes(fieldName)) {
             renderApp();
           }
           return;
@@ -8183,6 +8360,8 @@
           || state.ui.payrollAccountingLotModalOpen
           || state.ui.payableEntriesModalOpen
           || state.ui.settlementModalOpen
+          || state.ui.payrollClosePreviewRunId
+          || state.ui.payrollSelectedRunEmployeeId
         );
         applyModalScrollLock(hasOpenModal);
         app.innerHTML = `
@@ -8240,6 +8419,8 @@
           ${state.ui.payrollAccountingLotModalOpen ? renderPayrollAccountingLotModal() : ""}
           ${state.ui.payableEntriesModalOpen ? renderPayableEntriesModal() : ""}
           ${state.ui.settlementModalOpen ? renderSettlementModal() : ""}
+          ${state.ui.payrollClosePreviewRunId ? renderPayrollClosePreviewModal() : ""}
+          ${state.ui.payrollSelectedRunEmployeeId ? renderPayrollRunEmployeeDrawer() : ""}
         `;
         enhanceAccountLookupFields(app);
       }
@@ -12605,7 +12786,7 @@
         return 0;
       }
 
-      function processPayrollRun() {
+      function executePayrollRunProcessing() {
         const draft = state.ui.payrollRunDraft;
         const competence = draft.competence;
         const payrollType = draft.payrollType;
@@ -12739,7 +12920,7 @@
         return state.data.payrollAccountingMappings.find((mapping) => mapping.status !== "Inativo" && mapping.eventId === item.eventId && (!mapping.costCenterId || mapping.costCenterId === employee?.costCenterId)) || (event?.debitAccountId && event?.creditAccountId ? { eventId: event.id, costCenterId: employee?.costCenterId || "", debitAccountId: event.debitAccountId, creditAccountId: event.creditAccountId, financialNatureId: event.financialNatureId, defaultHistory: event.defaultHistory || event.name } : null);
       }
 
-      function closePayrollRun(id) {
+      function executePayrollRunClosing(id) {
         const run = getPayrollRunById(id);
         if (!run || run.status === "Contabilizada") return;
         const params = getActivePayrollParameters(run.competence);
@@ -15023,6 +15204,466 @@
           </section>
         `;
       }
+
+
+
+      /* ============================================================
+         PROCESSAMENTO DA FOLHA — FLUXO, PENDÊNCIAS, APURAÇÃO EM MASSA,
+         CONFERÊNCIA, COMPARATIVO E PRÉVIA DE FECHAMENTO
+         ============================================================ */
+
+      function payrollProcessingBounds(competence) {
+        const [year, month] = String(competence || "").split("-").map(Number);
+        if (!year || !month) return null;
+        return {
+          year,
+          month,
+          start: new Date(year, month - 1, 1, 12),
+          end: new Date(year, month, 0, 12)
+        };
+      }
+
+      function payrollProcessingDate(value) {
+        if (!value) return null;
+        const [year, month, day] = String(value).slice(0, 10).split("-").map(Number);
+        if (!year || !month || !day) return null;
+        return new Date(year, month - 1, day, 12);
+      }
+
+      function isDateInPayrollCompetence(date, bounds) {
+        return Boolean(date && bounds && date.getFullYear() === bounds.year && date.getMonth() === bounds.month - 1);
+      }
+
+      function getPayrollEmployeeServiceDayLimit(employee, competence) {
+        const bounds = payrollProcessingBounds(competence);
+        if (!bounds) return { eligible: true, maxDays: 30, reason: "Regra mensal padrão", admissionInMonth: false, terminationInMonth: false };
+        const admission = payrollProcessingDate(employee?.admissionDate);
+        const termination = payrollProcessingDate(employee?.terminationDate);
+        if (admission && admission > bounds.end) return { eligible: false, maxDays: 0, reason: "Admissão posterior à competência", admissionInMonth: false, terminationInMonth: false };
+        if (termination && termination < bounds.start) return { eligible: false, maxDays: 0, reason: "Desligamento anterior à competência", admissionInMonth: false, terminationInMonth: false };
+
+        const admissionInMonth = isDateInPayrollCompetence(admission, bounds);
+        const terminationInMonth = isDateInPayrollCompetence(termination, bounds);
+        let maxDays = 30;
+        const notes = [];
+
+        // Regra solicitada: admissão no dia 10 limita a 20 dias na folha de 30 dias.
+        if (admissionInMonth) {
+          const admissionDay = admission.getDate();
+          maxDays = admissionDay <= 1 ? 30 : Math.max(1, 30 - admissionDay);
+          notes.push(`Admissão em ${formatDate(employee.admissionDate)}: limite de ${maxDays} dia(s)`);
+        }
+        if (terminationInMonth) {
+          const terminationDay = Math.min(30, termination.getDate());
+          if (admissionInMonth) {
+            maxDays = Math.max(1, Math.min(maxDays, terminationDay - admission.getDate()));
+          } else {
+            maxDays = Math.max(1, Math.min(maxDays, terminationDay));
+          }
+          notes.push(`Desligamento em ${formatDate(employee.terminationDate)}`);
+        }
+        return {
+          eligible: true,
+          maxDays: clampPayrollNumber(maxDays, 0, 30),
+          reason: notes.join(" · ") || "Competência completa: limite de 30 dias",
+          admissionInMonth,
+          terminationInMonth
+        };
+      }
+
+      function getPayrollProcessingEmployees(draft = state.ui.payrollRunDraft) {
+        const bounds = payrollProcessingBounds(draft.competence);
+        return state.data.payrollEmployees.filter((item) => {
+          const statusAllowed = draft.employeeScope === "all" ? item.status !== "Demitido" || getPayrollEmployeeServiceDayLimit(item, draft.competence).eligible : item.status === "Ativo";
+          if (!statusAllowed) return false;
+          if (!bounds) return true;
+          return getPayrollEmployeeServiceDayLimit(item, draft.competence).eligible;
+        });
+      }
+
+      function getPayrollEmployeeWorkInput(employeeId, employee) {
+        const draftInputs = state.ui.payrollRunDraft.employeeInputs || {};
+        const raw = draftInputs[employeeId] || {};
+        const service = getPayrollEmployeeServiceDayLimit(employee, state.ui.payrollRunDraft.competence);
+        const automaticDays = service.maxDays;
+        return {
+          daysWorked: clampPayrollNumber(raw.daysWorked ?? automaticDays, 0, automaticDays),
+          absences: clampPayrollNumber(raw.absences ?? 0, 0, Math.max(0, automaticDays)),
+          overtimeHours: clampPayrollNumber(raw.overtimeHours ?? 0, 0, 744),
+          delayHours: clampPayrollNumber(raw.delayHours ?? 0, 0, 744),
+          monthlyJourney: clampPayrollNumber(employee?.monthlyJourney ?? 220, 1, 744),
+          serviceLimit: automaticDays,
+          serviceReason: service.reason,
+          admissionInMonth: service.admissionInMonth,
+          terminationInMonth: service.terminationInMonth
+        };
+      }
+
+      function previousPayrollCompetence(competence) {
+        const bounds = payrollProcessingBounds(competence);
+        if (!bounds) return "";
+        const date = new Date(bounds.year, bounds.month - 2, 1, 12);
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      }
+
+      function getPreviousPayrollRun(competence, payrollType) {
+        const previousCompetence = previousPayrollCompetence(competence);
+        return [...state.data.payrollRuns]
+          .filter((run) => run.competence === previousCompetence && run.payrollType === payrollType)
+          .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")))[0] || null;
+      }
+
+      function getPayrollProcessingReadiness(draft = state.ui.payrollRunDraft) {
+        const employees = getPayrollProcessingEmployees(draft);
+        const errors = [];
+        const warnings = [];
+        const info = [];
+        if (!draft.competence) errors.push("Informe a competência do processamento.");
+        if (!draft.payrollType) errors.push("Informe o tipo de folha.");
+        if (!employees.length) errors.push("Nenhum funcionário elegível foi localizado para a competência.");
+
+        const withoutSalary = employees.filter((employee) => toDecimal(employee.salaryBase) <= 0);
+        const withoutCostCenter = employees.filter((employee) => !employee.costCenterId || !getCostCenterById(employee.costCenterId));
+        if (withoutSalary.length) errors.push(`${withoutSalary.length} funcionário(s) sem salário-base válido.`);
+        if (withoutCostCenter.length) errors.push(`${withoutCostCenter.length} funcionário(s) sem centro de custo válido.`);
+
+        const activeEvents = state.data.payrollEvents.filter((item) => item.active !== false);
+        const automaticEvents = activeEvents.filter((item) => item.autoApply);
+        if (!automaticEvents.length) errors.push("Não existe rubrica automática ativa para gerar a folha.");
+        const needsInssTable = automaticEvents.some((item) => item.calculationType === "Tabela progressiva" && (item.tableType === "INSS" || item.nature === "INSS"));
+        const needsIrrfTable = automaticEvents.some((item) => item.calculationType === "Tabela progressiva" && (item.tableType === "IRRF" || item.nature === "IRRF"));
+        if (needsInssTable && !getValidPayrollTable("INSS", draft.competence)) errors.push("Tabela de INSS não localizada para a competência.");
+        if (needsIrrfTable && !getValidPayrollTable("IRRF", draft.competence)) errors.push("Tabela de IRRF não localizada para a competência.");
+
+        const admissions = employees.filter((employee) => getPayrollEmployeeServiceDayLimit(employee, draft.competence).admissionInMonth);
+        const terminations = employees.filter((employee) => getPayrollEmployeeServiceDayLimit(employee, draft.competence).terminationInMonth);
+        if (admissions.length) info.push(`${admissions.length} admissão(ões) na competência tiveram os dias limitados automaticamente.`);
+        if (terminations.length) warnings.push(`${terminations.length} desligamento(s) na competência exigem conferência dos dias calculados.`);
+
+        const duplicateClosed = state.data.payrollRuns.find((run) => run.competence === draft.competence && run.payrollType === draft.payrollType && canReopenPayrollRun(run));
+        if (duplicateClosed) errors.push(`A folha ${duplicateClosed.code} desta competência já foi fechada/contabilizada. Reabra antes de recalcular.`);
+        const existingDraft = state.data.payrollRuns.find((run) => run.competence === draft.competence && run.payrollType === draft.payrollType && !canReopenPayrollRun(run));
+        if (existingDraft) warnings.push(`O cálculo existente ${existingDraft.code} será substituído ao gerar novamente.`);
+
+        employees.forEach((employee) => {
+          const input = getPayrollEmployeeWorkInput(employee.id, employee);
+          if (input.absences > input.daysWorked) warnings.push(`${employee.name}: faltas superiores aos dias trabalhados informados.`);
+        });
+        if (!errors.length) info.unshift("Cadastros essenciais e tabelas do cálculo estão disponíveis.");
+        return { employees, errors, warnings, info, ready: errors.length === 0 };
+      }
+
+      function renderPayrollProcessFlow(selectedRun, readiness) {
+        const hasCalculated = Boolean(selectedRun);
+        const isClosed = Boolean(selectedRun && canReopenPayrollRun(selectedRun));
+        const steps = [
+          { label: "Preparação", helper: readiness.ready ? "Cadastros validados" : "Há pendências", state: readiness.errors.length ? "error" : "done" },
+          { label: "Apuração", helper: `${readiness.employees.length} funcionário(s)`, state: readiness.employees.length ? "done" : "current" },
+          { label: "Cálculo", helper: hasCalculated ? selectedRun.code : "Aguardando cálculo", state: hasCalculated ? "done" : "current" },
+          { label: "Conferência", helper: hasCalculated ? "Resumo disponível" : "Após o cálculo", state: hasCalculated ? (isClosed ? "done" : "current") : "" },
+          { label: "Fechamento", helper: isClosed ? "Concluído" : "Checklist obrigatório", state: isClosed ? "done" : (hasCalculated ? "current" : "") },
+          { label: "Contabilização", helper: selectedRun?.status === "Contabilizada" ? "Lote gerado" : "Após o fechamento", state: selectedRun?.status === "Contabilizada" ? "done" : "" }
+        ];
+        return `<section class="card"><div class="section-head"><div><h3>Fluxo do processamento</h3><p>Acompanhe a competência desde a preparação até a contabilização.</p></div></div><div class="payroll-process-flow">${steps.map((step, index) => `<div class="payroll-process-step ${step.state}"><small>Etapa ${index + 1}</small><strong>${escapeHtml(step.label)}</strong><span>${escapeHtml(step.helper)}</span></div>`).join("")}</div></section>`;
+      }
+
+      function renderPayrollProcessingReadiness(readiness, draft) {
+        const issueRows = [
+          ...readiness.errors.map((message) => ({ type: "error", message })),
+          ...readiness.warnings.map((message) => ({ type: "warning", message })),
+          ...readiness.info.map((message) => ({ type: "ok", message }))
+        ];
+        return `<section class="card"><div class="section-head"><div><h3>Central de pendências</h3><p>Validações da competência ${escapeHtml(draft.competence || "-")} antes de gerar o cálculo.</p></div><span class="status-highlight ${readiness.ready ? "ok" : "warn"}">${readiness.errors.length} erro(s) · ${readiness.warnings.length} aviso(s)</span></div><div class="payroll-readiness-grid"><div class="payroll-issue-list">${issueRows.length ? issueRows.map((item) => `<div class="payroll-issue ${item.type === "ok" ? "" : item.type}">${escapeHtml(item.message)}</div>`).join("") : `<div class="payroll-issue">Nenhuma pendência encontrada.</div>`}</div><div class="subtle-panel"><h4>Resumo da apuração</h4><p><strong>${readiness.employees.length}</strong> funcionário(s) elegíveis.<br><strong>${readiness.employees.filter((employee) => getPayrollEmployeeServiceDayLimit(employee, draft.competence).admissionInMonth).length}</strong> admissão(ões) no mês.<br><strong>${readiness.employees.filter((employee) => getPayrollEmployeeServiceDayLimit(employee, draft.competence).terminationInMonth).length}</strong> desligamento(s) no mês.</p><p class="field-hint">Os erros bloqueiam o cálculo. Avisos devem ser conferidos, mas não impedem o processamento.</p></div></div></section>`;
+      }
+
+      function applyAutomaticPayrollWorkDays() {
+        const draft = state.ui.payrollRunDraft;
+        draft.employeeInputs = draft.employeeInputs || {};
+        getPayrollProcessingEmployees(draft).forEach((employee) => {
+          const current = draft.employeeInputs[employee.id] || {};
+          const service = getPayrollEmployeeServiceDayLimit(employee, draft.competence);
+          draft.employeeInputs[employee.id] = { ...current, daysWorked: service.maxDays };
+        });
+        notify("success", "Apuração em massa", "Dias trabalhados preenchidos conforme admissão, desligamento e competência.");
+        renderApp();
+      }
+
+      function zeroPayrollWorkColumn(field) {
+        if (!["absences", "overtimeHours", "delayHours"].includes(field)) return;
+        const draft = state.ui.payrollRunDraft;
+        draft.employeeInputs = draft.employeeInputs || {};
+        getPayrollProcessingEmployees(draft).forEach((employee) => {
+          draft.employeeInputs[employee.id] = { ...(draft.employeeInputs[employee.id] || {}), [field]: 0 };
+        });
+        notify("success", "Apuração em massa", "Coluna zerada para todos os funcionários exibidos.");
+        renderApp();
+      }
+
+      function copyPreviousPayrollAttendance() {
+        const draft = state.ui.payrollRunDraft;
+        const previous = getPreviousPayrollRun(draft.competence, draft.payrollType);
+        if (!previous) {
+          notify("error", "Copiar apuração", "Não foi localizada uma folha do mês anterior com o mesmo tipo.");
+          return;
+        }
+        const previousMap = new Map((previous.attendanceInputs || []).map((row) => [row.employeeId, row]));
+        draft.employeeInputs = draft.employeeInputs || {};
+        let copied = 0;
+        getPayrollProcessingEmployees(draft).forEach((employee) => {
+          const row = previousMap.get(employee.id);
+          if (!row) return;
+          const service = getPayrollEmployeeServiceDayLimit(employee, draft.competence);
+          draft.employeeInputs[employee.id] = {
+            daysWorked: Math.min(service.maxDays, toDecimal(row.workDays ?? row.daysWorked ?? service.maxDays)),
+            absences: toDecimal(row.absenceDays ?? row.absences),
+            overtimeHours: toDecimal(row.overtimeHours),
+            delayHours: toDecimal(row.delayHours)
+          };
+          copied += 1;
+        });
+        notify("success", "Copiar apuração", `${copied} funcionário(s) receberam os valores de ${previous.competence}. Os limites de admissão foram reaplicados.`);
+        renderApp();
+      }
+
+      function payrollCsvDelimiter(line) {
+        const candidates = [";", "\t", ","];
+        return candidates.sort((a, b) => line.split(b).length - line.split(a).length)[0];
+      }
+
+      function normalizePayrollImportHeader(value) {
+        return normalizePayrollText(value).replace(/[^a-z0-9]/g, "");
+      }
+
+      async function importPayrollAttendanceFile(file) {
+        if (!file) return;
+        if (!/\.(csv|txt)$/i.test(file.name || "")) throw new Error("Selecione um arquivo .csv ou .txt.");
+        const content = await file.text();
+        const lines = content.replace(/^\uFEFF/, "").split(/\r?\n/).filter((line) => line.trim());
+        if (lines.length < 2) throw new Error("O arquivo não possui linhas de apuração.");
+        const delimiter = payrollCsvDelimiter(lines[0]);
+        const parseLine = (line) => line.split(delimiter).map((cell) => cell.trim().replace(/^"|"$/g, "").replace(/""/g, '"'));
+        const headers = parseLine(lines[0]).map(normalizePayrollImportHeader);
+        const findIndex = (...names) => headers.findIndex((header) => names.includes(header));
+        const indexes = {
+          registration: findIndex("matricula", "registration", "codigo", "codigofuncionario"),
+          name: findIndex("funcionario", "nome", "nomefuncionario"),
+          daysWorked: findIndex("diastrabalhados", "dias", "workdays"),
+          absences: findIndex("faltas", "diasdefalta", "absences"),
+          overtimeHours: findIndex("horasextras", "horaextra", "he50", "overtimehours"),
+          delayHours: findIndex("horasatraso", "atrasos", "delayhours")
+        };
+        if (indexes.registration < 0 && indexes.name < 0) throw new Error("Inclua a coluna Matrícula, Código ou Funcionário.");
+        const employees = getPayrollProcessingEmployees(state.ui.payrollRunDraft);
+        state.ui.payrollRunDraft.employeeInputs = state.ui.payrollRunDraft.employeeInputs || {};
+        let imported = 0;
+        const notFound = [];
+        lines.slice(1).forEach((line) => {
+          const cells = parseLine(line);
+          const key = indexes.registration >= 0 ? cells[indexes.registration] : "";
+          const name = indexes.name >= 0 ? cells[indexes.name] : "";
+          const employee = employees.find((item) => normalizePayrollText(item.registration) === normalizePayrollText(key) || normalizePayrollText(item.code) === normalizePayrollText(key))
+            || employees.find((item) => normalizePayrollText(item.name) === normalizePayrollText(name));
+          if (!employee) { notFound.push(key || name || "linha sem identificação"); return; }
+          const service = getPayrollEmployeeServiceDayLimit(employee, state.ui.payrollRunDraft.competence);
+          const decimal = (index, fallback = 0) => index >= 0 && cells[index] !== undefined && cells[index] !== "" ? toDecimal(String(cells[index]).replace(",", ".")) : fallback;
+          state.ui.payrollRunDraft.employeeInputs[employee.id] = {
+            daysWorked: clampPayrollNumber(decimal(indexes.daysWorked, service.maxDays), 0, service.maxDays),
+            absences: clampPayrollNumber(decimal(indexes.absences), 0, service.maxDays),
+            overtimeHours: clampPayrollNumber(decimal(indexes.overtimeHours), 0, 744),
+            delayHours: clampPayrollNumber(decimal(indexes.delayHours), 0, 744)
+          };
+          imported += 1;
+        });
+        state.ui.payrollProcessingImportName = file.name;
+        notify(notFound.length ? "error" : "success", "Importação da apuração", `${imported} funcionário(s) importado(s).${notFound.length ? ` Não localizados: ${notFound.slice(0, 5).join(", ")}${notFound.length > 5 ? "..." : ""}.` : ""}`);
+        renderApp();
+      }
+
+      function downloadPayrollAttendanceTemplate() {
+        const headers = ["Matrícula", "Funcionário", "Dias trabalhados", "Faltas", "Horas extras", "Horas atraso"];
+        const rows = getPayrollProcessingEmployees(state.ui.payrollRunDraft).map((employee) => {
+          const input = getPayrollEmployeeWorkInput(employee.id, employee);
+          return [employee.registration || employee.code, employee.name, input.daysWorked, input.absences, input.overtimeHours, input.delayHours];
+        });
+        downloadPayrollCsv(`modelo-apuracao-${state.ui.payrollRunDraft.competence || "folha"}.csv`, headers, rows);
+      }
+
+      function renderPayrollProcessingEmployeeGrid(employees) {
+        const rows = employees.map((employee) => {
+          const input = getPayrollEmployeeWorkInput(employee.id, employee);
+          const field = (name, value, step = "0.01", max = "744") => `<input type="number" min="0" max="${max}" step="${step}" value="${escapeHtml(String(value))}" data-payroll-work-employee="${escapeHtml(employee.id)}" data-payroll-work-field="${name}" aria-label="${escapeHtml(name)} de ${escapeHtml(employee.name)}">`;
+          return `<tr><td class="employee-cell"><strong>${escapeHtml(employee.name)}</strong><div class="table-muted">${escapeHtml(employee.registration || employee.code || "-")}</div><div class="payroll-service-limit ${input.admissionInMonth ? "admission" : ""}">${escapeHtml(input.serviceReason)}</div></td><td>${formatCurrency(employee.salaryBase)}</td><td>${field("daysWorked", input.daysWorked, "0.01", input.serviceLimit)}</td><td>${field("absences", input.absences, "0.01", input.serviceLimit)}</td><td>${field("overtimeHours", input.overtimeHours)}</td><td>${field("delayHours", input.delayHours)}</td></tr>`;
+        }).join("");
+        return `<div class="field full" style="margin-top:16px;"><label>Apuração por funcionário</label><p class="field-hint">Os dias são preenchidos automaticamente. Admissões e desligamentos ocorridos na competência recebem limite individual.</p><div class="payroll-bulk-toolbar"><div class="toolbar-group"><button class="secondary-button" type="button" data-action="payroll-apply-auto-days">Aplicar dias automáticos</button><button class="ghost-button" type="button" data-action="payroll-copy-previous-attendance">Copiar mês anterior</button><button class="ghost-button" type="button" data-action="payroll-zero-work-column" data-field="absences">Zerar faltas</button><button class="ghost-button" type="button" data-action="payroll-zero-work-column" data-field="overtimeHours">Zerar horas extras</button><button class="ghost-button" type="button" data-action="payroll-zero-work-column" data-field="delayHours">Zerar atrasos</button></div><div class="toolbar-group"><label class="secondary-button payroll-file-label">Importar CSV<input type="file" accept=".csv,.txt,text/csv,text/plain" data-payroll-attendance-import="1"></label><button class="ghost-button" type="button" data-action="payroll-download-attendance-template">Baixar modelo</button></div></div>${state.ui.payrollProcessingImportName ? `<p class="field-hint">Último arquivo importado: ${escapeHtml(state.ui.payrollProcessingImportName)}</p>` : ""}<div class="table-scroll"><table class="payroll-attendance-table"><thead><tr><th>Funcionário</th><th>Salário-base</th><th>Dias trabalhados</th><th>Faltas</th><th>Horas extras</th><th>Horas de atraso</th></tr></thead><tbody>${rows || renderPayrollEmptyRow(6, "Nenhum funcionário disponível para este filtro.")}</tbody></table></div></div>`;
+      }
+
+      function processPayrollRun() {
+        const readiness = getPayrollProcessingReadiness(state.ui.payrollRunDraft);
+        if (!readiness.ready) {
+          notify("error", "Processamento bloqueado", `${readiness.errors.length} pendência(s) precisam ser corrigidas antes do cálculo.`);
+          renderApp();
+          return;
+        }
+        executePayrollRunProcessing();
+      }
+
+      function buildPayrollEmployeeRunSummaries(run) {
+        if (!run) return [];
+        const items = state.data.payrollRunItems.filter((item) => item.runId === run.id);
+        const bases = state.data.payrollCalculationBases.filter((item) => item.runId === run.id);
+        const provisions = state.data.payrollProvisions.filter((item) => item.runId === run.id);
+        const employeeIds = [...new Set([...(run.attendanceInputs || []).map((row) => row.employeeId), ...items.map((item) => item.employeeId)])].filter(Boolean);
+        return employeeIds.map((employeeId) => {
+          const employee = getPayrollEmployeeById(employeeId) || { id: employeeId, name: "Funcionário não localizado" };
+          const employeeItems = items.filter((item) => item.employeeId === employeeId);
+          const earnings = roundCurrency(employeeItems.filter((item) => item.eventType === "Provento").reduce((sum, item) => sum + Number(item.amount || 0), 0));
+          const deductions = roundCurrency(employeeItems.filter((item) => item.eventType === "Desconto").reduce((sum, item) => sum + Number(item.amount || 0), 0));
+          const inss = roundCurrency(employeeItems.filter((item) => normalizePayrollText(`${item.eventName} ${getPayrollEventById(item.eventId)?.nature || ""}`).includes("inss")).reduce((sum, item) => sum + Number(item.amount || 0), 0));
+          const irrf = roundCurrency(employeeItems.filter((item) => normalizePayrollText(`${item.eventName} ${getPayrollEventById(item.eventId)?.nature || ""}`).includes("irrf")).reduce((sum, item) => sum + Number(item.amount || 0), 0));
+          const otherDeductions = roundCurrency(Math.max(0, deductions - inss - irrf));
+          const net = roundCurrency(earnings - deductions);
+          const base = bases.find((item) => item.employeeId === employeeId) || {};
+          const provision = provisions.find((item) => item.employeeId === employeeId) || {};
+          const attendance = (run.attendanceInputs || []).find((row) => row.employeeId === employeeId) || {};
+          return { employee, employeeId, items: employeeItems, earnings, deductions, inss, irrf, otherDeductions, net, base, provision, attendance, status: net < 0 ? "Líquido negativo" : net === 0 ? "Sem líquido" : "Conferido" };
+        }).sort((a, b) => String(a.employee.name || "").localeCompare(String(b.employee.name || "")));
+      }
+
+      function renderPayrollEmployeeSummaryTable(run) {
+        const rows = buildPayrollEmployeeRunSummaries(run);
+        return `<section class="table-card"><div class="table-toolbar"><div><h4>Conferência resumida por funcionário</h4><p class="page-subtitle">Clique em uma linha para abrir a memória individual e todas as rubricas.</p></div></div><div class="table-scroll"><table class="payroll-employee-summary-table"><thead><tr><th>Funcionário</th><th>Bruto</th><th>INSS</th><th>IRRF</th><th>Outros descontos</th><th>Líquido</th><th>Situação</th><th>Ação</th></tr></thead><tbody>${rows.length ? rows.map((row) => `<tr data-action="payroll-view-run-employee" data-id="${row.employeeId}"><td><strong>${escapeHtml(row.employee.name)}</strong><div class="table-muted">${escapeHtml(row.employee.registration || row.employee.code || "-")}</div></td><td>${formatCurrency(row.earnings)}</td><td>${formatCurrency(row.inss)}</td><td>${formatCurrency(row.irrf)}</td><td>${formatCurrency(row.otherDeductions)}</td><td><strong>${formatCurrency(row.net)}</strong></td><td>${renderStatusBadge(row.status)}</td><td><button class="action-chip" type="button" data-action="payroll-view-run-employee" data-id="${row.employeeId}">Detalhes</button></td></tr>`).join("") : renderPayrollEmptyRow(8, "Nenhum funcionário calculado.")}</tbody></table></div></section>`;
+      }
+
+      function payrollVarianceClass(value) {
+        if (Math.abs(value) < 0.005) return "payroll-variance-neutral";
+        return value > 0 ? "payroll-variance-positive" : "payroll-variance-negative";
+      }
+
+      function payrollVarianceText(current, previous) {
+        const difference = roundCurrency(current - previous);
+        const percentage = previous ? (difference / Math.abs(previous)) * 100 : (current ? 100 : 0);
+        return `${difference >= 0 ? "+" : ""}${formatCurrency(difference)} · ${percentage >= 0 ? "+" : ""}${formatNumber(percentage)}%`;
+      }
+
+      function renderPayrollPreviousComparison(run) {
+        const previous = getPreviousPayrollRun(run.competence, run.payrollType);
+        if (!previous) return `<section class="card"><div class="section-head"><div><h3>Comparação com o mês anterior</h3><p>Não existe folha de ${escapeHtml(previousPayrollCompetence(run.competence))} com o mesmo tipo para comparação.</p></div></div></section>`;
+        const currentRows = buildPayrollEmployeeRunSummaries(run);
+        const previousRows = buildPayrollEmployeeRunSummaries(previous);
+        const previousMap = new Map(previousRows.map((row) => [row.employeeId, row]));
+        const metrics = [
+          ["Funcionários", run.employeeCount || currentRows.length, previous.employeeCount || previousRows.length, false],
+          ["Proventos", run.totalEarnings || 0, previous.totalEarnings || 0, true],
+          ["Descontos", run.totalDeductions || 0, previous.totalDeductions || 0, true],
+          ["Líquido", run.netPayable || 0, previous.netPayable || 0, true]
+        ];
+        const variances = currentRows.map((row) => {
+          const previousRow = previousMap.get(row.employeeId);
+          return { ...row, previousNet: previousRow?.net || 0, difference: roundCurrency(row.net - (previousRow?.net || 0)) };
+        }).sort((a, b) => Math.abs(b.difference) - Math.abs(a.difference)).slice(0, 12);
+        return `<section class="card"><div class="section-head"><div><h3>Comparação com o mês anterior</h3><p>${escapeHtml(previous.competence)} versus ${escapeHtml(run.competence)} · mesmo tipo de folha.</p></div></div><div class="payroll-comparison-cards">${metrics.map(([label, current, prior, currency]) => `<div class="payroll-comparison-card"><small>${escapeHtml(label)}</small><strong>${currency ? formatCurrency(current) : escapeHtml(String(current))}</strong><span class="${payrollVarianceClass(current - prior)}">${currency ? payrollVarianceText(current, prior) : `${current - prior >= 0 ? "+" : ""}${current - prior}`}</span></div>`).join("")}</div><div class="table-card" style="margin-top:14px"><div class="table-toolbar"><h4>Maiores variações individuais do líquido</h4></div><div class="table-scroll"><table><thead><tr><th>Funcionário</th><th>Mês anterior</th><th>Mês atual</th><th>Variação</th></tr></thead><tbody>${variances.map((row) => `<tr><td>${escapeHtml(row.employee.name)}</td><td>${formatCurrency(row.previousNet)}</td><td>${formatCurrency(row.net)}</td><td class="${payrollVarianceClass(row.difference)}">${payrollVarianceText(row.net, row.previousNet)}</td></tr>`).join("")}</tbody></table></div></div></section>`;
+      }
+
+      function renderPayrollRunEmployeeDrawer() {
+        const run = getPayrollRunById(state.ui.payrollSelectedRunId) || [...state.data.payrollRuns].find((item) => buildPayrollEmployeeRunSummaries(item).some((row) => row.employeeId === state.ui.payrollSelectedRunEmployeeId));
+        if (!run) return "";
+        const rows = buildPayrollEmployeeRunSummaries(run);
+        const index = rows.findIndex((row) => row.employeeId === state.ui.payrollSelectedRunEmployeeId);
+        const summary = rows[index];
+        if (!summary) return "";
+        const previous = getPreviousPayrollRun(run.competence, run.payrollType);
+        const previousSummary = previous ? buildPayrollEmployeeRunSummaries(previous).find((row) => row.employeeId === summary.employeeId) : null;
+        const previousRow = index > 0 ? rows[index - 1] : null;
+        const nextRow = index >= 0 && index < rows.length - 1 ? rows[index + 1] : null;
+        return `<div class="provision-drawer-overlay"><button class="provision-drawer-backdrop" type="button" data-action="payroll-close-run-employee" aria-label="Fechar detalhes"></button><aside class="provision-drawer" role="dialog" aria-modal="true" aria-label="Conferência individual da folha"><div class="provision-drawer-header"><div><h3>${escapeHtml(summary.employee.name)}</h3><p>${escapeHtml(summary.employee.registration || summary.employee.code || "-")} · ${escapeHtml(run.code)} · ${escapeHtml(run.competence)}</p></div><div class="drawer-nav"><button class="action-chip" type="button" data-action="payroll-previous-run-employee" data-id="${previousRow?.employeeId || ""}" ${previousRow ? "" : "disabled"}>← Anterior</button><button class="action-chip" type="button" data-action="payroll-next-run-employee" data-id="${nextRow?.employeeId || ""}" ${nextRow ? "" : "disabled"}>Próximo →</button><button class="ghost-button" type="button" data-action="payroll-close-run-employee">Fechar</button></div></div><div class="provision-drawer-body"><div class="memory-value-grid"><div class="memory-value"><small>Bruto</small><strong>${formatCurrency(summary.earnings)}</strong></div><div class="memory-value"><small>Descontos</small><strong>${formatCurrency(summary.deductions)}</strong></div><div class="memory-value"><small>Líquido</small><strong>${formatCurrency(summary.net)}</strong></div><div class="memory-value"><small>Variação mensal</small><strong class="${payrollVarianceClass(summary.net - (previousSummary?.net || 0))}">${previousSummary ? payrollVarianceText(summary.net, previousSummary.net) : "Sem comparação"}</strong></div></div><details class="calculation-section" open><summary>Apuração e bases</summary><div class="calculation-section-content"><div class="memory-value-grid"><div class="memory-value"><small>Dias trabalhados</small><strong>${escapeHtml(String(summary.attendance.workDays ?? 0))}</strong></div><div class="memory-value"><small>Faltas</small><strong>${escapeHtml(String(summary.attendance.absenceDays ?? 0))}</strong></div><div class="memory-value"><small>Horas extras</small><strong>${escapeHtml(String(summary.attendance.overtimeHours ?? 0))}</strong></div><div class="memory-value"><small>Horas de atraso</small><strong>${escapeHtml(String(summary.attendance.delayHours ?? 0))}</strong></div><div class="memory-value"><small>Base INSS</small><strong>${formatCurrency(summary.base.inssBase || 0)}</strong></div><div class="memory-value"><small>Base IRRF</small><strong>${formatCurrency(summary.base.irrfBase || 0)}</strong></div><div class="memory-value"><small>Base FGTS</small><strong>${formatCurrency(summary.base.fgtsBase || 0)}</strong></div><div class="memory-value"><small>Provisões</small><strong>${formatCurrency(toDecimal(summary.provision.vacationProvision) + toDecimal(summary.provision.thirteenthProvision) + toDecimal(summary.provision.chargesProvision))}</strong></div></div></div></details><details class="calculation-section" open><summary>Rubricas calculadas</summary><div class="calculation-section-content"><div class="table-scroll"><table style="min-width:760px"><thead><tr><th>Rubrica</th><th>Tipo</th><th>Valor</th><th>Memória</th></tr></thead><tbody>${summary.items.map((item) => `<tr><td>${escapeHtml(item.eventCode)} - ${escapeHtml(item.eventName)}</td><td>${renderStatusBadge(item.eventType)}</td><td>${formatCurrency(item.amount)}</td><td class="table-muted">${escapeHtml(item.calculationNote || "-")}</td></tr>`).join("")}</tbody></table></div></div></details></div></aside></div>`;
+      }
+
+      function buildPayrollCloseChecklist(run) {
+        const params = getActivePayrollParameters(run.competence);
+        const items = state.data.payrollRunItems.filter((item) => item.runId === run.id && item.amount > 0);
+        const summaries = buildPayrollEmployeeRunSummaries(run);
+        const missingMappings = items.filter((item) => !getPayrollMappingForItem(item));
+        const missingCostCenters = summaries.filter((row) => !row.employee.costCenterId || !getCostCenterById(row.employee.costCenterId));
+        const negativeNet = summaries.filter((row) => row.net < 0);
+        const existingAccounting = state.data.accountingEntries.filter((item) => item.origin === "payroll-accounting" && item.sourcePayrollRunId === run.id);
+        const checks = [
+          { level: params.salaryPayableAccountId && params.chargesPayableAccountId ? "ok" : "error", title: "Contas gerais da folha", detail: params.salaryPayableAccountId && params.chargesPayableAccountId ? "Salários a pagar e encargos a recolher configurados." : "Configure salários a pagar e encargos a recolher nos parâmetros." },
+          { level: items.length ? "ok" : "error", title: "Movimentos calculados", detail: items.length ? `${items.length} movimento(s) serão considerados.` : "Nenhum movimento calculado foi encontrado." },
+          { level: missingMappings.length ? "error" : "ok", title: "Mapeamento contábil das rubricas", detail: missingMappings.length ? `${missingMappings.length} movimento(s) estão sem contas configuradas.` : "Todas as rubricas possuem débito e crédito." },
+          { level: missingCostCenters.length ? "error" : "ok", title: "Centros de custo", detail: missingCostCenters.length ? `${missingCostCenters.length} funcionário(s) estão sem centro de custo válido.` : "Todos os funcionários possuem centro de custo." },
+          { level: negativeNet.length ? "warning" : "ok", title: "Líquidos negativos", detail: negativeNet.length ? `${negativeNet.length} funcionário(s) possuem líquido negativo e precisam de conferência.` : "Nenhum líquido negativo encontrado." },
+          { level: existingAccounting.length ? "error" : "ok", title: "Duplicidade de contabilização", detail: existingAccounting.length ? "Já existem lançamentos contábeis vinculados a esta folha." : "Nenhum lote anterior ativo foi localizado." },
+          { level: state.data.payrollCalculationBases.some((item) => item.runId === run.id) ? "ok" : "warning", title: "Bases tributárias", detail: state.data.payrollCalculationBases.some((item) => item.runId === run.id) ? "Bases de INSS, IRRF e FGTS foram gravadas." : "As bases tributárias não foram localizadas." },
+          { level: state.data.payrollProvisions.some((item) => item.runId === run.id) ? "ok" : "warning", title: "Provisões", detail: state.data.payrollProvisions.some((item) => item.runId === run.id) ? "Provisões foram calculadas para a folha." : "Não há provisões vinculadas ao cálculo." }
+        ];
+        const errors = checks.filter((item) => item.level === "error");
+        const warnings = checks.filter((item) => item.level === "warning");
+        const bases = state.data.payrollCalculationBases.filter((item) => item.runId === run.id);
+        const provisions = state.data.payrollProvisions.filter((item) => item.runId === run.id);
+        return {
+          checks, errors, warnings, items, summaries,
+          totals: {
+            earnings: run.totalEarnings || 0,
+            deductions: run.totalDeductions || 0,
+            net: run.netPayable || 0,
+            inssBase: roundCurrency(bases.reduce((sum, item) => sum + Number(item.inssBase || 0), 0)),
+            fgtsBase: roundCurrency(bases.reduce((sum, item) => sum + Number(item.fgtsBase || 0), 0)),
+            provisions: roundCurrency(provisions.reduce((sum, item) => sum + Number(item.vacationProvision || 0) + Number(item.thirteenthProvision || 0) + Number(item.chargesProvision || 0), 0)),
+            accountingLines: items.length,
+            financialTitles: items.filter((item) => item.eventType === "Desconto" || item.eventType === "Informativa").length + 1
+          }
+        };
+      }
+
+      function renderPayrollClosePreviewModal() {
+        const run = getPayrollRunById(state.ui.payrollClosePreviewRunId);
+        if (!run) return "";
+        const checklist = buildPayrollCloseChecklist(run);
+        return `<div class="modal-overlay"><button class="modal-backdrop" type="button" data-action="payroll-cancel-close-preview" aria-label="Cancelar fechamento"></button><div class="modal-shell payroll-close-preview-shell" role="dialog" aria-modal="true" aria-labelledby="payroll-close-preview-title"><div class="modal-header"><div><h3 class="modal-title" id="payroll-close-preview-title">Prévia de fechamento — ${escapeHtml(run.code)}</h3><p class="modal-subtitle">Revise os valores, integrações e pendências antes de contabilizar a folha.</p></div><button class="ghost-button" type="button" data-action="payroll-cancel-close-preview">Cancelar</button></div><div class="modal-body"><div class="stats-grid"><article class="stats-card"><small>Funcionários</small><strong>${run.employeeCount || checklist.summaries.length}</strong><span>Registros calculados.</span></article><article class="stats-card"><small>Proventos</small><strong>${formatCurrency(checklist.totals.earnings)}</strong><span>Total bruto.</span></article><article class="stats-card"><small>Descontos</small><strong>${formatCurrency(checklist.totals.deductions)}</strong><span>Descontos da competência.</span></article><article class="stats-card"><small>Líquido</small><strong>${formatCurrency(checklist.totals.net)}</strong><span>Salários a pagar.</span></article><article class="stats-card"><small>Base INSS</small><strong>${formatCurrency(checklist.totals.inssBase)}</strong><span>Base consolidada.</span></article><article class="stats-card"><small>Base FGTS</small><strong>${formatCurrency(checklist.totals.fgtsBase)}</strong><span>Base consolidada.</span></article><article class="stats-card"><small>Provisões</small><strong>${formatCurrency(checklist.totals.provisions)}</strong><span>Férias, 13º e encargos.</span></article><article class="stats-card"><small>Integração</small><strong>${checklist.totals.accountingLines}</strong><span>${checklist.totals.financialTitles} título(s) financeiro(s).</span></article></div><section class="card" style="margin-top:16px"><div class="section-head"><div><h3>Checklist do fechamento</h3><p>${checklist.errors.length} erro(s) e ${checklist.warnings.length} aviso(s).</p></div><span class="status-highlight ${checklist.errors.length ? "warn" : "ok"}">${checklist.errors.length ? "Fechamento bloqueado" : "Pronto para fechar"}</span></div><div class="payroll-close-checklist">${checklist.checks.map((item) => `<div class="payroll-close-check ${item.level}"><div class="mark">${item.level === "ok" ? "✓" : "!"}</div><div><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.detail)}</p></div></div>`).join("")}</div></section><div class="form-actions" style="justify-content:flex-end"><button class="ghost-button" type="button" data-action="payroll-cancel-close-preview">Voltar para conferência</button><button class="primary-button" type="button" data-action="payroll-confirm-close-run" data-id="${run.id}" ${checklist.errors.length ? "disabled" : ""}>Confirmar fechamento e contabilização</button></div></div></div></div>`;
+      }
+
+      function closePayrollRun(id, confirmed = false) {
+        const run = getPayrollRunById(id);
+        if (!run || run.status === "Contabilizada") return;
+        const checklist = buildPayrollCloseChecklist(run);
+        state.ui.payrollClosePreviewRunId = id;
+        if (!confirmed) {
+          renderApp();
+          return;
+        }
+        if (checklist.errors.length) {
+          notify("error", "Fechamento bloqueado", `${checklist.errors.length} pendência(s) obrigatórias precisam ser corrigidas.`);
+          renderApp();
+          return;
+        }
+        state.ui.payrollClosePreviewRunId = "";
+        executePayrollRunClosing(id);
+      }
+
+      function renderPayrollProcessingPanel() {
+        const draft = state.ui.payrollRunDraft;
+        const readiness = getPayrollProcessingReadiness(draft);
+        const employees = readiness.employees;
+        const runs = filterRecords(state.data.payrollRuns, state.ui.search.payrollRuns, (item) => `${item.code} ${item.competence} ${item.payrollType} ${item.status}`);
+        const selectedRun = getPayrollRunById(state.ui.payrollSelectedRunId) || runs[0];
+        if (selectedRun && !state.ui.payrollSelectedRunId) state.ui.payrollSelectedRunId = selectedRun.id;
+        const selectedItems = selectedRun ? state.data.payrollRunItems.filter((item) => item.runId === selectedRun.id) : [];
+        const processingForm = `<form class="card" data-form="payroll-run"><div class="section-head"><div><h3>Processamento mensal</h3><p>Selecione a competência, confira os limites automáticos e informe somente as exceções.</p></div><span class="status-highlight ${readiness.ready ? "ok" : "warn"}">${readiness.ready ? "Pronta para calcular" : "Com pendências"}</span></div><div class="form-grid">${renderPayrollInput("competence", "Competência", draft.competence, "2026-07", "month")}${renderPayrollSelect("payrollType", "Tipo de folha", draft.payrollType, PAYROLL_TYPES.map((x) => [x, x]))}${renderPayrollSelect("employeeScope", "Funcionários", draft.employeeScope, [["active", "Somente ativos"], ["all", "Ativos, afastados e desligados na competência"]])}${renderPayrollTextarea("notes", "Observações", draft.notes, "Observações do processamento")}</div>${renderPayrollProcessingEmployeeGrid(employees)}<div class="form-actions"><button class="primary-button" type="button" data-action="payroll-process-run" ${readiness.ready ? "" : "disabled"}>Gerar cálculo</button></div></form>`;
+        const runList = `<section class="table-card">${renderPayrollTableHeader("Folhas processadas", "payrollRuns", "Pesquisar competência")}<div class="table-scroll"><table><thead><tr><th>Folha</th><th>Tipo</th><th>Funcionários</th><th>Proventos</th><th>Descontos</th><th>Líquido</th><th>Status</th><th>Ações</th></tr></thead><tbody>${runs.length ? runs.map((run) => `<tr class="selectable-row ${selectedRun?.id === run.id ? "selected" : ""}" data-action="payroll-select-run" data-id="${run.id}"><td><strong>${escapeHtml(run.code)}</strong><div class="table-muted">${escapeHtml(run.competence)}</div></td><td>${escapeHtml(run.payrollType)}</td><td>${run.employeeCount || 0}</td><td>${formatCurrency(run.totalEarnings)}</td><td>${formatCurrency(run.totalDeductions)}</td><td><strong>${formatCurrency(run.netPayable)}</strong></td><td>${renderStatusBadge(run.status)}</td><td><div class="table-actions"><button class="action-chip" type="button" data-action="payroll-select-run" data-id="${run.id}">Conferir</button>${canReopenPayrollRun(run) ? `<button class="action-chip danger" type="button" data-action="payroll-reopen-run" data-id="${run.id}">Reabrir</button>` : `<button class="action-chip" type="button" data-action="payroll-close-run" data-id="${run.id}">Revisar fechamento</button>`}</div></td></tr>`).join("") : renderPayrollEmptyRow(8, "Nenhuma folha processada.")}</tbody></table></div></section>`;
+        return `${renderPayrollProcessFlow(selectedRun, readiness)}${renderPayrollProcessingReadiness(readiness, draft)}<div class="layout-grid">${processingForm}${runList}</div>${renderPayrollRunDetails(selectedRun, selectedItems)}`;
+      }
+
+      function renderPayrollRunDetails(run, items) {
+        if (!run) return `<section class="empty-card"><strong>Nenhuma folha selecionada</strong><p>Depois de processar uma competência, a conferência por funcionário e o comparativo mensal aparecerão aqui.</p></section>`;
+        const bases = state.data.payrollCalculationBases.filter((item) => item.runId === run.id);
+        const provisions = state.data.payrollProvisions.filter((item) => item.runId === run.id);
+        const attendanceRows = (run.attendanceInputs || []).map((item) => `<tr><td>${escapeHtml(item.employeeName || getPayrollEmployeeById(item.employeeId)?.name || "-")}</td><td>${escapeHtml(String(item.workDays ?? 0))}</td><td>${escapeHtml(String(item.absenceDays ?? 0))}</td><td>${escapeHtml(String(item.overtimeHours ?? 0))}</td><td>${escapeHtml(String(item.delayHours ?? 0))}</td></tr>`).join("");
+        const attendanceTable = attendanceRows ? `<div class="table-scroll"><table><thead><tr><th>Funcionário</th><th>Dias trabalhados</th><th>Faltas</th><th>Horas extras</th><th>Horas de atraso</th></tr></thead><tbody>${attendanceRows}</tbody></table></div>` : `<div class="empty-card" style="padding:16px;"><strong>Apuração não gravada</strong><p>Folhas antigas não possuem a grade de dias/horas gravada.</p></div>`;
+        const header = `<section class="table-card"><div class="table-toolbar"><div><h4>Conferência da folha ${escapeHtml(run.code)}</h4><p class="page-subtitle">${escapeHtml(run.payrollType)} · ${escapeHtml(run.competence)}</p></div><div class="inline-actions"><span class="status-highlight ${run.status === "Contabilizada" ? "ok" : "warn"}">${escapeHtml(run.status)}</span>${!canReopenPayrollRun(run) ? `<button class="primary-button" type="button" data-action="payroll-close-run" data-id="${run.id}">Revisar fechamento</button>` : ""}</div></div><div class="totals-grid"><div class="total-card"><span>Base INSS</span><strong>${formatCurrency(bases.reduce((s, x) => s + Number(x.inssBase || 0), 0))}</strong><small>Calculada pelas incidências das rubricas.</small></div><div class="total-card"><span>Base FGTS</span><strong>${formatCurrency(bases.reduce((s, x) => s + Number(x.fgtsBase || 0), 0))}</strong><small>Parametrizada por rubrica.</small></div><div class="total-card"><span>Provisões</span><strong>${formatCurrency(provisions.reduce((s, x) => s + Number(x.vacationProvision || 0) + Number(x.thirteenthProvision || 0) + Number(x.chargesProvision || 0), 0))}</strong><small>Férias, 13º e encargos.</small></div></div></section>`;
+        const technical = `<details class="card"><summary style="cursor:pointer;font-weight:600;">Apuração e movimentos técnicos da folha</summary><div class="subtle-panel" style="margin-top:14px"><h4>Apuração usada no cálculo</h4>${attendanceTable}</div><div class="table-card" style="margin-top:14px"><div class="table-toolbar"><h4>Todos os movimentos calculados</h4></div><div class="table-scroll"><table><thead><tr><th>Funcionário</th><th>Rubrica</th><th>Tipo</th><th>Valor</th><th>Cálculo</th><th>Centro de custo</th></tr></thead><tbody>${items.length ? items.map((item) => `<tr><td>${escapeHtml(getPayrollEmployeeById(item.employeeId)?.name || "-")}</td><td>${escapeHtml(item.eventCode)} - ${escapeHtml(item.eventName)}</td><td>${renderStatusBadge(item.eventType)}</td><td>${formatCurrency(item.amount)}</td><td>${item.reductionAmount ? `<div class="table-muted">Bruto ${formatCurrency(item.grossAmount)} · Redutor ${formatCurrency(item.reductionAmount)}</div><div class="table-muted">${escapeHtml(item.calculationNote || "")}</div>` : escapeHtml(item.calculationNote || "-")}</td><td>${escapeHtml(getCostCenterById(item.costCenterId)?.name || "-")}</td></tr>`).join("") : renderPayrollEmptyRow(6, "Sem movimentos calculados.")}</tbody></table></div></div></details>`;
+        return `${header}${renderPayrollEmployeeSummaryTable(run)}${renderPayrollPreviousComparison(run)}${technical}`;
+      }
+
 
       initialize();
 
