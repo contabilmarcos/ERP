@@ -2834,6 +2834,394 @@
         flex: 1;
       }
     }
+  
+
+    /* Fluxo visual e navegação aprimorada da folha */
+    .payroll-nav-groups {
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+      overflow-x: auto;
+      padding: 2px 2px 8px;
+      overscroll-behavior-inline: contain;
+      scrollbar-width: thin;
+    }
+
+    .payroll-nav-group {
+      min-width: max-content;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface-2);
+    }
+
+    .payroll-nav-group-label {
+      display: block;
+      margin: 0 4px 7px;
+      color: var(--ink-3);
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .payroll-nav-group .modal-tabs {
+      flex-wrap: nowrap;
+      gap: 5px;
+    }
+
+    .payroll-nav-group .modal-tab {
+      padding: 7px 10px;
+      background: var(--surface);
+      white-space: nowrap;
+    }
+
+    .workflow-card {
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      box-shadow: var(--shadow-xs);
+    }
+
+    .workflow-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    .workflow-head h3 { margin: 0; font-size: 0.96rem; }
+    .workflow-head p { margin: 4px 0 0; color: var(--ink-2); font-size: 0.8rem; }
+
+    .workflow-steps {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(112px, 1fr));
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .workflow-step {
+      position: relative;
+      min-width: 112px;
+      min-height: 78px;
+      padding: 11px 11px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface-2);
+    }
+
+    .workflow-step-number {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 7px;
+      border-radius: 999px;
+      background: var(--surface-3);
+      color: var(--ink-3);
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    .workflow-step strong { display: block; font-size: 0.78rem; }
+    .workflow-step small { display: block; margin-top: 3px; color: var(--ink-3); font-size: 0.68rem; line-height: 1.35; }
+    .workflow-step.done { border-color: transparent; background: var(--success-soft); }
+    .workflow-step.done .workflow-step-number { background: var(--success); color: #fff; }
+    .workflow-step.done strong, .workflow-step.done small { color: var(--success); }
+    .workflow-step.current { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 2px var(--accent-soft); }
+    .workflow-step.current .workflow-step-number { background: var(--accent); color: #fff; }
+    .workflow-step.current strong { color: var(--accent-ink); }
+    .workflow-step.warning { background: var(--warning-soft); border-color: transparent; }
+    .workflow-step.warning .workflow-step-number { background: var(--warning); color: #fff; }
+    .workflow-step.warning strong, .workflow-step.warning small { color: var(--warning); }
+    .workflow-step.locked { opacity: 0.62; }
+
+    .operation-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface-2);
+    }
+
+    .operation-toolbar-main,
+    .operation-toolbar-actions,
+    .view-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .view-toggle {
+      padding: 3px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: var(--surface-3);
+    }
+
+    .view-toggle button {
+      border: 0;
+      border-radius: 7px;
+      padding: 6px 10px;
+      color: var(--ink-2);
+      background: transparent;
+      font-size: 0.76rem;
+      font-weight: 600;
+    }
+
+    .view-toggle button.active {
+      color: var(--accent-ink);
+      background: var(--surface);
+      box-shadow: var(--shadow-xs);
+    }
+
+    .action-menu { position: relative; }
+    .action-menu > summary {
+      list-style: none;
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--border-2);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--ink-2);
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    .action-menu > summary::-webkit-details-marker { display: none; }
+    .action-menu[open] > summary { background: var(--surface-3); color: var(--ink); }
+    .action-menu-popover {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      z-index: 35;
+      width: 220px;
+      padding: 7px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      box-shadow: var(--shadow-md);
+    }
+    .action-menu-popover button {
+      width: 100%;
+      border: 0;
+      border-radius: 7px;
+      padding: 9px 10px;
+      background: transparent;
+      color: var(--ink-2);
+      text-align: left;
+      font-size: 0.8rem;
+    }
+    .action-menu-popover button:hover { background: var(--surface-3); color: var(--ink); }
+    .action-menu-popover button.danger { color: var(--danger); }
+
+    .checklist-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .checklist-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 15px 17px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-2);
+    }
+    .checklist-head h3 { margin: 0; font-size: 0.92rem; }
+    .checklist-head p { margin: 3px 0 0; color: var(--ink-2); font-size: 0.76rem; }
+    .checklist-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 0;
+    }
+    .checklist-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 13px 16px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .checklist-item-icon {
+      width: 24px;
+      height: 24px;
+      flex: 0 0 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+    .checklist-item.ok .checklist-item-icon { color: #fff; background: var(--success); }
+    .checklist-item.warn .checklist-item-icon { color: #fff; background: var(--warning); }
+    .checklist-item.error .checklist-item-icon { color: #fff; background: var(--danger); }
+    .checklist-item strong { display: block; font-size: 0.8rem; }
+    .checklist-item p { margin: 3px 0 0; color: var(--ink-2); font-size: 0.73rem; line-height: 1.4; }
+
+    .provision-summary-table { min-width: 1040px; }
+    .provision-detail-table { min-width: 2460px; }
+    .provision-table th,
+    .provision-table td { white-space: nowrap; }
+    .provision-table .sticky-left {
+      position: sticky;
+      left: 0;
+      z-index: 3;
+      background: inherit;
+      box-shadow: 1px 0 0 var(--border);
+    }
+    .provision-table thead .sticky-left { z-index: 5; background: var(--surface-2); }
+    .provision-table .sticky-right {
+      position: sticky;
+      right: 0;
+      z-index: 3;
+      background: inherit;
+      box-shadow: -1px 0 0 var(--border);
+    }
+    .provision-table thead .sticky-right { z-index: 5; background: var(--surface-2); }
+    .provision-table tbody tr:hover .sticky-left,
+    .provision-table tbody tr:hover .sticky-right { background: var(--surface-2); }
+    .provision-table .amount-strong { font-family: var(--mono); font-weight: 700; }
+
+    .configuration-shell {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--surface-2);
+      padding: 16px;
+    }
+    .configuration-intro {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .configuration-intro h3 { margin: 0; font-size: 0.94rem; }
+    .configuration-intro p { margin: 4px 0 0; color: var(--ink-2); font-size: 0.78rem; }
+    .configuration-content { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+
+    .provision-drawer-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .provision-drawer-backdrop {
+      position: absolute;
+      inset: 0;
+      border: 0;
+      background: rgba(20, 23, 28, 0.38);
+      backdrop-filter: blur(2px);
+    }
+    .provision-drawer {
+      position: relative;
+      width: min(760px, 94vw);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background: var(--canvas);
+      box-shadow: -16px 0 45px rgba(20, 23, 28, 0.18);
+      animation: provision-drawer-in 0.2s ease;
+    }
+    @keyframes provision-drawer-in { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+    .provision-drawer-header {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .provision-drawer-header h3 { margin: 0; font-size: 1rem; }
+    .provision-drawer-header p { margin: 4px 0 0; color: var(--ink-2); font-size: 0.76rem; }
+    .provision-drawer-body {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .drawer-nav { display: flex; gap: 6px; align-items: center; }
+    .drawer-nav .action-chip:disabled { opacity: 0.42; }
+    .calculation-section {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .calculation-section > summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 13px 15px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--ink);
+      background: var(--surface-2);
+    }
+    .calculation-section > summary::-webkit-details-marker { display: none; }
+    .calculation-section > summary::after { content: '+'; float: right; color: var(--ink-3); }
+    .calculation-section[open] > summary::after { content: '−'; }
+    .calculation-section-content { padding: 14px; }
+    .memory-value-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+    }
+    .memory-value {
+      padding: 11px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface-2);
+    }
+    .memory-value small { color: var(--ink-3); font-size: 0.7rem; }
+    .memory-value strong { display: block; margin-top: 5px; font-family: var(--mono); font-size: 0.88rem; }
+
+    .accounting-balance-banner {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(130px, 1fr));
+      gap: 10px;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-2);
+      overflow-x: auto;
+    }
+    .accounting-balance-item {
+      min-width: 130px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+    }
+    .accounting-balance-item span { display: block; color: var(--ink-3); font-size: 0.68rem; }
+    .accounting-balance-item strong { display: block; margin-top: 5px; font-family: var(--mono); font-size: 0.9rem; }
+    .accounting-balance-item.ok { border-color: transparent; background: var(--success-soft); color: var(--success); }
+    .accounting-balance-item.error { border-color: transparent; background: var(--danger-soft); color: var(--danger); }
+
+    @media (max-width: 900px) {
+      .workflow-steps { grid-template-columns: repeat(6, 150px); }
+      .accounting-balance-banner { grid-template-columns: repeat(5, 150px); }
+      .provision-drawer { width: 100vw; }
+      .operation-toolbar { align-items: flex-start; }
+    }
+
   </style>
 </head>
 <body>
@@ -3121,6 +3509,9 @@
           payrollProvisionAccountingDraft: createEmptyPayrollProvisionAccountingDraft(),
           payrollProvisionPreview: null,
           payrollSelectedProvisionId: "",
+          payrollProvisionTableMode: "summary",
+          payrollProvisionConfigOpen: false,
+          payrollProvisionAccountingConfigOpen: false,
           payrollReportFilters: createEmptyPayrollReportFilters(),
           payrollSelectedRunId: "",
           editing: {
@@ -4025,6 +4416,23 @@
             break;
           case "payroll-view-provision":
             state.ui.payrollSelectedProvisionId = id || "";
+            renderApp();
+            break;
+          case "payroll-previous-provision":
+          case "payroll-next-provision":
+            state.ui.payrollSelectedProvisionId = id || state.ui.payrollSelectedProvisionId;
+            renderApp();
+            break;
+          case "payroll-set-provision-table-mode":
+            state.ui.payrollProvisionTableMode = target.dataset.mode === "detail" ? "detail" : "summary";
+            renderApp();
+            break;
+          case "toggle-payroll-provision-config":
+            state.ui.payrollProvisionConfigOpen = !state.ui.payrollProvisionConfigOpen;
+            renderApp();
+            break;
+          case "toggle-payroll-provision-accounting-config":
+            state.ui.payrollProvisionAccountingConfigOpen = !state.ui.payrollProvisionAccountingConfigOpen;
             renderApp();
             break;
           case "payroll-close-provision-detail":
@@ -10328,6 +10736,14 @@
         { key: "reports", label: "Relatórios" }
       ];
 
+      const PAYROLL_NAV_GROUPS = [
+        { label: "Visão geral", items: ["dashboard"] },
+        { label: "Cadastros", items: ["employees", "positions", "departments", "events"] },
+        { label: "Processos", items: ["processing", "provisions", "provisionAccounting"] },
+        { label: "Configurações", items: ["parameters", "tables", "integration"] },
+        { label: "Consultas", items: ["reports"] }
+      ];
+
       const PAYROLL_TYPES = [
         "Folha mensal", "Adiantamento salarial", "13º primeira parcela", "13º segunda parcela", "Férias", "Rescisão", "Folha complementar", "Pró-labore", "Autônomos"
       ];
@@ -12094,7 +12510,77 @@
         const filters = state.ui.payrollProvisionFilters;
         const companies = [...new Set(state.data.payrollProvisionSettings.map((item) => item.companyName).filter(Boolean))];
         const branches = [...new Set(state.data.payrollProvisionSettings.map((item) => item.branchName).filter(Boolean))];
-        return `<form class="card" data-form="payroll-provision-filters"><div class="section-head"><div><h3>Cálculo e conferência</h3><p>Selecione os filtros, calcule individualmente e confira a memória antes da contabilização.</p></div></div><div class="form-grid">${renderPayrollSelect("companyName", "Empresa", filters.companyName, companies.map((item) => [item, item]))}${renderPayrollSelect("branchName", "Filial", filters.branchName, branches.map((item) => [item, item]))}${renderPayrollInput("competence", "Competência", filters.competence, "2026-07", "month")}${renderPayrollSelect("departmentId", "Departamento", filters.departmentId, [["all", "Todos"], ...state.data.payrollDepartments.map((item) => [item.id, `${item.code} - ${item.name}`])])}${renderPayrollSelect("costCenterId", "Centro de custo", filters.costCenterId, [["all", "Todos"], ...state.data.costCenters.map((item) => [item.id, `${item.code} - ${item.name}`])])}${renderPayrollSelect("employeeId", "Funcionário", filters.employeeId, [["all", "Todos"], ...state.data.payrollEmployees.map((item) => [item.id, `${item.registration || item.code} - ${item.name}`])])}${renderPayrollSelect("provisionType", "Tipo de provisão", filters.provisionType, PAYROLL_PROVISION_TYPES)}${renderPayrollSelect("employeeStatus", "Situação do funcionário", filters.employeeStatus, [["all", "Todas"], ...PAYROLL_EMPLOYEE_STATUS.map((item) => [item, item])])}</div><div class="form-actions"><button class="primary-button" type="button" data-action="payroll-calculate-provisions">Calcular / recalcular</button><button class="secondary-button" type="button" data-action="payroll-set-provision-calculated">Marcar como calculada</button><button class="ghost-button" type="button" data-action="payroll-reopen-provision-competence">Reabrir</button><button class="ghost-button" type="button" data-action="export-payroll-provisions">Exportar CSV</button><button class="ghost-button" type="button" data-action="reset-payroll-provision-filters">Limpar filtros</button></div></form>`;
+        return `<form class="card" data-form="payroll-provision-filters"><div class="section-head"><div><h3>Operação mensal</h3><p>Escolha a competência e o universo de funcionários para calcular e conferir.</p></div></div><div class="form-grid">${renderPayrollSelect("companyName", "Empresa", filters.companyName, companies.map((item) => [item, item]))}${renderPayrollSelect("branchName", "Filial", filters.branchName, branches.map((item) => [item, item]))}${renderPayrollInput("competence", "Competência", filters.competence, "2026-07", "month")}${renderPayrollSelect("departmentId", "Departamento", filters.departmentId, [["all", "Todos"], ...state.data.payrollDepartments.map((item) => [item.id, `${item.code} - ${item.name}`])])}${renderPayrollSelect("costCenterId", "Centro de custo", filters.costCenterId, [["all", "Todos"], ...state.data.costCenters.map((item) => [item.id, `${item.code} - ${item.name}`])])}${renderPayrollSelect("employeeId", "Funcionário", filters.employeeId, [["all", "Todos"], ...state.data.payrollEmployees.map((item) => [item.id, `${item.registration || item.code} - ${item.name}`])])}${renderPayrollSelect("provisionType", "Tipo de provisão", filters.provisionType, PAYROLL_PROVISION_TYPES)}${renderPayrollSelect("employeeStatus", "Situação do funcionário", filters.employeeStatus, [["all", "Todas"], ...PAYROLL_EMPLOYEE_STATUS.map((item) => [item, item])])}</div></form>`;
+      }
+
+      function getPayrollProvisionVisualChecks(records, filters, competenceRecord) {
+        const exactSettings = state.data.payrollProvisionSettings.find((item) => item.status !== "Inativo" && item.companyName === filters.companyName && item.branchName === filters.branchName);
+        const missingSalary = records.filter((item) => toDecimal(item.salaryBase) <= 0);
+        const missingCostCenter = records.filter((item) => !item.costCenterId || !getCostCenterById(item.costCenterId));
+        const invalidValues = records.filter((item) => !Number.isFinite(toDecimal(item.totalGeneral)) || PAYROLL_PROVISION_COMPONENTS.some((component) => toDecimal(item.balances?.[component.key]) < -0.009));
+        const missingAccountConfig = records.filter((record) => {
+          const config = findPayrollProvisionAccountingConfig(record, filters.companyName, filters.branchName);
+          if (!config) return true;
+          return PAYROLL_PROVISION_COMPONENTS.some((component) => !config[component.debitField] || !config[component.creditField]);
+        });
+        const activeBatch = state.data.payrollProvisionAccountingBatches.find((item) => item.companyName === filters.companyName && item.branchName === filters.branchName && item.competence === filters.competence && item.status !== "Estornado");
+        return [
+          { key: "settings", level: exactSettings ? "ok" : "error", title: "Percentuais configurados", detail: exactSettings ? `${filters.companyName} / ${filters.branchName}` : "Cadastre os percentuais da empresa e filial." },
+          { key: "records", level: records.length ? "ok" : "warn", title: "Funcionários calculados", detail: records.length ? `${records.length} funcionário(s) na competência.` : "Calcule as provisões para iniciar a conferência." },
+          { key: "salary", level: missingSalary.length ? "error" : records.length ? "ok" : "warn", title: "Bases salariais", detail: missingSalary.length ? `${missingSalary.length} funcionário(s) sem salário válido.` : records.length ? "Todas as bases salariais são válidas." : "Aguardando cálculo." },
+          { key: "costCenter", level: missingCostCenter.length ? "error" : records.length ? "ok" : "warn", title: "Centros de custo", detail: missingCostCenter.length ? `${missingCostCenter.length} funcionário(s) com pendência.` : records.length ? "Todos os centros de custo estão válidos." : "Aguardando cálculo." },
+          { key: "values", level: invalidValues.length ? "error" : records.length ? "ok" : "warn", title: "Valores e saldos", detail: invalidValues.length ? `${invalidValues.length} registro(s) com valor inválido ou saldo negativo.` : records.length ? "Valores consistentes para fechamento." : "Aguardando cálculo." },
+          { key: "accounts", level: missingAccountConfig.length ? "error" : records.length ? "ok" : "warn", title: "Configuração contábil", detail: missingAccountConfig.length ? `${missingAccountConfig.length} funcionário(s) sem contas completas.` : records.length ? "Contas de débito e crédito localizadas." : "Aguardando funcionários calculados." },
+          { key: "status", level: ["Calculada", "Contabilizada"].includes(competenceRecord?.status) ? "ok" : records.length ? "warn" : "warn", title: "Conferência da competência", detail: competenceRecord?.status ? `Status atual: ${competenceRecord.status}.` : "Competência ainda não calculada." },
+          { key: "duplicate", level: activeBatch ? "warn" : "ok", title: "Duplicidade contábil", detail: activeBatch ? `Lote ativo: ${activeBatch.batchNumber}.` : "Nenhum lote ativo conflitante." }
+        ];
+      }
+
+      function renderPayrollProvisionChecklist(records, filters, competenceRecord) {
+        const checks = getPayrollProvisionVisualChecks(records, filters, competenceRecord);
+        const issues = checks.filter((item) => item.level !== "ok").length;
+        return `<section class="checklist-card"><div class="checklist-head"><div><h3>Central de pendências</h3><p>Validações necessárias para fechar e contabilizar com segurança.</p></div><span class="badge ${issues ? "warning" : "positive"}">${issues ? `${issues} pendência(s)` : "Tudo validado"}</span></div><div class="checklist-grid">${checks.map((item) => `<div class="checklist-item ${item.level}"><span class="checklist-item-icon">${item.level === "ok" ? "✓" : item.level === "error" ? "!" : "•"}</span><div><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.detail)}</p></div></div>`).join("")}</div></section>`;
+      }
+
+      function renderPayrollProvisionWorkflow(records, filters, competenceRecord, preview = state.ui.payrollProvisionPreview) {
+        const checks = getPayrollProvisionVisualChecks(records, filters, competenceRecord);
+        const configurationOk = checks.filter((item) => ["settings", "accounts"].includes(item.key)).every((item) => item.level === "ok");
+        const calculated = records.length > 0;
+        const conferred = ["Calculada", "Contabilizada"].includes(competenceRecord?.status);
+        const previewMatches = !!(preview && preview.draft?.companyName === filters.companyName && preview.draft?.branchName === filters.branchName && preview.draft?.competence === filters.competence);
+        const accounted = competenceRecord?.status === "Contabilizada";
+        const definitions = [
+          ["Configurar", "Percentuais e contas", configurationOk],
+          ["Calcular", "Valores por funcionário", calculated],
+          ["Conferir", "Memória e pendências", conferred],
+          ["Fechar", "Liberar contabilização", conferred],
+          ["Prévia", "Validar lote contábil", previewMatches && !preview?.errors?.length],
+          ["Contabilizar", "Gerar lançamentos", accounted]
+        ];
+        let firstPending = definitions.findIndex((item) => !item[2]);
+        if (firstPending < 0) firstPending = definitions.length - 1;
+        return `<section class="workflow-card"><div class="workflow-head"><div><h3>Fluxo da competência</h3><p>${escapeHtml(filters.companyName || "Empresa")} · ${escapeHtml(filters.branchName || "Filial")} · ${escapeHtml(filters.competence || "Competência")}</p></div>${renderStatusBadge(competenceRecord?.status || "Não calculada")}</div><div class="workflow-steps">${definitions.map((item, index) => { const cls = item[2] ? "done" : index === firstPending ? (configurationOk || index === 0 ? "current" : "warning") : "locked"; return `<div class="workflow-step ${cls}"><span class="workflow-step-number">${item[2] ? "✓" : index + 1}</span><strong>${item[0]}</strong><small>${item[1]}</small></div>`; }).join("")}</div></section>`;
+      }
+
+      function renderPayrollProvisionPrimaryAction(competenceRecord, records) {
+        const status = competenceRecord?.status || "Não calculada";
+        if (status === "Contabilizada") return `<button class="primary-button" type="button" data-action="switch-payroll-panel" data-panel="provisionAccounting">Consultar lote contábil</button>`;
+        if (status === "Calculada") return `<button class="primary-button" type="button" data-action="switch-payroll-panel" data-panel="provisionAccounting">Ir para contabilização</button>`;
+        if (records.length) return `<button class="primary-button" type="button" data-action="payroll-set-provision-calculated">Finalizar conferência</button>`;
+        return `<button class="primary-button" type="button" data-action="payroll-calculate-provisions">Calcular provisões</button>`;
+      }
+
+      function renderPayrollProvisionOperationToolbar(competenceRecord, records) {
+        const mode = state.ui.payrollProvisionTableMode || "summary";
+        return `<div class="operation-toolbar"><div class="operation-toolbar-main"><div class="view-toggle" aria-label="Visualização da conferência"><button class="${mode === "summary" ? "active" : ""}" type="button" data-action="payroll-set-provision-table-mode" data-mode="summary">Resumida</button><button class="${mode === "detail" ? "active" : ""}" type="button" data-action="payroll-set-provision-table-mode" data-mode="detail">Detalhada</button></div><span class="table-muted">${records.length} funcionário(s)</span></div><div class="operation-toolbar-actions">${renderPayrollProvisionPrimaryAction(competenceRecord, records)}<details class="action-menu"><summary aria-label="Mais ações">•••</summary><div class="action-menu-popover"><button type="button" data-action="payroll-calculate-provisions">Calcular / recalcular</button><button type="button" data-action="export-payroll-provisions">Exportar conferência em CSV</button><button type="button" data-action="reset-payroll-provision-filters">Limpar filtros</button>${competenceRecord ? `<button class="danger" type="button" data-action="payroll-reopen-provision-competence">Reabrir competência</button>` : ""}</div></details></div></div>`;
+      }
+
+      function renderPayrollProvisionTable(records) {
+        const detailed = state.ui.payrollProvisionTableMode === "detail";
+        if (!detailed) {
+          return `<div class="table-scroll"><table class="provision-table provision-summary-table"><thead><tr><th class="sticky-left">Funcionário</th><th>Departamento / Centro de custo</th><th>Salário</th><th>Férias</th><th>13º salário</th><th>Encargos</th><th>Total geral</th><th>Status</th><th class="sticky-right">Detalhes</th></tr></thead><tbody>${records.length ? records.map((item) => `<tr><td class="sticky-left"><strong>${escapeHtml(item.employeeName)}</strong><div class="table-muted">${escapeHtml(item.registration || item.employeeCode || "-")} · ${escapeHtml(item.employeeStatus || "-")}</div></td><td>${escapeHtml(item.departmentName || "-")}<div class="table-muted">${escapeHtml(item.costCenterName || "-")}</div></td><td class="mono">${formatCurrency(item.salaryBase)}</td><td><strong>${formatCurrency(item.totalVacation)}</strong><div class="table-muted">${item.vacationAvos}/12 avos</div></td><td><strong>${formatCurrency(item.totalThirteenth)}</strong><div class="table-muted">${item.thirteenthAvos}/12 avos</div></td><td>${formatCurrency(toDecimal(item.totalVacationCharges) + toDecimal(item.totalThirteenthCharges))}</td><td class="amount-strong">${formatCurrency(item.totalGeneral)}</td><td>${renderStatusBadge(item.status)}</td><td class="sticky-right"><button class="action-chip" type="button" data-action="payroll-view-provision" data-id="${item.id}">Abrir memória</button></td></tr>`).join("") : renderPayrollEmptyRow(9, "Nenhuma provisão calculada para os filtros selecionados.")}</tbody></table></div>`;
+        }
+        return `<div class="table-scroll"><table class="provision-table provision-detail-table"><thead><tr><th class="sticky-left">Funcionário</th><th>Código</th><th>Departamento</th><th>Centro de custo</th><th>Salário</th><th>Avos férias</th><th>Provisão férias</th><th>INSS férias</th><th>Terceiros férias</th><th>RAT férias</th><th>FGTS férias</th><th>Total férias</th><th>Avos 13º</th><th>Provisão 13º</th><th>INSS 13º</th><th>Terceiros 13º</th><th>RAT 13º</th><th>FGTS 13º</th><th>Total 13º</th><th>Total geral</th><th>Status</th><th class="sticky-right">Ações</th></tr></thead><tbody>${records.length ? records.map((item) => `<tr><td class="sticky-left"><strong>${escapeHtml(item.employeeName)}</strong><div class="table-muted">${escapeHtml(item.registration || "-")}</div></td><td class="mono">${escapeHtml(item.employeeCode || item.code)}</td><td>${escapeHtml(item.departmentName || "-")}</td><td>${escapeHtml(item.costCenterName || "-")}</td><td class="mono">${formatCurrency(item.salaryBase)}</td><td>${item.vacationAvos}/12</td><td>${formatCurrency(item.balances?.vacation)}</td><td>${formatCurrency(item.vacationInss)}</td><td>${formatCurrency(item.vacationThirdParty)}</td><td>${formatCurrency(item.vacationRat)}</td><td>${formatCurrency(item.vacationFgts)}</td><td><strong>${formatCurrency(item.totalVacation)}</strong></td><td>${item.thirteenthAvos}/12</td><td>${formatCurrency(item.balances?.thirteenth)}</td><td>${formatCurrency(item.thirteenthInss)}</td><td>${formatCurrency(item.thirteenthThirdParty)}</td><td>${formatCurrency(item.thirteenthRat)}</td><td>${formatCurrency(item.thirteenthFgts)}</td><td><strong>${formatCurrency(item.totalThirteenth)}</strong></td><td class="amount-strong">${formatCurrency(item.totalGeneral)}</td><td>${renderStatusBadge(item.status)}</td><td class="sticky-right"><button class="action-chip" type="button" data-action="payroll-view-provision" data-id="${item.id}">Memória</button></td></tr>`).join("") : renderPayrollEmptyRow(22, "Nenhuma provisão calculada para os filtros selecionados.")}</tbody></table></div>`;
       }
 
       function renderPayrollProvisionsPanel() {
@@ -12103,16 +12589,21 @@
         const summary = summarizePayrollProvisions(records, filters.provisionType);
         const competenceRecord = getPayrollProvisionCompetence(filters.companyName, filters.branchName, filters.competence);
         const selected = state.data.payrollProvisions.find((item) => item.id === state.ui.payrollSelectedProvisionId && item.schemaVersion === 2);
-        return `<div class="split-grid">${renderPayrollProvisionSettingsForm()}${renderPayrollProvisionFiltersForm()}</div><section class="card"><div class="section-head"><div><h3>Resumo das provisões</h3><p>${escapeHtml(filters.companyName)} · ${escapeHtml(filters.branchName)} · ${escapeHtml(filters.competence)}</p></div><span class="status-highlight ${competenceRecord?.status === "Contabilizada" ? "ok" : "warn"}">${escapeHtml(competenceRecord?.status || "Não calculada")}</span></div><div class="stats-grid"><article class="stats-card"><small>Provisão de férias</small><strong>${formatCurrency(summary.vacation)}</strong><span>Inclui o adicional de 1/3 e ajustes/baixas.</span></article><article class="stats-card"><small>Encargos sobre férias</small><strong>${formatCurrency(summary.vacationCharges)}</strong><span>INSS, Terceiros, RAT e FGTS habilitados.</span></article><article class="stats-card"><small>Provisão de 13º</small><strong>${formatCurrency(summary.thirteenth)}</strong><span>Calculada pelos avos adquiridos.</span></article><article class="stats-card"><small>Encargos sobre o 13º</small><strong>${formatCurrency(summary.thirteenthCharges)}</strong><span>Percentuais registrados na memória.</span></article><article class="stats-card"><small>Total geral</small><strong>${formatCurrency(summary.total)}</strong><span>${records.length} funcionário(s) na conferência.</span></article></div></section><section class="table-card"><div class="table-toolbar"><div><h4>Conferência individual por funcionário</h4><p class="page-subtitle">A tabela pode ser rolada horizontalmente para visualizar todas as bases e encargos.</p></div></div><div class="table-scroll"><table style="min-width:2600px"><thead><tr><th>Código</th><th>Matrícula</th><th>Funcionário</th><th>Departamento</th><th>Centro de custo</th><th>Salário</th><th>Avos férias</th><th>Provisão férias</th><th>INSS férias</th><th>Terceiros férias</th><th>RAT férias</th><th>FGTS férias</th><th>Total férias</th><th>Avos 13º</th><th>Provisão 13º</th><th>INSS 13º</th><th>Terceiros 13º</th><th>RAT 13º</th><th>FGTS 13º</th><th>Total 13º</th><th>Total geral</th><th>Status</th><th>Ações</th></tr></thead><tbody>${records.length ? records.map((item) => `<tr><td class="mono">${escapeHtml(item.employeeCode || item.code)}</td><td>${escapeHtml(item.registration || "-")}</td><td><strong>${escapeHtml(item.employeeName)}</strong><div class="table-muted">${escapeHtml(item.employeeStatus)}</div></td><td>${escapeHtml(item.departmentName || "-")}</td><td>${escapeHtml(item.costCenterName || "-")}</td><td class="mono">${formatCurrency(item.salaryBase)}</td><td>${item.vacationAvos}/12</td><td>${formatCurrency(item.balances?.vacation)}</td><td>${formatCurrency(item.vacationInss)}</td><td>${formatCurrency(item.vacationThirdParty)}</td><td>${formatCurrency(item.vacationRat)}</td><td>${formatCurrency(item.vacationFgts)}</td><td><strong>${formatCurrency(item.totalVacation)}</strong></td><td>${item.thirteenthAvos}/12</td><td>${formatCurrency(item.balances?.thirteenth)}</td><td>${formatCurrency(item.thirteenthInss)}</td><td>${formatCurrency(item.thirteenthThirdParty)}</td><td>${formatCurrency(item.thirteenthRat)}</td><td>${formatCurrency(item.thirteenthFgts)}</td><td><strong>${formatCurrency(item.totalThirteenth)}</strong></td><td><strong>${formatCurrency(item.totalGeneral)}</strong></td><td>${renderStatusBadge(item.status)}</td><td><button class="action-chip" type="button" data-action="payroll-view-provision" data-id="${item.id}">Memória</button></td></tr>`).join("") : renderPayrollEmptyRow(23, "Nenhuma provisão calculada para os filtros selecionados.")}</tbody></table></div></section>${selected ? renderPayrollProvisionDetail(selected) : ""}<section class="table-card"><div class="table-toolbar"><h4>Configurações de percentuais cadastradas</h4></div><div class="table-scroll"><table><thead><tr><th>Empresa</th><th>Filial</th><th>INSS</th><th>Terceiros</th><th>RAT</th><th>FGTS</th><th>Status</th><th>Ações</th></tr></thead><tbody>${state.data.payrollProvisionSettings.map((item) => `<tr><td>${escapeHtml(item.companyName)}</td><td>${escapeHtml(item.branchName)}</td><td>${item.inssCompanyEnabled ? `${formatNumber(item.inssCompanyRate)}%` : "Inativo"}</td><td>${item.thirdPartyEnabled ? `${formatNumber(item.thirdPartyRate)}%` : "Inativo"}</td><td>${item.ratEnabled ? `${formatNumber(item.ratRate)}%` : "Inativo"}</td><td>${item.fgtsEnabled ? `${formatNumber(item.fgtsRate)}%` : "Inativo"}</td><td>${renderStatusBadge(item.status)}</td><td><div class="table-actions"><button class="action-chip" type="button" data-action="edit-payroll-provision-settings" data-id="${item.id}">Editar</button><button class="action-chip danger" type="button" data-action="delete-payroll-provision-settings" data-id="${item.id}">Excluir</button></div></td></tr>`).join("")}</tbody></table></div></section>`;
+        const configOpen = state.ui.payrollProvisionConfigOpen;
+        return `${renderPayrollProvisionWorkflow(records, filters, competenceRecord)}${renderPayrollProvisionFiltersForm()}${renderPayrollProvisionOperationToolbar(competenceRecord, records)}${renderPayrollProvisionChecklist(records, filters, competenceRecord)}<section class="card"><div class="section-head"><div><h3>Resumo da competência</h3><p>${escapeHtml(filters.companyName)} · ${escapeHtml(filters.branchName)} · ${escapeHtml(filters.competence)}</p></div><span class="status-highlight ${competenceRecord?.status === "Contabilizada" ? "ok" : "warn"}">${escapeHtml(competenceRecord?.status || "Não calculada")}</span></div><div class="stats-grid"><article class="stats-card"><small>Provisão de férias</small><strong>${formatCurrency(summary.vacation)}</strong><span>Saldo de férias com adicional de 1/3.</span></article><article class="stats-card"><small>Encargos sobre férias</small><strong>${formatCurrency(summary.vacationCharges)}</strong><span>INSS, Terceiros, RAT e FGTS.</span></article><article class="stats-card"><small>Provisão de 13º</small><strong>${formatCurrency(summary.thirteenth)}</strong><span>Saldo proporcional aos avos.</span></article><article class="stats-card"><small>Encargos sobre o 13º</small><strong>${formatCurrency(summary.thirteenthCharges)}</strong><span>Encargos registrados na memória.</span></article><article class="stats-card"><small>Total geral</small><strong>${formatCurrency(summary.total)}</strong><span>${records.length} funcionário(s) na conferência.</span></article></div></section><section class="table-card"><div class="table-toolbar"><div><h4>Conferência individual</h4><p class="page-subtitle">Use a visão resumida no dia a dia e abra a visão detalhada somente quando necessário.</p></div></div>${renderPayrollProvisionTable(records)}</section><section class="configuration-shell"><div class="configuration-intro"><div><h3>Configurações das provisões</h3><p>Percentuais e regras ficam separados da operação mensal.</p></div><button class="secondary-button" type="button" data-action="toggle-payroll-provision-config">${configOpen ? "Ocultar configurações" : "Abrir configurações"}</button></div>${configOpen ? `<div class="configuration-content">${renderPayrollProvisionSettingsForm()}<section class="table-card"><div class="table-toolbar"><h4>Percentuais cadastrados</h4></div><div class="table-scroll"><table><thead><tr><th>Empresa</th><th>Filial</th><th>INSS</th><th>Terceiros</th><th>RAT</th><th>FGTS</th><th>Status</th><th>Ações</th></tr></thead><tbody>${state.data.payrollProvisionSettings.length ? state.data.payrollProvisionSettings.map((item) => `<tr><td>${escapeHtml(item.companyName)}</td><td>${escapeHtml(item.branchName)}</td><td>${item.inssCompanyEnabled ? `${formatNumber(item.inssCompanyRate)}%` : "Inativo"}</td><td>${item.thirdPartyEnabled ? `${formatNumber(item.thirdPartyRate)}%` : "Inativo"}</td><td>${item.ratEnabled ? `${formatNumber(item.ratRate)}%` : "Inativo"}</td><td>${item.fgtsEnabled ? `${formatNumber(item.fgtsRate)}%` : "Inativo"}</td><td>${renderStatusBadge(item.status)}</td><td><div class="table-actions"><button class="action-chip" type="button" data-action="edit-payroll-provision-settings" data-id="${item.id}">Editar</button><button class="action-chip danger" type="button" data-action="delete-payroll-provision-settings" data-id="${item.id}">Excluir</button></div></td></tr>`).join("") : renderPayrollEmptyRow(8, "Nenhuma configuração de percentuais cadastrada.")}</tbody></table></div></section></div>` : ""}</section>${selected ? renderPayrollProvisionDetail(selected, records) : ""}`;
       }
 
-      function renderPayrollProvisionDetail(record) {
+      function renderPayrollProvisionDetail(record, records = []) {
         const editable = getPayrollProvisionCompetence(record.companyName, record.branchName, record.competence)?.status !== "Contabilizada";
+        const orderedRecords = records.length ? records : getFilteredPayrollProvisions();
+        const currentIndex = orderedRecords.findIndex((item) => item.id === record.id);
+        const previous = currentIndex > 0 ? orderedRecords[currentIndex - 1] : null;
+        const next = currentIndex >= 0 && currentIndex < orderedRecords.length - 1 ? orderedRecords[currentIndex + 1] : null;
         const movementRows = PAYROLL_PROVISION_COMPONENTS.map((component) => {
           const payment = component.key === "vacation" ? record.payments?.vacation : component.key === "thirteenth" ? record.payments?.thirteenth : 0;
           return `<tr><td>${escapeHtml(component.label)}</td><td>${formatCurrency(record.previousAccounted?.[component.key])}</td><td>${formatCurrency(record.movements?.[component.key])}</td><td>${formatCurrency(payment)}</td><td>${formatCurrency(record.netMovements?.[component.key] ?? record.movements?.[component.key])}</td><td><strong>${formatCurrency(record.balances?.[component.key])}</strong></td></tr>`;
         }).join("");
-        return `<section class="card"><div class="section-head"><div><h3>Memória de cálculo — ${escapeHtml(record.employeeName)}</h3><p>${escapeHtml(record.registration || record.employeeCode)} · ${escapeHtml(record.competence)} · ${escapeHtml(record.companyName)} / ${escapeHtml(record.branchName)}</p></div><button class="ghost-button" type="button" data-action="payroll-close-provision-detail">Fechar memória</button></div><div class="split-grid"><div class="subtle-panel"><h4>Férias</h4><p><strong>Base salarial:</strong> ${formatCurrency(record.salaryBase)}<br><strong>Avos:</strong> ${record.vacationAvos}/12<br><strong>Fórmula:</strong> salário × avos ÷ 12 + adicional de 1/3<br><strong>Valor de férias:</strong> ${formatCurrency(record.vacationValue)}<br><strong>Adicional de 1/3:</strong> ${formatCurrency(record.vacationOneThird)}<br><strong>Provisão antes de ajustes:</strong> ${formatCurrency(record.vacationProvision)}</p></div><div class="subtle-panel"><h4>13º salário</h4><p><strong>Base salarial:</strong> ${formatCurrency(record.salaryBase)}<br><strong>Avos:</strong> ${record.thirteenthAvos}/12<br><strong>Fórmula:</strong> salário × avos ÷ 12<br><strong>Provisão antes de ajustes:</strong> ${formatCurrency(record.thirteenthProvision)}</p></div></div><div class="subtle-panel"><h4>Percentuais utilizados</h4><p>INSS Empresa: ${formatNumber(record.ratesSnapshot?.inssCompanyRate)}% · Terceiros: ${formatNumber(record.ratesSnapshot?.thirdPartyRate)}% · RAT: ${formatNumber(record.ratesSnapshot?.ratRate)}% · FGTS: ${formatNumber(record.ratesSnapshot?.fgtsRate)}%</p></div><div class="table-card"><div class="table-toolbar"><h4>Saldo anterior, movimentação e saldo final</h4></div><div class="table-scroll"><table><thead><tr><th>Componente</th><th>Contabilizado anteriormente</th><th>Provisão/ajuste da competência</th><th>Baixa/pagamento</th><th>Variação líquida</th><th>Saldo final</th></tr></thead><tbody>${movementRows}</tbody></table></div></div><form class="subtle-panel" data-form="payroll-provision-adjustment"><input type="hidden" name="id" value="${record.id}"><h4>Ajustes e baixas</h4><div class="form-grid">${renderPayrollInput("vacationAdjustment", "Ajuste de férias", record.adjustments?.vacation || "", "0,00", "number")}${renderPayrollInput("vacationPayment", "Baixa/pagamento de férias", record.payments?.vacation || "", "0,00", "number")}${renderPayrollInput("thirteenthAdjustment", "Ajuste de 13º", record.adjustments?.thirteenth || "", "0,00", "number")}${renderPayrollInput("thirteenthPayment", "Baixa/pagamento de 13º", record.payments?.thirteenth || "", "0,00", "number")}${renderPayrollTextarea("notes", "Observações da memória", record.notes || "", "Motivo do ajuste ou baixa")}</div><div class="form-actions"><button class="primary-button" type="submit" ${editable ? "" : "disabled"}>Salvar memória</button></div></form></section>`;
+        return `<div class="provision-drawer-overlay"><button class="provision-drawer-backdrop" type="button" data-action="payroll-close-provision-detail" aria-label="Fechar memória"></button><aside class="provision-drawer" role="dialog" aria-modal="true" aria-label="Memória de cálculo"><div class="provision-drawer-header"><div><h3>${escapeHtml(record.employeeName)}</h3><p>${escapeHtml(record.registration || record.employeeCode)} · ${escapeHtml(record.competence)} · ${escapeHtml(record.companyName)} / ${escapeHtml(record.branchName)}</p></div><div class="drawer-nav"><button class="action-chip" type="button" data-action="payroll-previous-provision" data-id="${previous?.id || ""}" ${previous ? "" : "disabled"}>← Anterior</button><button class="action-chip" type="button" data-action="payroll-next-provision" data-id="${next?.id || ""}" ${next ? "" : "disabled"}>Próximo →</button><button class="ghost-button" type="button" data-action="payroll-close-provision-detail">Fechar</button></div></div><div class="provision-drawer-body"><div class="memory-value-grid"><div class="memory-value"><small>Salário-base</small><strong>${formatCurrency(record.salaryBase)}</strong></div><div class="memory-value"><small>Total de férias</small><strong>${formatCurrency(record.totalVacation)}</strong></div><div class="memory-value"><small>Total de 13º</small><strong>${formatCurrency(record.totalThirteenth)}</strong></div><div class="memory-value"><small>Total geral</small><strong>${formatCurrency(record.totalGeneral)}</strong></div></div><details class="calculation-section" open><summary>Resumo e bases</summary><div class="calculation-section-content"><div class="memory-value-grid"><div class="memory-value"><small>Avos de férias</small><strong>${record.vacationAvos}/12</strong></div><div class="memory-value"><small>Avos de 13º</small><strong>${record.thirteenthAvos}/12</strong></div><div class="memory-value"><small>Departamento</small><strong>${escapeHtml(record.departmentName || "-")}</strong></div><div class="memory-value"><small>Centro de custo</small><strong>${escapeHtml(record.costCenterName || "-")}</strong></div></div></div></details><details class="calculation-section" open><summary>Férias</summary><div class="calculation-section-content"><p class="page-subtitle"><strong>Fórmula:</strong> salário × avos ÷ 12 + adicional de 1/3.</p><div class="memory-value-grid"><div class="memory-value"><small>Valor de férias</small><strong>${formatCurrency(record.vacationValue)}</strong></div><div class="memory-value"><small>Adicional de 1/3</small><strong>${formatCurrency(record.vacationOneThird)}</strong></div><div class="memory-value"><small>Provisão antes de ajustes</small><strong>${formatCurrency(record.vacationProvision)}</strong></div><div class="memory-value"><small>Total com encargos</small><strong>${formatCurrency(record.totalVacation)}</strong></div></div></div></details><details class="calculation-section"><summary>13º salário</summary><div class="calculation-section-content"><p class="page-subtitle"><strong>Fórmula:</strong> salário × avos ÷ 12.</p><div class="memory-value-grid"><div class="memory-value"><small>Provisão antes de ajustes</small><strong>${formatCurrency(record.thirteenthProvision)}</strong></div><div class="memory-value"><small>Total com encargos</small><strong>${formatCurrency(record.totalThirteenth)}</strong></div></div></div></details><details class="calculation-section"><summary>Encargos utilizados</summary><div class="calculation-section-content"><div class="memory-value-grid"><div class="memory-value"><small>INSS Empresa</small><strong>${formatNumber(record.ratesSnapshot?.inssCompanyRate)}%</strong></div><div class="memory-value"><small>Terceiros</small><strong>${formatNumber(record.ratesSnapshot?.thirdPartyRate)}%</strong></div><div class="memory-value"><small>RAT</small><strong>${formatNumber(record.ratesSnapshot?.ratRate)}%</strong></div><div class="memory-value"><small>FGTS</small><strong>${formatNumber(record.ratesSnapshot?.fgtsRate)}%</strong></div></div></div></details><details class="calculation-section" open><summary>Movimentação e saldo final</summary><div class="calculation-section-content"><div class="table-scroll"><table style="min-width:850px"><thead><tr><th>Componente</th><th>Contabilizado anteriormente</th><th>Provisão/ajuste</th><th>Baixa</th><th>Variação líquida</th><th>Saldo final</th></tr></thead><tbody>${movementRows}</tbody></table></div></div></details><details class="calculation-section"><summary>Ajustes e baixas</summary><div class="calculation-section-content"><form data-form="payroll-provision-adjustment"><input type="hidden" name="id" value="${record.id}"><div class="form-grid">${renderPayrollInput("vacationAdjustment", "Ajuste de férias", record.adjustments?.vacation || "", "0,00", "number")}${renderPayrollInput("vacationPayment", "Baixa/pagamento de férias", record.payments?.vacation || "", "0,00", "number")}${renderPayrollInput("thirteenthAdjustment", "Ajuste de 13º", record.adjustments?.thirteenth || "", "0,00", "number")}${renderPayrollInput("thirteenthPayment", "Baixa/pagamento de 13º", record.payments?.thirteenth || "", "0,00", "number")}${renderPayrollTextarea("notes", "Observações da memória", record.notes || "", "Motivo do ajuste ou baixa")}</div><div class="form-actions"><button class="primary-button" type="submit" ${editable ? "" : "disabled"}>Salvar memória</button></div></form></div></details></div></aside></div>`;
       }
 
       function submitPayrollProvisionAccountingConfig(formData) {
@@ -12361,7 +12852,9 @@
       function renderPayrollProvisionPreview() {
         const preview = state.ui.payrollProvisionPreview;
         if (!preview) return `<section class="empty-card"><strong>Nenhuma prévia gerada.</strong><p>Preencha os parâmetros e clique em Gerar prévia para validar contas, centros de custo e balanceamento.</p></section>`;
-        return `<section class="table-card"><div class="table-toolbar"><div><h4>Prévia dos lançamentos</h4><p class="page-subtitle">${escapeHtml(preview.draft.batchNumber)} · ${escapeHtml(preview.draft.competence)}</p></div><div class="inline-actions"><button class="ghost-button" type="button" data-action="export-payroll-provision-preview">Exportar CSV</button><button class="primary-button" type="button" data-action="payroll-confirm-provision-accounting" ${preview.errors.length ? "disabled" : ""}>Confirmar contabilização</button></div></div>${preview.errors.length ? `<div class="notice-card" style="margin:16px"><div class="notice-icon">!</div><div><strong>Validações pendentes</strong><p>${preview.errors.map(escapeHtml).join("<br>")}</p></div></div>` : ""}<div class="table-scroll"><table style="min-width:1500px"><thead><tr><th>Linha</th><th>Conta débito</th><th>Conta crédito</th><th>Valor</th><th>Centro de custo</th><th>Departamento</th><th>Filial</th><th>Histórico</th><th>Tipo</th><th>Funcionários</th></tr></thead><tbody>${preview.lines.length ? preview.lines.map((line) => `<tr><td>${line.lineNumber}</td><td><strong>${escapeHtml(getChartAccountById(line.debitAccountId)?.code || "-")}</strong><div class="table-muted">${escapeHtml(getChartAccountById(line.debitAccountId)?.name || "-")}</div></td><td><strong>${escapeHtml(getChartAccountById(line.creditAccountId)?.code || "-")}</strong><div class="table-muted">${escapeHtml(getChartAccountById(line.creditAccountId)?.name || "-")}</div></td><td>${formatCurrency(line.amount)}</td><td>${escapeHtml(getCostCenterById(line.costCenterId)?.name || "-")}</td><td>${escapeHtml(getPayrollDepartmentById(line.departmentId)?.name || "-")}</td><td>${escapeHtml(line.branchName)}</td><td>${escapeHtml(line.history)}</td><td>${escapeHtml(line.provisionLabel)}</td><td>${line.employeeIds.length}</td></tr>`).join("") : renderPayrollEmptyRow(10, "Nenhuma linha gerada.")}</tbody></table></div><div class="totals-grid" style="padding:16px"><div class="total-card"><span>Total dos débitos</span><strong>${formatCurrency(preview.totalDebit)}</strong></div><div class="total-card"><span>Total dos créditos</span><strong>${formatCurrency(preview.totalCredit)}</strong></div><div class="total-card"><span>Diferença</span><strong>${formatCurrency(preview.difference)}</strong></div></div></section>`;
+        const employeeCount = new Set(preview.lines.flatMap((line) => line.employeeIds || [])).size;
+        const balanced = Math.abs(toDecimal(preview.difference)) < 0.005 && !preview.errors.length;
+        return `<section class="table-card"><div class="table-toolbar"><div><h4>Prévia dos lançamentos</h4><p class="page-subtitle">Lote ${escapeHtml(preview.draft.batchNumber)} · ${escapeHtml(preview.draft.competence)}</p></div><div class="inline-actions"><button class="ghost-button" type="button" data-action="export-payroll-provision-preview">Exportar CSV</button><button class="primary-button" type="button" data-action="payroll-confirm-provision-accounting" ${preview.errors.length ? "disabled" : ""}>Confirmar contabilização</button></div></div><div class="accounting-balance-banner"><div class="accounting-balance-item"><span>Débitos</span><strong>${formatCurrency(preview.totalDebit)}</strong></div><div class="accounting-balance-item"><span>Créditos</span><strong>${formatCurrency(preview.totalCredit)}</strong></div><div class="accounting-balance-item ${balanced ? "ok" : "error"}"><span>Diferença</span><strong>${formatCurrency(preview.difference)} ${balanced ? "✓" : "!"}</strong></div><div class="accounting-balance-item"><span>Funcionários</span><strong>${employeeCount}</strong></div><div class="accounting-balance-item"><span>Linhas contábeis</span><strong>${preview.lines.length}</strong></div></div>${preview.errors.length ? `<div class="notice-card" style="margin:16px"><div class="notice-icon">!</div><div><strong>Validações pendentes</strong><p>${preview.errors.map(escapeHtml).join("<br>")}</p></div></div>` : `<div class="notice-card" style="margin:16px"><div class="notice-icon">✓</div><div><strong>Prévia validada</strong><p>Contas, centros de custo e balanceamento estão prontos para confirmação.</p></div></div>`}<div class="table-scroll"><table style="min-width:1500px"><thead><tr><th>Linha</th><th>Conta débito</th><th>Conta crédito</th><th>Valor</th><th>Centro de custo</th><th>Departamento</th><th>Filial</th><th>Histórico</th><th>Tipo</th><th>Funcionários</th></tr></thead><tbody>${preview.lines.length ? preview.lines.map((line) => `<tr><td>${line.lineNumber}</td><td><strong>${escapeHtml(getChartAccountById(line.debitAccountId)?.code || "-")}</strong><div class="table-muted">${escapeHtml(getChartAccountById(line.debitAccountId)?.name || "-")}</div></td><td><strong>${escapeHtml(getChartAccountById(line.creditAccountId)?.code || "-")}</strong><div class="table-muted">${escapeHtml(getChartAccountById(line.creditAccountId)?.name || "-")}</div></td><td class="amount-strong">${formatCurrency(line.amount)}</td><td>${escapeHtml(getCostCenterById(line.costCenterId)?.name || "-")}</td><td>${escapeHtml(getPayrollDepartmentById(line.departmentId)?.name || "-")}</td><td>${escapeHtml(line.branchName)}</td><td>${escapeHtml(line.history)}</td><td>${escapeHtml(line.provisionLabel)}</td><td>${line.employeeIds.length}</td></tr>`).join("") : renderPayrollEmptyRow(10, "Nenhuma linha gerada.")}</tbody></table></div></section>`;
       }
 
       function renderPayrollProvisionAccountingPanel() {
@@ -12369,7 +12862,11 @@
         const companies = [...new Set(state.data.payrollProvisionSettings.map((item) => item.companyName).filter(Boolean))];
         const branches = [...new Set(state.data.payrollProvisionSettings.map((item) => item.branchName).filter(Boolean))];
         const batches = [...state.data.payrollProvisionAccountingBatches].sort((a, b) => String(b.generatedAt || "").localeCompare(String(a.generatedAt || "")));
-        return `<section class="card"><div class="section-head"><div><h3>Contabilização das Provisões</h3><p>A contabilização usa somente a movimentação da competência: saldo atual menos o saldo contabilizado anteriormente.</p></div></div><form data-form="payroll-provision-accounting"><div class="form-grid">${renderPayrollSelect("companyName", "Empresa", draft.companyName, companies.map((item) => [item, item]))}${renderPayrollSelect("branchName", "Filial", draft.branchName, branches.map((item) => [item, item]))}${renderPayrollInput("competence", "Competência", draft.competence, "2026-07", "month")}${renderPayrollSelect("provisionType", "Tipo de provisão", draft.provisionType, PAYROLL_PROVISION_TYPES)}${renderPayrollInput("postingDate", "Data do lançamento", draft.postingDate, "", "date")}${renderPayrollInput("history", "Histórico padrão", draft.history, "Deixe em branco para gerar automaticamente")}${renderPayrollInput("batchNumber", "Lote contábil", draft.batchNumber, "PROV-202607")}${renderPayrollSelect("grouping", "Forma de agrupamento", draft.grouping, PAYROLL_PROVISION_GROUPINGS)}</div><div class="form-actions"><button class="primary-button" type="button" data-action="payroll-preview-provision-accounting">Gerar prévia</button></div></form></section>${renderPayrollProvisionPreview()}${renderPayrollProvisionAccountingConfigForm()}<section class="table-card"><div class="table-toolbar"><h4>Configurações contábeis salvas</h4></div><div class="table-scroll"><table><thead><tr><th>Código</th><th>Empresa/Filial</th><th>Departamento</th><th>Centro de custo</th><th>Status</th><th>Ações</th></tr></thead><tbody>${state.data.payrollProvisionAccountingConfigs.length ? state.data.payrollProvisionAccountingConfigs.map((item) => `<tr><td>${escapeHtml(item.code)}</td><td>${escapeHtml(item.companyName)} / ${escapeHtml(item.branchName)}</td><td>${escapeHtml(getPayrollDepartmentById(item.departmentId)?.name || "Todos")}</td><td>${escapeHtml(getCostCenterById(item.costCenterId)?.name || "Todos")}</td><td>${renderStatusBadge(item.status)}</td><td><div class="table-actions"><button class="action-chip" type="button" data-action="edit-payroll-provision-account-config" data-id="${item.id}">Editar</button><button class="action-chip danger" type="button" data-action="delete-payroll-provision-account-config" data-id="${item.id}">Excluir</button></div></td></tr>`).join("") : renderPayrollEmptyRow(6, "Nenhuma configuração de contas cadastrada.")}</tbody></table></div></section><section class="table-card"><div class="table-toolbar"><h4>Histórico de contabilizações</h4></div><div class="table-scroll"><table><thead><tr><th>Lote</th><th>Competência</th><th>Empresa/Filial</th><th>Tipo</th><th>Agrupamento</th><th>Total</th><th>Usuário/Data</th><th>Status</th><th>Ações</th></tr></thead><tbody>${batches.length ? batches.map((item) => `<tr><td><strong>${escapeHtml(item.batchNumber)}</strong><div class="table-muted">${escapeHtml(item.code)}</div></td><td>${escapeHtml(item.competence)}</td><td>${escapeHtml(item.companyName)} / ${escapeHtml(item.branchName)}</td><td>${escapeHtml(PAYROLL_PROVISION_TYPES.find((type) => type[0] === item.provisionType)?.[1] || item.provisionType)}</td><td>${escapeHtml(PAYROLL_PROVISION_GROUPINGS.find((type) => type[0] === item.grouping)?.[1] || item.grouping)}</td><td>${formatCurrency(item.totalDebit)}</td><td>${escapeHtml(item.userName || "Usuário local")}<div class="table-muted">${formatDateTime(item.generatedAt)}</div></td><td>${renderStatusBadge(item.status)}</td><td><div class="table-actions"><button class="action-chip" type="button" data-action="export-payroll-provision-batch" data-id="${item.id}">Exportar</button>${item.status !== "Estornado" ? `<button class="action-chip danger" type="button" data-action="payroll-reverse-provision-batch" data-id="${item.id}">Estornar</button>` : ""}</div></td></tr>`).join("") : renderPayrollEmptyRow(9, "Nenhuma contabilização de provisões gerada.")}</tbody></table></div></section>`;
+        const records = state.data.payrollProvisions.filter((item) => item.schemaVersion === 2 && item.companyName === draft.companyName && item.branchName === draft.branchName && item.competence === draft.competence);
+        const competenceRecord = getPayrollProvisionCompetence(draft.companyName, draft.branchName, draft.competence);
+        const configOpen = state.ui.payrollProvisionAccountingConfigOpen;
+        const workflowFilters = { ...state.ui.payrollProvisionFilters, companyName: draft.companyName, branchName: draft.branchName, competence: draft.competence };
+        return `${renderPayrollProvisionWorkflow(records, workflowFilters, competenceRecord)}${renderPayrollProvisionChecklist(records, workflowFilters, competenceRecord)}<section class="card"><div class="section-head"><div><h3>Contabilização das Provisões</h3><p>Somente a movimentação da competência será contabilizada: saldo atual menos saldo anterior.</p></div>${renderStatusBadge(competenceRecord?.status || "Não calculada")}</div><form data-form="payroll-provision-accounting"><div class="form-grid">${renderPayrollSelect("companyName", "Empresa", draft.companyName, companies.map((item) => [item, item]))}${renderPayrollSelect("branchName", "Filial", draft.branchName, branches.map((item) => [item, item]))}${renderPayrollInput("competence", "Competência", draft.competence, "2026-07", "month")}${renderPayrollSelect("provisionType", "Tipo de provisão", draft.provisionType, PAYROLL_PROVISION_TYPES)}${renderPayrollInput("postingDate", "Data do lançamento", draft.postingDate, "", "date")}${renderPayrollInput("history", "Histórico padrão", draft.history, "Deixe em branco para gerar automaticamente")}${renderPayrollInput("batchNumber", "Lote contábil", draft.batchNumber, "PROV-202607")}${renderPayrollSelect("grouping", "Forma de agrupamento", draft.grouping, PAYROLL_PROVISION_GROUPINGS)}</div><div class="form-actions"><button class="primary-button" type="button" data-action="payroll-preview-provision-accounting">Gerar e validar prévia</button><button class="ghost-button" type="button" data-action="switch-payroll-panel" data-panel="provisions">Voltar à conferência</button></div></form></section>${renderPayrollProvisionPreview()}<section class="configuration-shell"><div class="configuration-intro"><div><h3>Configuração das contas contábeis</h3><p>Abra esta área apenas quando precisar cadastrar ou revisar as contas.</p></div><button class="secondary-button" type="button" data-action="toggle-payroll-provision-accounting-config">${configOpen ? "Ocultar contas" : "Configurar contas"}</button></div>${configOpen ? `<div class="configuration-content">${renderPayrollProvisionAccountingConfigForm()}<section class="table-card"><div class="table-toolbar"><h4>Configurações contábeis salvas</h4></div><div class="table-scroll"><table><thead><tr><th>Código</th><th>Empresa/Filial</th><th>Departamento</th><th>Centro de custo</th><th>Status</th><th>Ações</th></tr></thead><tbody>${state.data.payrollProvisionAccountingConfigs.length ? state.data.payrollProvisionAccountingConfigs.map((item) => `<tr><td>${escapeHtml(item.code)}</td><td>${escapeHtml(item.companyName)} / ${escapeHtml(item.branchName)}</td><td>${escapeHtml(getPayrollDepartmentById(item.departmentId)?.name || "Todos")}</td><td>${escapeHtml(getCostCenterById(item.costCenterId)?.name || "Todos")}</td><td>${renderStatusBadge(item.status)}</td><td><div class="table-actions"><button class="action-chip" type="button" data-action="edit-payroll-provision-account-config" data-id="${item.id}">Editar</button><button class="action-chip danger" type="button" data-action="delete-payroll-provision-account-config" data-id="${item.id}">Excluir</button></div></td></tr>`).join("") : renderPayrollEmptyRow(6, "Nenhuma configuração de contas cadastrada.")}</tbody></table></div></section></div>` : ""}</section><section class="table-card"><div class="table-toolbar"><div><h4>Histórico de contabilizações</h4><p class="page-subtitle">Consulte, exporte ou estorne os lotes gerados.</p></div></div><div class="table-scroll"><table><thead><tr><th>Lote</th><th>Competência</th><th>Empresa/Filial</th><th>Tipo</th><th>Agrupamento</th><th>Total</th><th>Usuário/Data</th><th>Status</th><th>Ações</th></tr></thead><tbody>${batches.length ? batches.map((item) => `<tr><td><strong>${escapeHtml(item.batchNumber)}</strong><div class="table-muted">${escapeHtml(item.code)}</div></td><td>${escapeHtml(item.competence)}</td><td>${escapeHtml(item.companyName)} / ${escapeHtml(item.branchName)}</td><td>${escapeHtml(PAYROLL_PROVISION_TYPES.find((type) => type[0] === item.provisionType)?.[1] || item.provisionType)}</td><td>${escapeHtml(PAYROLL_PROVISION_GROUPINGS.find((type) => type[0] === item.grouping)?.[1] || item.grouping)}</td><td class="amount-strong">${formatCurrency(item.totalDebit)}</td><td>${escapeHtml(item.userName || "Usuário local")}<div class="table-muted">${formatDateTime(item.generatedAt)}</div></td><td>${renderStatusBadge(item.status)}</td><td><div class="table-actions"><button class="action-chip" type="button" data-action="export-payroll-provision-batch" data-id="${item.id}">Exportar</button>${item.status !== "Estornado" ? `<button class="action-chip danger" type="button" data-action="payroll-reverse-provision-batch" data-id="${item.id}">Estornar</button>` : ""}</div></td></tr>`).join("") : renderPayrollEmptyRow(9, "Nenhuma contabilização de provisões gerada.")}</tbody></table></div></section>`;
       }
 
       function payrollCsvCell(value) {
@@ -12423,10 +12920,11 @@
 
       function renderPayrollView() {
         const panel = state.ui.payrollPanel || "dashboard";
+        const tabMap = Object.fromEntries(PAYROLL_PANELS.map((tab) => [tab.key, tab]));
         return `
-          <div class="modal-tabs" aria-label="Áreas da folha">
-            ${PAYROLL_PANELS.map((tab) => `<button class="modal-tab ${panel === tab.key ? "active" : ""}" type="button" data-action="switch-payroll-panel" data-panel="${tab.key}">${escapeHtml(tab.label)}</button>`).join("")}
-          </div>
+          <nav class="payroll-nav-groups" aria-label="Áreas da folha">
+            ${PAYROLL_NAV_GROUPS.map((group) => `<div class="payroll-nav-group"><span class="payroll-nav-group-label">${escapeHtml(group.label)}</span><div class="modal-tabs">${group.items.map((key) => { const tab = tabMap[key]; return tab ? `<button class="modal-tab ${panel === tab.key ? "active" : ""}" type="button" data-action="switch-payroll-panel" data-panel="${tab.key}">${escapeHtml(tab.label)}</button>` : ""; }).join("")}</div></div>`).join("")}
+          </nav>
           ${renderPayrollPanel(panel)}
         `;
       }
