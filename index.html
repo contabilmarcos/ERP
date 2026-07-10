@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -2867,6 +2868,10 @@
         payrollRunItems: "erp_payroll_run_items",
         payrollCalculationBases: "erp_payroll_calculation_bases",
         payrollProvisions: "erp_payroll_provisions",
+        payrollProvisionSettings: "erp_payroll_provision_settings",
+        payrollProvisionCompetences: "erp_payroll_provision_competences",
+        payrollProvisionAccountingConfigs: "erp_payroll_provision_accounting_configs",
+        payrollProvisionAccountingBatches: "erp_payroll_provision_accounting_batches",
         payrollAccountingMappings: "erp_payroll_accounting_mappings",
         payrollAccountingEntries: "erp_payroll_accounting_entries",
         payrollFinancialEntries: "erp_payroll_financial_entries"
@@ -2901,6 +2906,10 @@
         payrollRunItems: { prefix: "MOV", digits: 7 },
         payrollCalculationBases: { prefix: "BAS", digits: 7 },
         payrollProvisions: { prefix: "PRV", digits: 7 },
+        payrollProvisionSettings: { prefix: "PVS", digits: 4 },
+        payrollProvisionCompetences: { prefix: "PVC", digits: 6 },
+        payrollProvisionAccountingConfigs: { prefix: "PAC", digits: 5 },
+        payrollProvisionAccountingBatches: { prefix: "PAB", digits: 6 },
         payrollAccountingMappings: { prefix: "MAP", digits: 5 },
         payrollAccountingEntries: { prefix: "FLC", digits: 7 },
         payrollFinancialEntries: { prefix: "FFT", digits: 7 }
@@ -3016,6 +3025,10 @@
           payrollRunItems: [],
           payrollCalculationBases: [],
           payrollProvisions: [],
+          payrollProvisionSettings: [],
+          payrollProvisionCompetences: [],
+          payrollProvisionAccountingConfigs: [],
+          payrollProvisionAccountingBatches: [],
           payrollAccountingMappings: [],
           payrollAccountingEntries: [],
           payrollFinancialEntries: []
@@ -3041,6 +3054,8 @@
             payrollDepartments: "",
             payrollEvents: "",
             payrollRuns: "",
+            payrollProvisions: "",
+            payrollProvisionBatches: "",
             payrollAccountingEntries: "",
             payrollFinancialEntries: ""
           },
@@ -3100,6 +3115,12 @@
           payrollPeriodDraft: createEmptyPayrollPeriodDraft(),
           payrollMappingDraft: createEmptyPayrollAccountingMappingDraft(),
           payrollRunDraft: createEmptyPayrollRunDraft(),
+          payrollProvisionFilters: createEmptyPayrollProvisionFilters(),
+          payrollProvisionSettingsDraft: createEmptyPayrollProvisionSettingsDraft(),
+          payrollProvisionAccountingConfigDraft: createEmptyPayrollProvisionAccountingConfigDraft(),
+          payrollProvisionAccountingDraft: createEmptyPayrollProvisionAccountingDraft(),
+          payrollProvisionPreview: null,
+          payrollSelectedProvisionId: "",
           payrollReportFilters: createEmptyPayrollReportFilters(),
           payrollSelectedRunId: "",
           editing: {
@@ -3122,7 +3143,9 @@
             payrollIrrfId: null,
             payrollEmployerChargeId: null,
             payrollPeriodId: null,
-            payrollMappingId: null
+            payrollMappingId: null,
+            payrollProvisionSettingsId: null,
+            payrollProvisionAccountingConfigId: null
           },
           invoiceDraft: createEmptyInvoiceDraft(),
           invoiceModalOpen: false,
@@ -3991,6 +4014,72 @@
           case "payroll-reopen-run":
             reopenPayrollRun(id);
             break;
+          case "payroll-calculate-provisions":
+            calculatePayrollProvisions();
+            break;
+          case "payroll-set-provision-calculated":
+            setPayrollProvisionCompetenceCalculated();
+            break;
+          case "payroll-reopen-provision-competence":
+            reopenPayrollProvisionCompetence();
+            break;
+          case "payroll-view-provision":
+            state.ui.payrollSelectedProvisionId = id || "";
+            renderApp();
+            break;
+          case "payroll-close-provision-detail":
+            state.ui.payrollSelectedProvisionId = "";
+            renderApp();
+            break;
+          case "reset-payroll-provision-filters":
+            state.ui.payrollProvisionFilters = createEmptyPayrollProvisionFilters();
+            state.ui.payrollSelectedProvisionId = "";
+            renderApp();
+            break;
+          case "reset-payroll-provision-settings":
+            state.ui.editing.payrollProvisionSettingsId = null;
+            state.ui.payrollProvisionSettingsDraft = createEmptyPayrollProvisionSettingsDraft();
+            renderApp();
+            break;
+          case "edit-payroll-provision-settings":
+            state.ui.editing.payrollProvisionSettingsId = id;
+            state.ui.payrollProvisionSettingsDraft = createEmptyPayrollProvisionSettingsDraft(getPayrollProvisionSettingsById(id));
+            renderApp();
+            break;
+          case "delete-payroll-provision-settings":
+            deletePayrollProvisionSettings(id);
+            break;
+          case "reset-payroll-provision-account-config":
+            state.ui.editing.payrollProvisionAccountingConfigId = null;
+            state.ui.payrollProvisionAccountingConfigDraft = createEmptyPayrollProvisionAccountingConfigDraft();
+            renderApp();
+            break;
+          case "edit-payroll-provision-account-config":
+            state.ui.editing.payrollProvisionAccountingConfigId = id;
+            state.ui.payrollProvisionAccountingConfigDraft = createEmptyPayrollProvisionAccountingConfigDraft(getPayrollProvisionAccountingConfigById(id));
+            renderApp();
+            break;
+          case "delete-payroll-provision-account-config":
+            deleteRecord("payrollProvisionAccountingConfigs", id, "Contas das provisões", "Configuração excluída com sucesso.");
+            break;
+          case "payroll-preview-provision-accounting":
+            buildPayrollProvisionAccountingPreview();
+            break;
+          case "payroll-confirm-provision-accounting":
+            confirmPayrollProvisionAccounting();
+            break;
+          case "payroll-reverse-provision-batch":
+            reversePayrollProvisionAccountingBatch(id);
+            break;
+          case "export-payroll-provisions":
+            exportPayrollProvisionsCsv();
+            break;
+          case "export-payroll-provision-preview":
+            exportPayrollProvisionPreviewCsv();
+            break;
+          case "export-payroll-provision-batch":
+            exportPayrollProvisionBatchCsv(id);
+            break;
           case "reset-payroll-report":
             state.ui.payrollReportFilters = createEmptyPayrollReportFilters();
             renderApp();
@@ -4544,6 +4633,19 @@
           case "payroll-mapping":
             submitPayrollAccountingMapping(new FormData(form));
             break;
+          case "payroll-provision-settings":
+            submitPayrollProvisionSettings(new FormData(form));
+            break;
+          case "payroll-provision-account-config":
+            submitPayrollProvisionAccountingConfig(new FormData(form));
+            break;
+          case "payroll-provision-adjustment":
+            submitPayrollProvisionAdjustment(new FormData(form));
+            break;
+          case "payroll-provision-filters":
+          case "payroll-provision-accounting":
+            renderApp();
+            break;
           case "payroll-report-filters":
             submitPayrollAnalyticalReport(new FormData(form));
             break;
@@ -4636,7 +4738,9 @@
           "payroll-charge": "payrollEmployerChargeDraft",
           "payroll-period": "payrollPeriodDraft",
           "payroll-mapping": "payrollMappingDraft",
-          "payroll-run": "payrollRunDraft"
+          "payroll-run": "payrollRunDraft",
+          "payroll-provision-settings": "payrollProvisionSettingsDraft",
+          "payroll-provision-account-config": "payrollProvisionAccountingConfigDraft"
         };
 
         if (payrollDraftMap[formType]) {
@@ -4663,6 +4767,24 @@
 
         if (payrollFilterMap[formType]) {
           state.ui[payrollFilterMap[formType]][fieldName] = target.value;
+          return;
+        }
+
+        if (formType === "payroll-provision-filters") {
+          state.ui.payrollProvisionFilters[fieldName] = target.value;
+          state.ui.payrollSelectedProvisionId = "";
+          if (event.type === "change") renderApp();
+          return;
+        }
+
+        if (formType === "payroll-provision-accounting") {
+          state.ui.payrollProvisionAccountingDraft[fieldName] = target.value;
+          if (fieldName === "competence" && target.value) {
+            state.ui.payrollProvisionAccountingDraft.postingDate = `${target.value}-28`;
+            state.ui.payrollProvisionAccountingDraft.batchNumber = `PROV-${String(target.value).replace("-", "")}`;
+          }
+          state.ui.payrollProvisionPreview = null;
+          if (event.type === "change") renderApp();
           return;
         }
 
@@ -10200,6 +10322,8 @@
         { key: "parameters", label: "Parâmetros" },
         { key: "tables", label: "Tabelas e encargos" },
         { key: "processing", label: "Processamento" },
+        { key: "provisions", label: "Provisões Trabalhistas" },
+        { key: "provisionAccounting", label: "Contab. Provisões" },
         { key: "integration", label: "Integração" },
         { key: "reports", label: "Relatórios" }
       ];
@@ -10214,6 +10338,34 @@
       const PAYROLL_EVENT_NATURES = ["Salário", "Hora extra", "Adicional", "Falta", "DSR", "INSS", "IRRF", "FGTS", "Férias", "13º", "Rescisão", "Vale-transporte", "Vale-alimentação", "Adiantamento", "Pensão", "Outros"];
       const PAYROLL_CALC_TYPES = ["Valor fixo", "Percentual", "Fórmula", "Quantidade x valor", "Tabela progressiva"];
       const PAYROLL_ACCOUNTING_BATCH_NAME = "Lançamentos da folha";
+      const PAYROLL_PROVISION_STATUS = ["Em cálculo", "Calculada", "Contabilizada", "Reaberta", "Cancelada", "Com erro"];
+      const PAYROLL_PROVISION_TYPES = [
+        ["all", "Todas as provisões"],
+        ["vacation", "Provisão de férias"],
+        ["vacationCharges", "Encargos sobre férias"],
+        ["thirteenth", "Provisão de 13º salário"],
+        ["thirteenthCharges", "Encargos sobre o 13º salário"]
+      ];
+      const PAYROLL_PROVISION_GROUPINGS = [
+        ["employee", "Um lançamento por funcionário"],
+        ["department", "Agrupado por departamento"],
+        ["costCenter", "Agrupado por centro de custo"],
+        ["branch", "Agrupado por filial"],
+        ["account", "Agrupado por conta contábil"],
+        ["provisionType", "Agrupado por tipo de provisão"]
+      ];
+      const PAYROLL_PROVISION_COMPONENTS = [
+        { key: "vacation", group: "vacation", label: "Provisão de férias", debitField: "vacationExpenseAccountId", creditField: "vacationLiabilityAccountId" },
+        { key: "vacationInss", group: "vacationCharges", label: "INSS Empresa sobre férias", debitField: "vacationInssExpenseAccountId", creditField: "vacationInssLiabilityAccountId" },
+        { key: "vacationThirdParty", group: "vacationCharges", label: "Terceiros sobre férias", debitField: "vacationThirdPartyExpenseAccountId", creditField: "vacationThirdPartyLiabilityAccountId" },
+        { key: "vacationRat", group: "vacationCharges", label: "RAT sobre férias", debitField: "vacationRatExpenseAccountId", creditField: "vacationRatLiabilityAccountId" },
+        { key: "vacationFgts", group: "vacationCharges", label: "FGTS sobre férias", debitField: "vacationFgtsExpenseAccountId", creditField: "vacationFgtsLiabilityAccountId" },
+        { key: "thirteenth", group: "thirteenth", label: "Provisão de 13º salário", debitField: "thirteenthExpenseAccountId", creditField: "thirteenthLiabilityAccountId" },
+        { key: "thirteenthInss", group: "thirteenthCharges", label: "INSS Empresa sobre o 13º", debitField: "thirteenthInssExpenseAccountId", creditField: "thirteenthInssLiabilityAccountId" },
+        { key: "thirteenthThirdParty", group: "thirteenthCharges", label: "Terceiros sobre o 13º", debitField: "thirteenthThirdPartyExpenseAccountId", creditField: "thirteenthThirdPartyLiabilityAccountId" },
+        { key: "thirteenthRat", group: "thirteenthCharges", label: "RAT sobre o 13º", debitField: "thirteenthRatExpenseAccountId", creditField: "thirteenthRatLiabilityAccountId" },
+        { key: "thirteenthFgts", group: "thirteenthCharges", label: "FGTS sobre o 13º", debitField: "thirteenthFgtsExpenseAccountId", creditField: "thirteenthFgtsLiabilityAccountId" }
+      ];
 
       function createEmptyPayrollEmployeeDraft(employee) {
         const position = employee?.positionId ? getPayrollPositionById(employee.positionId) : null;
@@ -10436,6 +10588,74 @@
         };
       }
 
+      function createEmptyPayrollProvisionSettingsDraft(settings) {
+        return {
+          id: settings?.id || null,
+          code: settings?.code || "",
+          companyName: settings?.companyName || "Empresa Principal",
+          branchName: settings?.branchName || "Matriz",
+          inssCompanyRate: settings?.inssCompanyRate ?? 20,
+          thirdPartyRate: settings?.thirdPartyRate ?? 5.8,
+          ratRate: settings?.ratRate ?? 2,
+          fgtsRate: settings?.fgtsRate ?? 8,
+          inssCompanyEnabled: settings?.inssCompanyEnabled !== false,
+          thirdPartyEnabled: settings?.thirdPartyEnabled !== false,
+          ratEnabled: settings?.ratEnabled !== false,
+          fgtsEnabled: settings?.fgtsEnabled !== false,
+          costCenterRule: settings?.costCenterRule || "current",
+          status: settings?.status || "Ativo"
+        };
+      }
+
+      function createEmptyPayrollProvisionFilters(filters) {
+        return {
+          companyName: filters?.companyName || "Empresa Principal",
+          branchName: filters?.branchName || "Matriz",
+          competence: filters?.competence || new Date().toISOString().slice(0, 7),
+          departmentId: filters?.departmentId || "all",
+          costCenterId: filters?.costCenterId || "all",
+          employeeId: filters?.employeeId || "all",
+          provisionType: filters?.provisionType || "all",
+          employeeStatus: filters?.employeeStatus || "all"
+        };
+      }
+
+      function createEmptyPayrollProvisionAccountingConfigDraft(config) {
+        const fields = {
+          vacationExpenseAccountId: "", vacationLiabilityAccountId: "",
+          vacationInssExpenseAccountId: "", vacationInssLiabilityAccountId: "",
+          vacationThirdPartyExpenseAccountId: "", vacationThirdPartyLiabilityAccountId: "",
+          vacationRatExpenseAccountId: "", vacationRatLiabilityAccountId: "",
+          vacationFgtsExpenseAccountId: "", vacationFgtsLiabilityAccountId: "",
+          thirteenthExpenseAccountId: "", thirteenthLiabilityAccountId: "",
+          thirteenthInssExpenseAccountId: "", thirteenthInssLiabilityAccountId: "",
+          thirteenthThirdPartyExpenseAccountId: "", thirteenthThirdPartyLiabilityAccountId: "",
+          thirteenthRatExpenseAccountId: "", thirteenthRatLiabilityAccountId: "",
+          thirteenthFgtsExpenseAccountId: "", thirteenthFgtsLiabilityAccountId: "",
+          vacationPaymentAccountId: "", thirteenthPaymentAccountId: ""
+        };
+        return {
+          id: config?.id || null, code: config?.code || "",
+          companyName: config?.companyName || "Empresa Principal",
+          branchName: config?.branchName || "Matriz",
+          departmentId: config?.departmentId || "", costCenterId: config?.costCenterId || "",
+          status: config?.status || "Ativo", ...fields, ...(config || {})
+        };
+      }
+
+      function createEmptyPayrollProvisionAccountingDraft(draft) {
+        const competence = draft?.competence || new Date().toISOString().slice(0, 7);
+        return {
+          companyName: draft?.companyName || "Empresa Principal",
+          branchName: draft?.branchName || "Matriz",
+          competence, provisionType: draft?.provisionType || "all",
+          postingDate: draft?.postingDate || `${competence}-28`,
+          history: draft?.history || "",
+          batchNumber: draft?.batchNumber || `PROV-${String(competence).replace("-", "")}`,
+          grouping: draft?.grouping || "employee"
+        };
+      }
+
       function createEmptyPayrollReportFilters(filters) {
         return {
           reportType: filters?.reportType || "analytical",
@@ -10450,7 +10670,7 @@
 
       function migratePayrollCollections() {
         [
-          "payrollEmployees", "payrollPositions", "payrollDepartments", "payrollSalaryHistory", "payrollEvents", "payrollEventRules", "payrollParameters", "payrollInssTables", "payrollIrrfTables", "payrollEmployerCharges", "payrollPeriods", "payrollRuns", "payrollRunItems", "payrollCalculationBases", "payrollProvisions", "payrollAccountingMappings", "payrollAccountingEntries", "payrollFinancialEntries"
+          "payrollEmployees", "payrollPositions", "payrollDepartments", "payrollSalaryHistory", "payrollEvents", "payrollEventRules", "payrollParameters", "payrollInssTables", "payrollIrrfTables", "payrollEmployerCharges", "payrollPeriods", "payrollRuns", "payrollRunItems", "payrollCalculationBases", "payrollProvisions", "payrollProvisionSettings", "payrollProvisionCompetences", "payrollProvisionAccountingConfigs", "payrollProvisionAccountingBatches", "payrollAccountingMappings", "payrollAccountingEntries", "payrollFinancialEntries"
         ].forEach((key) => {
           if (!Array.isArray(state.data[key])) {
             state.data[key] = [];
@@ -10459,6 +10679,7 @@
         });
         migratePayrollFinancialEntriesDestination();
         seedPayrollDefaults();
+        seedPayrollProvisionDefaults();
         migratePayrollPayableAccountingEntries();
       }
 
@@ -10583,6 +10804,20 @@
         if (changed) {
           ["payrollParameters", "payrollEvents"].forEach(persistCollection);
         }
+      }
+
+      function seedPayrollProvisionDefaults() {
+        if (state.data.payrollProvisionSettings.length) return;
+        const now = payrollNow();
+        const settings = {
+          ...createEmptyPayrollProvisionSettingsDraft(),
+          id: generateId(),
+          code: generateCode("payrollProvisionSettings"),
+          createdAt: now,
+          updatedAt: now
+        };
+        state.data.payrollProvisionSettings.push(settings);
+        persistCollection("payrollProvisionSettings");
       }
 
       function normalizeCpf(value) {
@@ -11435,6 +11670,757 @@
         renderApp();
       }
 
+
+      function formatNumber(value) {
+        return new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(toDecimal(value));
+      }
+
+      function formatDateTime(value) {
+        if (!value) return "-";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return String(value);
+        return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(date);
+      }
+
+      function getPayrollProvisionSettingsById(id) {
+        return state.data.payrollProvisionSettings.find((item) => item.id === id);
+      }
+
+      function getPayrollProvisionAccountingConfigById(id) {
+        return state.data.payrollProvisionAccountingConfigs.find((item) => item.id === id);
+      }
+
+      function getActivePayrollProvisionSettings(companyName, branchName) {
+        const active = state.data.payrollProvisionSettings.filter((item) => item.status !== "Inativo");
+        return active.find((item) => (!companyName || item.companyName === companyName) && (!branchName || item.branchName === branchName)) || active[0] || createEmptyPayrollProvisionSettingsDraft();
+      }
+
+      function getPayrollProvisionCompetence(companyName, branchName, competence) {
+        return state.data.payrollProvisionCompetences.find((item) => item.companyName === companyName && item.branchName === branchName && item.competence === competence) || null;
+      }
+
+      function ensurePayrollProvisionCompetence(companyName, branchName, competence) {
+        const existing = getPayrollProvisionCompetence(companyName, branchName, competence);
+        if (existing) return existing;
+        const record = {
+          id: generateId(), code: generateCode("payrollProvisionCompetences"), companyName, branchName, competence,
+          status: "Em cálculo", accountedTypes: [], createdAt: payrollNow(), updatedAt: payrollNow(), calculatedAt: "", accountedAt: "", accountingBatchIds: []
+        };
+        state.data.payrollProvisionCompetences.push(record);
+        return record;
+      }
+
+      function payrollProvisionCompetenceBounds(competence) {
+        const [year, month] = String(competence || "").split("-").map(Number);
+        if (!year || !month) return null;
+        return {
+          start: new Date(year, month - 1, 1, 12),
+          end: new Date(year, month, 0, 12),
+          year,
+          month
+        };
+      }
+
+      function payrollProvisionDate(value) {
+        if (!value) return null;
+        const [year, month, day] = String(value).slice(0, 10).split("-").map(Number);
+        if (!year || !month || !day) return null;
+        return new Date(year, month - 1, day, 12);
+      }
+
+      function payrollProvisionDaysInclusive(start, end) {
+        if (!start || !end || end < start) return 0;
+        return Math.floor((end.getTime() - start.getTime()) / 86400000) + 1;
+      }
+
+      function getPayrollProvisionAttendance(employeeId, competence) {
+        const run = [...state.data.payrollRuns]
+          .filter((item) => item.competence === competence)
+          .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")))[0];
+        const row = run?.attendanceInputs?.find((item) => item.employeeId === employeeId);
+        return { absenceDays: Math.max(0, toDecimal(row?.absenceDays)), workDays: Math.max(0, toDecimal(row?.workDays)) };
+      }
+
+      function getPayrollSalaryForCompetence(employee, competence) {
+        const bounds = payrollProvisionCompetenceBounds(competence);
+        if (!bounds) return roundCurrency(toDecimal(employee?.salaryBase));
+        const history = state.data.payrollSalaryHistory
+          .filter((item) => item.employeeId === employee.id && item.status !== "Inativo" && (!item.effectiveDate || payrollProvisionDate(item.effectiveDate) <= bounds.end))
+          .sort((a, b) => {
+            const dateCompare = String(b.effectiveDate || "").localeCompare(String(a.effectiveDate || ""));
+            return dateCompare || String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""));
+          });
+        return roundCurrency(toDecimal(history[0]?.salaryBase ?? employee.salaryBase));
+      }
+
+      function payrollProvisionQualifiesMonth(employee, monthStart, monthEnd, competence) {
+        const admission = payrollProvisionDate(employee.admissionDate) || monthStart;
+        const termination = payrollProvisionDate(employee.terminationDate);
+        const effectiveStart = admission > monthStart ? admission : monthStart;
+        const effectiveEnd = termination && termination < monthEnd ? termination : monthEnd;
+        let serviceDays = payrollProvisionDaysInclusive(effectiveStart, effectiveEnd);
+        const target = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, "0")}`;
+        if (target === competence) {
+          serviceDays -= getPayrollProvisionAttendance(employee.id, competence).absenceDays;
+        }
+        return serviceDays >= 15;
+      }
+
+      function calculatePayrollProvisionAvos(employee, competence, kind) {
+        const bounds = payrollProvisionCompetenceBounds(competence);
+        const admission = payrollProvisionDate(employee.admissionDate);
+        if (!bounds || !admission || admission > bounds.end) return 0;
+        const termination = payrollProvisionDate(employee.terminationDate);
+        const calculationEnd = termination && termination < bounds.end ? termination : bounds.end;
+        let periodStart;
+        if (kind === "thirteenth") {
+          periodStart = new Date(bounds.year, 0, 1, 12);
+          if (admission > periodStart) periodStart = admission;
+        } else {
+          let anniversaryYear = bounds.year;
+          let anniversary = new Date(anniversaryYear, admission.getMonth(), admission.getDate(), 12);
+          if (anniversary > bounds.end) anniversary = new Date(anniversaryYear - 1, admission.getMonth(), admission.getDate(), 12);
+          periodStart = anniversary < admission ? admission : anniversary;
+        }
+        if (calculationEnd < periodStart) return 0;
+        let cursor = new Date(periodStart.getFullYear(), periodStart.getMonth(), 1, 12);
+        const lastMonth = new Date(calculationEnd.getFullYear(), calculationEnd.getMonth(), 1, 12);
+        let avos = 0;
+        while (cursor <= lastMonth && avos < 12) {
+          const monthStart = new Date(cursor.getFullYear(), cursor.getMonth(), 1, 12);
+          const monthEnd = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0, 12);
+          if (payrollProvisionQualifiesMonth(employee, monthStart, monthEnd, competence)) avos += 1;
+          cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1, 12);
+        }
+        return Math.min(12, avos);
+      }
+
+      function calculateVacationProvision(salaryBase, avos) {
+        const vacationValue = toDecimal(salaryBase) * Math.max(0, Math.min(12, toDecimal(avos))) / 12;
+        const oneThird = vacationValue / 3;
+        return {
+          vacationValue: roundCurrency(vacationValue),
+          oneThird: roundCurrency(oneThird),
+          total: roundCurrency(vacationValue + oneThird)
+        };
+      }
+
+      function calculateThirteenthProvision(salaryBase, avos) {
+        return roundCurrency(toDecimal(salaryBase) * Math.max(0, Math.min(12, toDecimal(avos))) / 12);
+      }
+
+      function calculateProvisionCharges(baseValue, settings) {
+        const charge = (enabled, rate) => enabled ? roundCurrency(toDecimal(baseValue) * toDecimal(rate) / 100) : 0;
+        return {
+          inss: charge(settings.inssCompanyEnabled, settings.inssCompanyRate),
+          thirdParty: charge(settings.thirdPartyEnabled, settings.thirdPartyRate),
+          rat: charge(settings.ratEnabled, settings.ratRate),
+          fgts: charge(settings.fgtsEnabled, settings.fgtsRate)
+        };
+      }
+
+      function getPreviousPayrollProvisionRecord(employeeId, companyName, branchName, competence) {
+        return [...state.data.payrollProvisions]
+          .filter((item) => item.schemaVersion === 2 && item.employeeId === employeeId && item.companyName === companyName && item.branchName === branchName && item.competence < competence && item.status === "Contabilizada")
+          .sort((a, b) => String(b.competence).localeCompare(String(a.competence)))[0] || null;
+      }
+
+      function calculatePayrollProvisionMovements(balances, previousBalances) {
+        return PAYROLL_PROVISION_COMPONENTS.reduce((result, component) => {
+          result[component.key] = roundCurrency(toDecimal(balances?.[component.key]) - toDecimal(previousBalances?.[component.key]));
+          return result;
+        }, {});
+      }
+
+      function buildPayrollProvisionRecord(employee, competence, settings, existing) {
+        const salaryBase = getPayrollSalaryForCompetence(employee, competence);
+        const vacationAvos = calculatePayrollProvisionAvos(employee, competence, "vacation");
+        const thirteenthAvos = calculatePayrollProvisionAvos(employee, competence, "thirteenth");
+        const vacation = calculateVacationProvision(salaryBase, vacationAvos);
+        const thirteenth = calculateThirteenthProvision(salaryBase, thirteenthAvos);
+        const vacationCharges = calculateProvisionCharges(vacation.total, settings);
+        const thirteenthCharges = calculateProvisionCharges(thirteenth, settings);
+        const adjustments = {
+          vacation: roundCurrency(toDecimal(existing?.adjustments?.vacation)),
+          thirteenth: roundCurrency(toDecimal(existing?.adjustments?.thirteenth))
+        };
+        const payments = {
+          vacation: roundCurrency(toDecimal(existing?.payments?.vacation)),
+          thirteenth: roundCurrency(toDecimal(existing?.payments?.thirteenth))
+        };
+        const balances = {
+          vacation: roundCurrency(vacation.total + adjustments.vacation - payments.vacation),
+          vacationInss: vacationCharges.inss,
+          vacationThirdParty: vacationCharges.thirdParty,
+          vacationRat: vacationCharges.rat,
+          vacationFgts: vacationCharges.fgts,
+          thirteenth: roundCurrency(thirteenth + adjustments.thirteenth - payments.thirteenth),
+          thirteenthInss: thirteenthCharges.inss,
+          thirteenthThirdParty: thirteenthCharges.thirdParty,
+          thirteenthRat: thirteenthCharges.rat,
+          thirteenthFgts: thirteenthCharges.fgts
+        };
+        const previous = getPreviousPayrollProvisionRecord(employee.id, settings.companyName, settings.branchName, competence);
+        const previousAccounted = previous?.balances || {};
+        const accountingBalances = {
+          ...balances,
+          vacation: roundCurrency(vacation.total + adjustments.vacation),
+          thirteenth: roundCurrency(thirteenth + adjustments.thirteenth)
+        };
+        const movements = calculatePayrollProvisionMovements(accountingBalances, previousAccounted);
+        const netMovements = calculatePayrollProvisionMovements(balances, previousAccounted);
+        const totalVacationCharges = roundCurrency(vacationCharges.inss + vacationCharges.thirdParty + vacationCharges.rat + vacationCharges.fgts);
+        const totalThirteenthCharges = roundCurrency(thirteenthCharges.inss + thirteenthCharges.thirdParty + thirteenthCharges.rat + thirteenthCharges.fgts);
+        const totalVacation = roundCurrency(balances.vacation + totalVacationCharges);
+        const totalThirteenth = roundCurrency(balances.thirteenth + totalThirteenthCharges);
+        const department = getPayrollDepartmentById(employee.departmentId);
+        const costCenter = getCostCenterById(employee.costCenterId);
+        return {
+          id: existing?.id || generateId(), code: existing?.code || generateCode("payrollProvisions"), schemaVersion: 2,
+          companyName: settings.companyName, branchName: settings.branchName, competence, employeeId: employee.id,
+          employeeCode: employee.code, registration: employee.registration, employeeName: employee.name,
+          departmentId: employee.departmentId || "", departmentName: department?.name || "",
+          costCenterId: employee.costCenterId || "", costCenterName: costCenter?.name || "",
+          employeeStatus: employee.status || "Ativo", admissionDate: employee.admissionDate || "", terminationDate: employee.terminationDate || "",
+          salaryBase, vacationAvos, thirteenthAvos,
+          vacationValue: vacation.vacationValue, vacationOneThird: vacation.oneThird, vacationProvision: vacation.total,
+          vacationInss: vacationCharges.inss, vacationThirdParty: vacationCharges.thirdParty, vacationRat: vacationCharges.rat, vacationFgts: vacationCharges.fgts,
+          thirteenthProvision: thirteenth, thirteenthInss: thirteenthCharges.inss, thirteenthThirdParty: thirteenthCharges.thirdParty, thirteenthRat: thirteenthCharges.rat, thirteenthFgts: thirteenthCharges.fgts,
+          totalVacationCharges, totalThirteenthCharges, totalVacation, totalThirteenth, totalGeneral: roundCurrency(totalVacation + totalThirteenth),
+          adjustments, payments, previousAccounted, movements, netMovements, accountingBalances, balances,
+          ratesSnapshot: { inssCompanyRate: toDecimal(settings.inssCompanyRate), thirdPartyRate: toDecimal(settings.thirdPartyRate), ratRate: toDecimal(settings.ratRate), fgtsRate: toDecimal(settings.fgtsRate) },
+          enabledSnapshot: { inssCompanyEnabled: settings.inssCompanyEnabled !== false, thirdPartyEnabled: settings.thirdPartyEnabled !== false, ratEnabled: settings.ratEnabled !== false, fgtsEnabled: settings.fgtsEnabled !== false },
+          status: existing?.status === "Contabilizada" ? "Contabilizada" : "Em cálculo",
+          calculationDate: payrollNow(), createdAt: existing?.createdAt || payrollNow(), updatedAt: payrollNow(),
+          notes: existing?.notes || ""
+        };
+      }
+
+      function getPayrollProvisionEligibleEmployees(filters) {
+        const bounds = payrollProvisionCompetenceBounds(filters.competence);
+        if (!bounds) return [];
+        return state.data.payrollEmployees.filter((employee) => {
+          const admission = payrollProvisionDate(employee.admissionDate);
+          if (!admission || admission > bounds.end) return false;
+          return (filters.departmentId === "all" || employee.departmentId === filters.departmentId)
+            && (filters.costCenterId === "all" || employee.costCenterId === filters.costCenterId)
+            && (filters.employeeId === "all" || employee.id === filters.employeeId)
+            && (filters.employeeStatus === "all" || employee.status === filters.employeeStatus);
+        });
+      }
+
+      function calculatePayrollProvisions() {
+        const filters = state.ui.payrollProvisionFilters;
+        const settings = getActivePayrollProvisionSettings(filters.companyName, filters.branchName);
+        if (!filters.competence || !settings || settings.companyName !== filters.companyName || settings.branchName !== filters.branchName) {
+          notify("error", "Provisões", "Selecione uma empresa/filial com percentuais configurados e informe a competência.");
+          return;
+        }
+        const competenceRecord = getPayrollProvisionCompetence(filters.companyName, filters.branchName, filters.competence);
+        if (competenceRecord?.status === "Contabilizada") {
+          notify("error", "Competência bloqueada", "A competência já foi contabilizada. Estorne e reabra antes de recalcular.");
+          return;
+        }
+        const employees = getPayrollProvisionEligibleEmployees(filters);
+        if (!employees.length) {
+          notify("error", "Provisões", "Nenhum funcionário corresponde aos filtros informados.");
+          return;
+        }
+        const employeeIds = new Set(employees.map((item) => item.id));
+        const preserved = state.data.payrollProvisions.filter((item) => !(item.schemaVersion === 2 && item.companyName === filters.companyName && item.branchName === filters.branchName && item.competence === filters.competence && employeeIds.has(item.employeeId)));
+        const generated = employees.map((employee, index) => {
+          const existing = state.data.payrollProvisions.find((item) => item.schemaVersion === 2 && item.companyName === filters.companyName && item.branchName === filters.branchName && item.competence === filters.competence && item.employeeId === employee.id);
+          const record = buildPayrollProvisionRecord(employee, filters.competence, settings, existing);
+          if (!existing) record.code = payrollCode("payrollProvisions", index);
+          return record;
+        });
+        state.data.payrollProvisions = [...preserved, ...generated];
+        const record = ensurePayrollProvisionCompetence(filters.companyName, filters.branchName, filters.competence);
+        Object.assign(record, { status: "Em cálculo", calculatedAt: payrollNow(), updatedAt: payrollNow() });
+        persistCollection("payrollProvisions");
+        persistCollection("payrollProvisionCompetences");
+        CLOUD.schedulePush(getDataSnapshot());
+        notify("success", "Provisões calculadas", `${generated.length} funcionário(s) calculado(s) individualmente.`);
+        renderApp();
+      }
+
+      function getFilteredPayrollProvisions(filters = state.ui.payrollProvisionFilters) {
+        return state.data.payrollProvisions
+          .filter((item) => item.schemaVersion === 2 && item.companyName === filters.companyName && item.branchName === filters.branchName && item.competence === filters.competence)
+          .filter((item) => filters.departmentId === "all" || item.departmentId === filters.departmentId)
+          .filter((item) => filters.costCenterId === "all" || item.costCenterId === filters.costCenterId)
+          .filter((item) => filters.employeeId === "all" || item.employeeId === filters.employeeId)
+          .filter((item) => filters.employeeStatus === "all" || item.employeeStatus === filters.employeeStatus)
+          .sort((a, b) => String(a.employeeName || "").localeCompare(String(b.employeeName || "")));
+      }
+
+      function summarizePayrollProvisions(records, provisionType = "all") {
+        const summary = records.reduce((result, item) => {
+          result.vacation += toDecimal(item.balances?.vacation);
+          result.vacationCharges += toDecimal(item.totalVacationCharges);
+          result.thirteenth += toDecimal(item.balances?.thirteenth);
+          result.thirteenthCharges += toDecimal(item.totalThirteenthCharges);
+          return result;
+        }, { vacation: 0, vacationCharges: 0, thirteenth: 0, thirteenthCharges: 0, total: 0 });
+        if (provisionType === "vacation") summary.total = summary.vacation;
+        else if (provisionType === "vacationCharges") summary.total = summary.vacationCharges;
+        else if (provisionType === "thirteenth") summary.total = summary.thirteenth;
+        else if (provisionType === "thirteenthCharges") summary.total = summary.thirteenthCharges;
+        else summary.total = summary.vacation + summary.vacationCharges + summary.thirteenth + summary.thirteenthCharges;
+        return summary;
+      }
+
+      function setPayrollProvisionCompetenceCalculated() {
+        const filters = state.ui.payrollProvisionFilters;
+        const competenceRecord = getPayrollProvisionCompetence(filters.companyName, filters.branchName, filters.competence);
+        const records = getFilteredPayrollProvisions({ ...filters, departmentId: "all", costCenterId: "all", employeeId: "all", employeeStatus: "all" });
+        if (!competenceRecord || !records.length) {
+          notify("error", "Fechamento das provisões", "Calcule as provisões antes de marcar a competência como calculada.");
+          return;
+        }
+        if (competenceRecord.status === "Contabilizada") {
+          notify("error", "Fechamento das provisões", "A competência já está contabilizada.");
+          return;
+        }
+        const invalid = records.filter((item) => !Number.isFinite(toDecimal(item.totalGeneral)) || !item.costCenterId || PAYROLL_PROVISION_COMPONENTS.some((component) => toDecimal(item.balances?.[component.key]) < -0.009));
+        if (invalid.length) {
+          notify("error", "Validação", `${invalid.length} funcionário(s) possuem valor inválido, saldo negativo ou centro de custo ausente.`);
+          return;
+        }
+        competenceRecord.status = "Calculada";
+        competenceRecord.calculatedAt = payrollNow();
+        competenceRecord.updatedAt = payrollNow();
+        records.forEach((item) => { item.status = "Calculada"; item.updatedAt = payrollNow(); });
+        persistCollection("payrollProvisionCompetences");
+        persistCollection("payrollProvisions");
+        CLOUD.schedulePush(getDataSnapshot());
+        notify("success", "Competência calculada", "A competência foi conferida e liberada para a prévia contábil.");
+        renderApp();
+      }
+
+      function reopenPayrollProvisionCompetence() {
+        const filters = state.ui.payrollProvisionFilters;
+        const competenceRecord = getPayrollProvisionCompetence(filters.companyName, filters.branchName, filters.competence);
+        if (!competenceRecord) {
+          notify("error", "Reabertura", "Competência de provisões não encontrada.");
+          return;
+        }
+        const activeBatch = state.data.payrollProvisionAccountingBatches.find((item) => item.companyName === filters.companyName && item.branchName === filters.branchName && item.competence === filters.competence && item.status !== "Estornado");
+        if (activeBatch) {
+          notify("error", "Reabertura", "Estorne primeiro os lotes contábeis ativos desta competência.");
+          return;
+        }
+        competenceRecord.status = "Reaberta";
+        competenceRecord.updatedAt = payrollNow();
+        state.data.payrollProvisions.forEach((item) => {
+          if (item.schemaVersion === 2 && item.companyName === filters.companyName && item.branchName === filters.branchName && item.competence === filters.competence) item.status = "Reaberta";
+        });
+        persistCollection("payrollProvisionCompetences");
+        persistCollection("payrollProvisions");
+        notify("success", "Competência reaberta", "Os valores podem ser recalculados novamente.");
+        renderApp();
+      }
+
+      function submitPayrollProvisionSettings(formData) {
+        const id = state.ui.editing.payrollProvisionSettingsId;
+        const previous = getPayrollProvisionSettingsById(id);
+        const record = {
+          id: id || generateId(), code: previous?.code || generateCode("payrollProvisionSettings"),
+          companyName: clean(formData.get("companyName")), branchName: clean(formData.get("branchName")),
+          inssCompanyRate: toDecimal(formData.get("inssCompanyRate")), thirdPartyRate: toDecimal(formData.get("thirdPartyRate")),
+          ratRate: toDecimal(formData.get("ratRate")), fgtsRate: toDecimal(formData.get("fgtsRate")),
+          inssCompanyEnabled: formData.get("inssCompanyEnabled") === "on", thirdPartyEnabled: formData.get("thirdPartyEnabled") === "on",
+          ratEnabled: formData.get("ratEnabled") === "on", fgtsEnabled: formData.get("fgtsEnabled") === "on",
+          costCenterRule: formData.get("costCenterRule") || "current", status: formData.get("status") || "Ativo",
+          createdAt: previous?.createdAt || payrollNow(), updatedAt: payrollNow()
+        };
+        if (!record.companyName || !record.branchName || [record.inssCompanyRate, record.thirdPartyRate, record.ratRate, record.fgtsRate].some((value) => value < 0 || value > 100)) {
+          notify("error", "Configuração das provisões", "Informe empresa, filial e percentuais válidos entre 0% e 100%.");
+          return;
+        }
+        if (state.data.payrollProvisionSettings.some((item) => item.id !== record.id && item.companyName === record.companyName && item.branchName === record.branchName)) {
+          notify("error", "Configuração duplicada", "Já existe uma configuração para esta empresa e filial.");
+          return;
+        }
+        upsertRecord("payrollProvisionSettings", record);
+        state.ui.editing.payrollProvisionSettingsId = null;
+        state.ui.payrollProvisionSettingsDraft = createEmptyPayrollProvisionSettingsDraft();
+        state.ui.payrollProvisionFilters.companyName = record.companyName;
+        state.ui.payrollProvisionFilters.branchName = record.branchName;
+        notify("success", "Configuração das provisões", "Percentuais e critérios salvos com sucesso.");
+        renderApp();
+      }
+
+      function deletePayrollProvisionSettings(id) {
+        const settings = getPayrollProvisionSettingsById(id);
+        if (!settings) return;
+        const used = state.data.payrollProvisions.some((item) => item.schemaVersion === 2 && item.companyName === settings.companyName && item.branchName === settings.branchName);
+        if (used) {
+          notify("error", "Configuração em uso", "Não é possível excluir uma configuração já utilizada em cálculos. Inative-a.");
+          return;
+        }
+        deleteRecord("payrollProvisionSettings", id, "Configuração das provisões", "Configuração excluída com sucesso.");
+      }
+
+      function submitPayrollProvisionAdjustment(formData) {
+        const id = formData.get("id");
+        const record = state.data.payrollProvisions.find((item) => item.id === id && item.schemaVersion === 2);
+        if (!record) return;
+        const competenceRecord = getPayrollProvisionCompetence(record.companyName, record.branchName, record.competence);
+        if (competenceRecord?.status === "Contabilizada") {
+          notify("error", "Competência bloqueada", "Estorne e reabra a competência antes de informar ajustes ou baixas.");
+          return;
+        }
+        record.adjustments = { vacation: roundCurrency(toDecimal(formData.get("vacationAdjustment"))), thirteenth: roundCurrency(toDecimal(formData.get("thirteenthAdjustment"))) };
+        record.payments = { vacation: roundCurrency(toDecimal(formData.get("vacationPayment"))), thirteenth: roundCurrency(toDecimal(formData.get("thirteenthPayment"))) };
+        record.notes = clean(formData.get("notes"));
+        const employee = getPayrollEmployeeById(record.employeeId);
+        const settings = getActivePayrollProvisionSettings(record.companyName, record.branchName);
+        const recalculated = buildPayrollProvisionRecord(employee, record.competence, settings, record);
+        Object.assign(record, recalculated, { status: competenceRecord?.status === "Calculada" ? "Calculada" : "Em cálculo", updatedAt: payrollNow() });
+        if (competenceRecord && competenceRecord.status === "Calculada") competenceRecord.status = "Em cálculo";
+        persistCollection("payrollProvisions");
+        persistCollection("payrollProvisionCompetences");
+        notify("success", "Memória de cálculo", "Ajustes e baixas atualizados. Confira e marque a competência como calculada novamente.");
+        renderApp();
+      }
+
+      function renderPayrollProvisionSettingsForm() {
+        const draft = state.ui.payrollProvisionSettingsDraft;
+        return `<form class="card" data-form="payroll-provision-settings"><div class="section-head"><div><h3>Percentuais por empresa</h3><p>Os percentuais são gravados na competência calculada e podem ser ativados ou desativados.</p></div></div><div class="form-grid">${renderPayrollInput("companyName", "Empresa", draft.companyName, "Empresa Principal")}${renderPayrollInput("branchName", "Filial", draft.branchName, "Matriz")}${renderPayrollInput("inssCompanyRate", "INSS Empresa (%)", draft.inssCompanyRate, "20", "number")}${renderPayrollInput("thirdPartyRate", "Terceiros (%)", draft.thirdPartyRate, "5,8", "number")}${renderPayrollInput("ratRate", "RAT (%)", draft.ratRate, "2", "number")}${renderPayrollInput("fgtsRate", "FGTS (%)", draft.fgtsRate, "8", "number")}${renderPayrollSelect("costCenterRule", "Critério de centro de custo", draft.costCenterRule, [["current", "Centro de custo atual do funcionário"], ["payroll", "Centro de custo da folha"], ["default", "Centro de custo padrão da empresa"]])}${renderPayrollSelect("status", "Status", draft.status, [["Ativo", "Ativo"], ["Inativo", "Inativo"]])}</div><div class="split-grid" style="margin-top:14px;"><label class="badge"><input type="checkbox" name="inssCompanyEnabled" ${draft.inssCompanyEnabled ? "checked" : ""}> INSS Empresa ativo</label><label class="badge"><input type="checkbox" name="thirdPartyEnabled" ${draft.thirdPartyEnabled ? "checked" : ""}> Terceiros ativo</label><label class="badge"><input type="checkbox" name="ratEnabled" ${draft.ratEnabled ? "checked" : ""}> RAT ativo</label><label class="badge"><input type="checkbox" name="fgtsEnabled" ${draft.fgtsEnabled ? "checked" : ""}> FGTS ativo</label></div>${renderPayrollFormActions("reset-payroll-provision-settings")}</form>`;
+      }
+
+      function renderPayrollProvisionFiltersForm() {
+        const filters = state.ui.payrollProvisionFilters;
+        const companies = [...new Set(state.data.payrollProvisionSettings.map((item) => item.companyName).filter(Boolean))];
+        const branches = [...new Set(state.data.payrollProvisionSettings.map((item) => item.branchName).filter(Boolean))];
+        return `<form class="card" data-form="payroll-provision-filters"><div class="section-head"><div><h3>Cálculo e conferência</h3><p>Selecione os filtros, calcule individualmente e confira a memória antes da contabilização.</p></div></div><div class="form-grid">${renderPayrollSelect("companyName", "Empresa", filters.companyName, companies.map((item) => [item, item]))}${renderPayrollSelect("branchName", "Filial", filters.branchName, branches.map((item) => [item, item]))}${renderPayrollInput("competence", "Competência", filters.competence, "2026-07", "month")}${renderPayrollSelect("departmentId", "Departamento", filters.departmentId, [["all", "Todos"], ...state.data.payrollDepartments.map((item) => [item.id, `${item.code} - ${item.name}`])])}${renderPayrollSelect("costCenterId", "Centro de custo", filters.costCenterId, [["all", "Todos"], ...state.data.costCenters.map((item) => [item.id, `${item.code} - ${item.name}`])])}${renderPayrollSelect("employeeId", "Funcionário", filters.employeeId, [["all", "Todos"], ...state.data.payrollEmployees.map((item) => [item.id, `${item.registration || item.code} - ${item.name}`])])}${renderPayrollSelect("provisionType", "Tipo de provisão", filters.provisionType, PAYROLL_PROVISION_TYPES)}${renderPayrollSelect("employeeStatus", "Situação do funcionário", filters.employeeStatus, [["all", "Todas"], ...PAYROLL_EMPLOYEE_STATUS.map((item) => [item, item])])}</div><div class="form-actions"><button class="primary-button" type="button" data-action="payroll-calculate-provisions">Calcular / recalcular</button><button class="secondary-button" type="button" data-action="payroll-set-provision-calculated">Marcar como calculada</button><button class="ghost-button" type="button" data-action="payroll-reopen-provision-competence">Reabrir</button><button class="ghost-button" type="button" data-action="export-payroll-provisions">Exportar CSV</button><button class="ghost-button" type="button" data-action="reset-payroll-provision-filters">Limpar filtros</button></div></form>`;
+      }
+
+      function renderPayrollProvisionsPanel() {
+        const filters = state.ui.payrollProvisionFilters;
+        const records = getFilteredPayrollProvisions(filters);
+        const summary = summarizePayrollProvisions(records, filters.provisionType);
+        const competenceRecord = getPayrollProvisionCompetence(filters.companyName, filters.branchName, filters.competence);
+        const selected = state.data.payrollProvisions.find((item) => item.id === state.ui.payrollSelectedProvisionId && item.schemaVersion === 2);
+        return `<div class="split-grid">${renderPayrollProvisionSettingsForm()}${renderPayrollProvisionFiltersForm()}</div><section class="card"><div class="section-head"><div><h3>Resumo das provisões</h3><p>${escapeHtml(filters.companyName)} · ${escapeHtml(filters.branchName)} · ${escapeHtml(filters.competence)}</p></div><span class="status-highlight ${competenceRecord?.status === "Contabilizada" ? "ok" : "warn"}">${escapeHtml(competenceRecord?.status || "Não calculada")}</span></div><div class="stats-grid"><article class="stats-card"><small>Provisão de férias</small><strong>${formatCurrency(summary.vacation)}</strong><span>Inclui o adicional de 1/3 e ajustes/baixas.</span></article><article class="stats-card"><small>Encargos sobre férias</small><strong>${formatCurrency(summary.vacationCharges)}</strong><span>INSS, Terceiros, RAT e FGTS habilitados.</span></article><article class="stats-card"><small>Provisão de 13º</small><strong>${formatCurrency(summary.thirteenth)}</strong><span>Calculada pelos avos adquiridos.</span></article><article class="stats-card"><small>Encargos sobre o 13º</small><strong>${formatCurrency(summary.thirteenthCharges)}</strong><span>Percentuais registrados na memória.</span></article><article class="stats-card"><small>Total geral</small><strong>${formatCurrency(summary.total)}</strong><span>${records.length} funcionário(s) na conferência.</span></article></div></section><section class="table-card"><div class="table-toolbar"><div><h4>Conferência individual por funcionário</h4><p class="page-subtitle">A tabela pode ser rolada horizontalmente para visualizar todas as bases e encargos.</p></div></div><div class="table-scroll"><table style="min-width:2600px"><thead><tr><th>Código</th><th>Matrícula</th><th>Funcionário</th><th>Departamento</th><th>Centro de custo</th><th>Salário</th><th>Avos férias</th><th>Provisão férias</th><th>INSS férias</th><th>Terceiros férias</th><th>RAT férias</th><th>FGTS férias</th><th>Total férias</th><th>Avos 13º</th><th>Provisão 13º</th><th>INSS 13º</th><th>Terceiros 13º</th><th>RAT 13º</th><th>FGTS 13º</th><th>Total 13º</th><th>Total geral</th><th>Status</th><th>Ações</th></tr></thead><tbody>${records.length ? records.map((item) => `<tr><td class="mono">${escapeHtml(item.employeeCode || item.code)}</td><td>${escapeHtml(item.registration || "-")}</td><td><strong>${escapeHtml(item.employeeName)}</strong><div class="table-muted">${escapeHtml(item.employeeStatus)}</div></td><td>${escapeHtml(item.departmentName || "-")}</td><td>${escapeHtml(item.costCenterName || "-")}</td><td class="mono">${formatCurrency(item.salaryBase)}</td><td>${item.vacationAvos}/12</td><td>${formatCurrency(item.balances?.vacation)}</td><td>${formatCurrency(item.vacationInss)}</td><td>${formatCurrency(item.vacationThirdParty)}</td><td>${formatCurrency(item.vacationRat)}</td><td>${formatCurrency(item.vacationFgts)}</td><td><strong>${formatCurrency(item.totalVacation)}</strong></td><td>${item.thirteenthAvos}/12</td><td>${formatCurrency(item.balances?.thirteenth)}</td><td>${formatCurrency(item.thirteenthInss)}</td><td>${formatCurrency(item.thirteenthThirdParty)}</td><td>${formatCurrency(item.thirteenthRat)}</td><td>${formatCurrency(item.thirteenthFgts)}</td><td><strong>${formatCurrency(item.totalThirteenth)}</strong></td><td><strong>${formatCurrency(item.totalGeneral)}</strong></td><td>${renderStatusBadge(item.status)}</td><td><button class="action-chip" type="button" data-action="payroll-view-provision" data-id="${item.id}">Memória</button></td></tr>`).join("") : renderPayrollEmptyRow(23, "Nenhuma provisão calculada para os filtros selecionados.")}</tbody></table></div></section>${selected ? renderPayrollProvisionDetail(selected) : ""}<section class="table-card"><div class="table-toolbar"><h4>Configurações de percentuais cadastradas</h4></div><div class="table-scroll"><table><thead><tr><th>Empresa</th><th>Filial</th><th>INSS</th><th>Terceiros</th><th>RAT</th><th>FGTS</th><th>Status</th><th>Ações</th></tr></thead><tbody>${state.data.payrollProvisionSettings.map((item) => `<tr><td>${escapeHtml(item.companyName)}</td><td>${escapeHtml(item.branchName)}</td><td>${item.inssCompanyEnabled ? `${formatNumber(item.inssCompanyRate)}%` : "Inativo"}</td><td>${item.thirdPartyEnabled ? `${formatNumber(item.thirdPartyRate)}%` : "Inativo"}</td><td>${item.ratEnabled ? `${formatNumber(item.ratRate)}%` : "Inativo"}</td><td>${item.fgtsEnabled ? `${formatNumber(item.fgtsRate)}%` : "Inativo"}</td><td>${renderStatusBadge(item.status)}</td><td><div class="table-actions"><button class="action-chip" type="button" data-action="edit-payroll-provision-settings" data-id="${item.id}">Editar</button><button class="action-chip danger" type="button" data-action="delete-payroll-provision-settings" data-id="${item.id}">Excluir</button></div></td></tr>`).join("")}</tbody></table></div></section>`;
+      }
+
+      function renderPayrollProvisionDetail(record) {
+        const editable = getPayrollProvisionCompetence(record.companyName, record.branchName, record.competence)?.status !== "Contabilizada";
+        const movementRows = PAYROLL_PROVISION_COMPONENTS.map((component) => {
+          const payment = component.key === "vacation" ? record.payments?.vacation : component.key === "thirteenth" ? record.payments?.thirteenth : 0;
+          return `<tr><td>${escapeHtml(component.label)}</td><td>${formatCurrency(record.previousAccounted?.[component.key])}</td><td>${formatCurrency(record.movements?.[component.key])}</td><td>${formatCurrency(payment)}</td><td>${formatCurrency(record.netMovements?.[component.key] ?? record.movements?.[component.key])}</td><td><strong>${formatCurrency(record.balances?.[component.key])}</strong></td></tr>`;
+        }).join("");
+        return `<section class="card"><div class="section-head"><div><h3>Memória de cálculo — ${escapeHtml(record.employeeName)}</h3><p>${escapeHtml(record.registration || record.employeeCode)} · ${escapeHtml(record.competence)} · ${escapeHtml(record.companyName)} / ${escapeHtml(record.branchName)}</p></div><button class="ghost-button" type="button" data-action="payroll-close-provision-detail">Fechar memória</button></div><div class="split-grid"><div class="subtle-panel"><h4>Férias</h4><p><strong>Base salarial:</strong> ${formatCurrency(record.salaryBase)}<br><strong>Avos:</strong> ${record.vacationAvos}/12<br><strong>Fórmula:</strong> salário × avos ÷ 12 + adicional de 1/3<br><strong>Valor de férias:</strong> ${formatCurrency(record.vacationValue)}<br><strong>Adicional de 1/3:</strong> ${formatCurrency(record.vacationOneThird)}<br><strong>Provisão antes de ajustes:</strong> ${formatCurrency(record.vacationProvision)}</p></div><div class="subtle-panel"><h4>13º salário</h4><p><strong>Base salarial:</strong> ${formatCurrency(record.salaryBase)}<br><strong>Avos:</strong> ${record.thirteenthAvos}/12<br><strong>Fórmula:</strong> salário × avos ÷ 12<br><strong>Provisão antes de ajustes:</strong> ${formatCurrency(record.thirteenthProvision)}</p></div></div><div class="subtle-panel"><h4>Percentuais utilizados</h4><p>INSS Empresa: ${formatNumber(record.ratesSnapshot?.inssCompanyRate)}% · Terceiros: ${formatNumber(record.ratesSnapshot?.thirdPartyRate)}% · RAT: ${formatNumber(record.ratesSnapshot?.ratRate)}% · FGTS: ${formatNumber(record.ratesSnapshot?.fgtsRate)}%</p></div><div class="table-card"><div class="table-toolbar"><h4>Saldo anterior, movimentação e saldo final</h4></div><div class="table-scroll"><table><thead><tr><th>Componente</th><th>Contabilizado anteriormente</th><th>Provisão/ajuste da competência</th><th>Baixa/pagamento</th><th>Variação líquida</th><th>Saldo final</th></tr></thead><tbody>${movementRows}</tbody></table></div></div><form class="subtle-panel" data-form="payroll-provision-adjustment"><input type="hidden" name="id" value="${record.id}"><h4>Ajustes e baixas</h4><div class="form-grid">${renderPayrollInput("vacationAdjustment", "Ajuste de férias", record.adjustments?.vacation || "", "0,00", "number")}${renderPayrollInput("vacationPayment", "Baixa/pagamento de férias", record.payments?.vacation || "", "0,00", "number")}${renderPayrollInput("thirteenthAdjustment", "Ajuste de 13º", record.adjustments?.thirteenth || "", "0,00", "number")}${renderPayrollInput("thirteenthPayment", "Baixa/pagamento de 13º", record.payments?.thirteenth || "", "0,00", "number")}${renderPayrollTextarea("notes", "Observações da memória", record.notes || "", "Motivo do ajuste ou baixa")}</div><div class="form-actions"><button class="primary-button" type="submit" ${editable ? "" : "disabled"}>Salvar memória</button></div></form></section>`;
+      }
+
+      function submitPayrollProvisionAccountingConfig(formData) {
+        const id = state.ui.editing.payrollProvisionAccountingConfigId;
+        const previous = getPayrollProvisionAccountingConfigById(id);
+        const record = {
+          ...createEmptyPayrollProvisionAccountingConfigDraft(previous),
+          id: id || generateId(), code: previous?.code || generateCode("payrollProvisionAccountingConfigs"),
+          companyName: clean(formData.get("companyName")), branchName: clean(formData.get("branchName")),
+          departmentId: formData.get("departmentId") || "", costCenterId: formData.get("costCenterId") || "", status: formData.get("status") || "Ativo",
+          createdAt: previous?.createdAt || payrollNow(), updatedAt: payrollNow()
+        };
+        [...PAYROLL_PROVISION_COMPONENTS.flatMap((item) => [item.debitField, item.creditField]), "vacationPaymentAccountId", "thirteenthPaymentAccountId"].forEach((field) => { record[field] = formData.get(field) || ""; });
+        if (!record.companyName || !record.branchName) {
+          notify("error", "Contas das provisões", "Informe empresa e filial.");
+          return;
+        }
+        upsertRecord("payrollProvisionAccountingConfigs", record);
+        state.ui.editing.payrollProvisionAccountingConfigId = null;
+        state.ui.payrollProvisionAccountingConfigDraft = createEmptyPayrollProvisionAccountingConfigDraft();
+        notify("success", "Contas das provisões", "Configuração contábil salva com sucesso.");
+        renderApp();
+      }
+
+      function renderProvisionAccountSelect(name, value) {
+        const options = getSelectableChartAccounts().map((item) => `<option value="${item.id}" ${value === item.id ? "selected" : ""}>${escapeHtml(item.code)} - ${escapeHtml(item.name)}</option>`).join("");
+        return `<select name="${name}"><option value="">Selecione</option>${options}</select>`;
+      }
+
+      function renderPayrollProvisionAccountingConfigForm() {
+        const draft = state.ui.payrollProvisionAccountingConfigDraft;
+        const rows = PAYROLL_PROVISION_COMPONENTS.map((component) => `<tr><td><strong>${escapeHtml(component.label)}</strong></td><td>${renderProvisionAccountSelect(component.debitField, draft[component.debitField])}</td><td>${renderProvisionAccountSelect(component.creditField, draft[component.creditField])}</td></tr>`).join("");
+        return `<form class="card" data-form="payroll-provision-account-config"><div class="section-head"><div><h3>Configuração das contas contábeis</h3><p>Uma configuração genérica pode ser refinada por departamento e centro de custo.</p></div></div><div class="form-grid">${renderPayrollInput("companyName", "Empresa", draft.companyName, "Empresa Principal")}${renderPayrollInput("branchName", "Filial", draft.branchName, "Matriz")}${renderPayrollSelect("departmentId", "Departamento", draft.departmentId, [["", "Todos"], ...state.data.payrollDepartments.map((item) => [item.id, `${item.code} - ${item.name}`])])}${renderPayrollSelect("costCenterId", "Centro de custo", draft.costCenterId, [["", "Todos"], ...state.data.costCenters.map((item) => [item.id, `${item.code} - ${item.name}`])])}${renderPayrollSelect("status", "Status", draft.status, [["Ativo", "Ativo"], ["Inativo", "Inativo"]])}</div><div class="table-card" style="margin-top:16px"><div class="table-scroll"><table><thead><tr><th>Componente</th><th>Conta de despesa (débito)</th><th>Conta da provisão/encargo (crédito)</th></tr></thead><tbody>${rows}</tbody></table></div></div><div class="form-grid" style="margin-top:14px">${renderPayrollSelect("vacationPaymentAccountId", "Conta de férias a pagar (baixa)", draft.vacationPaymentAccountId, getSelectableChartAccounts().map((item) => [item.id, `${item.code} - ${item.name}`]), "Opcional")}${renderPayrollSelect("thirteenthPaymentAccountId", "Conta de 13º a pagar (baixa)", draft.thirteenthPaymentAccountId, getSelectableChartAccounts().map((item) => [item.id, `${item.code} - ${item.name}`]), "Opcional")}</div>${renderPayrollFormActions("reset-payroll-provision-account-config")}</form>`;
+      }
+
+      function findPayrollProvisionAccountingConfig(record, companyName, branchName) {
+        return state.data.payrollProvisionAccountingConfigs
+          .filter((item) => item.status !== "Inativo" && item.companyName === companyName && item.branchName === branchName)
+          .filter((item) => !item.departmentId || item.departmentId === record.departmentId)
+          .filter((item) => !item.costCenterId || item.costCenterId === record.costCenterId)
+          .sort((a, b) => (Number(!!b.departmentId) + Number(!!b.costCenterId)) - (Number(!!a.departmentId) + Number(!!a.costCenterId)))[0] || null;
+      }
+
+      function payrollProvisionTypesOverlap(left, right) {
+        if (left === "all" || right === "all") return true;
+        return left === right;
+      }
+
+      function getPayrollProvisionActiveBatch(companyName, branchName, competence, provisionType) {
+        return state.data.payrollProvisionAccountingBatches.find((item) => item.companyName === companyName && item.branchName === branchName && item.competence === competence && item.status !== "Estornado" && payrollProvisionTypesOverlap(item.provisionType, provisionType));
+      }
+
+      function payrollProvisionGroupingKey(line, grouping) {
+        if (grouping === "employee") return `${line.employeeIds[0]}|${line.componentKey}|${line.debitAccountId}|${line.creditAccountId}`;
+        if (grouping === "department") return `${line.departmentId}|${line.componentKey}|${line.debitAccountId}|${line.creditAccountId}`;
+        if (grouping === "costCenter") return `${line.costCenterId}|${line.componentKey}|${line.debitAccountId}|${line.creditAccountId}`;
+        if (grouping === "branch") return `${line.branchName}|${line.componentKey}|${line.debitAccountId}|${line.creditAccountId}`;
+        if (grouping === "account") return `${line.debitAccountId}|${line.creditAccountId}|${line.componentKey}`;
+        return `${line.componentKey}|${line.debitAccountId}|${line.creditAccountId}`;
+      }
+
+      function buildPayrollProvisionAccountingPreview() {
+        const draft = state.ui.payrollProvisionAccountingDraft;
+        const competenceRecord = getPayrollProvisionCompetence(draft.companyName, draft.branchName, draft.competence);
+        const errors = [];
+        if (!competenceRecord || competenceRecord.status !== "Calculada") errors.push("A competência precisa estar com status Calculada.");
+        if (getPayrollProvisionActiveBatch(draft.companyName, draft.branchName, draft.competence, draft.provisionType)) errors.push("Já existe contabilização ativa que se sobrepõe ao tipo selecionado.");
+        const records = state.data.payrollProvisions.filter((item) => item.schemaVersion === 2 && item.companyName === draft.companyName && item.branchName === draft.branchName && item.competence === draft.competence);
+        if (!records.length) errors.push("Não existem funcionários com provisões calculadas nesta competência.");
+        const components = PAYROLL_PROVISION_COMPONENTS.filter((item) => draft.provisionType === "all" || item.group === draft.provisionType);
+        const rawLines = [];
+        records.forEach((record) => {
+          if (!record.costCenterId || !getCostCenterById(record.costCenterId)) {
+            errors.push(`${record.employeeName}: centro de custo não cadastrado.`);
+            return;
+          }
+          const config = findPayrollProvisionAccountingConfig(record, draft.companyName, draft.branchName);
+          if (!config) {
+            errors.push(`${record.employeeName}: configuração contábil não encontrada.`);
+            return;
+          }
+          components.forEach((component) => {
+            const movement = roundCurrency(toDecimal(record.movements?.[component.key]));
+            if (Math.abs(movement) < 0.005) return;
+            const normalDebit = config[component.debitField];
+            const normalCredit = config[component.creditField];
+            const debitAccountId = movement >= 0 ? normalDebit : normalCredit;
+            const creditAccountId = movement >= 0 ? normalCredit : normalDebit;
+            if (!debitAccountId || !creditAccountId || !getChartAccountById(debitAccountId) || !getChartAccountById(creditAccountId)) {
+              errors.push(`${record.employeeName}: contas ausentes para ${component.label}.`);
+              return;
+            }
+            const reversal = movement < 0;
+            const competenceLabel = String(draft.competence).split("-").reverse().join("/");
+            const baseHistory = draft.history || `${component.label} – competência ${competenceLabel}`;
+            rawLines.push({
+              componentKey: component.key, provisionGroup: component.group, provisionLabel: component.label,
+              debitAccountId, creditAccountId, amount: Math.abs(movement), costCenterId: record.costCenterId,
+              departmentId: record.departmentId || "", branchName: record.branchName, employeeIds: [record.employeeId],
+              history: `${reversal ? "Reversão de " : ""}${baseHistory}${draft.grouping === "employee" ? ` - ${record.registration || record.employeeName}` : ""}`,
+              reversal
+            });
+          });
+          const competenceLabel = String(draft.competence).split("-").reverse().join("/");
+          const paymentDefinitions = [
+            { enabled: draft.provisionType === "all" || draft.provisionType === "vacation", amount: toDecimal(record.payments?.vacation), key: "vacationPayment", group: "vacation", label: "Baixa da provisão de férias", liabilityAccountId: config.vacationLiabilityAccountId, paymentAccountId: config.vacationPaymentAccountId },
+            { enabled: draft.provisionType === "all" || draft.provisionType === "thirteenth", amount: toDecimal(record.payments?.thirteenth), key: "thirteenthPayment", group: "thirteenth", label: "Baixa da provisão de 13º salário", liabilityAccountId: config.thirteenthLiabilityAccountId, paymentAccountId: config.thirteenthPaymentAccountId }
+          ];
+          paymentDefinitions.forEach((payment) => {
+            if (!payment.enabled || payment.amount <= 0) return;
+            if (!payment.liabilityAccountId || !payment.paymentAccountId || !getChartAccountById(payment.liabilityAccountId) || !getChartAccountById(payment.paymentAccountId)) {
+              errors.push(`${record.employeeName}: contas de baixa ausentes para ${payment.label}.`);
+              return;
+            }
+            rawLines.push({
+              componentKey: payment.key, provisionGroup: payment.group, provisionLabel: payment.label,
+              debitAccountId: payment.liabilityAccountId, creditAccountId: payment.paymentAccountId, amount: roundCurrency(payment.amount),
+              costCenterId: record.costCenterId, departmentId: record.departmentId || "", branchName: record.branchName, employeeIds: [record.employeeId],
+              history: `${payment.label} – competência ${competenceLabel}${draft.grouping === "employee" ? ` - ${record.registration || record.employeeName}` : ""}`,
+              reversal: false
+            });
+          });
+        });
+        const grouped = new Map();
+        rawLines.forEach((line) => {
+          const key = payrollProvisionGroupingKey(line, draft.grouping);
+          const current = grouped.get(key);
+          if (!current) grouped.set(key, { ...line, employeeIds: [...line.employeeIds] });
+          else {
+            current.amount = roundCurrency(current.amount + line.amount);
+            current.employeeIds = [...new Set([...current.employeeIds, ...line.employeeIds])];
+            if (draft.grouping !== "employee") current.history = draft.history || `${line.reversal ? "Reversão de " : ""}${line.provisionLabel} – competência ${String(draft.competence).split("-").reverse().join("/")}`;
+          }
+        });
+        const lines = [...grouped.values()].map((line, index) => ({ ...line, lineNumber: index + 1, amount: roundCurrency(line.amount) }));
+        const totalDebit = roundCurrency(lines.reduce((sum, line) => sum + line.amount, 0));
+        const totalCredit = roundCurrency(lines.reduce((sum, line) => sum + line.amount, 0));
+        const difference = roundCurrency(totalDebit - totalCredit);
+        if (!lines.length && !errors.length) errors.push("A movimentação da competência é zero para o tipo selecionado.");
+        if (Math.abs(difference) > 0.009) errors.push("Os totais de débito e crédito estão diferentes.");
+        state.ui.payrollProvisionPreview = { draft: { ...draft }, lines, errors: [...new Set(errors)], totalDebit, totalCredit, difference, generatedAt: payrollNow() };
+        if (errors.length) notify("error", "Prévia contábil", `${[...new Set(errors)].length} validação(ões) precisam ser corrigidas.`);
+        else notify("success", "Prévia contábil", `${lines.length} linha(s) gerada(s) e balanceada(s).`);
+        renderApp();
+      }
+
+      function confirmPayrollProvisionAccounting() {
+        const preview = state.ui.payrollProvisionPreview;
+        if (!preview || preview.errors.length || !preview.lines.length || Math.abs(preview.difference) > 0.009) {
+          notify("error", "Contabilização", "Gere uma prévia válida e balanceada antes de confirmar.");
+          return;
+        }
+        const draft = preview.draft;
+        const competenceRecord = getPayrollProvisionCompetence(draft.companyName, draft.branchName, draft.competence);
+        if (!competenceRecord || competenceRecord.status !== "Calculada") {
+          notify("error", "Contabilização", "A competência não está liberada para contabilização.");
+          return;
+        }
+        if (getPayrollProvisionActiveBatch(draft.companyName, draft.branchName, draft.competence, draft.provisionType)) {
+          notify("error", "Duplicidade", "A mesma provisão já foi contabilizada nesta competência.");
+          return;
+        }
+        const batchId = generateId();
+        const now = payrollNow();
+        const batch = {
+          id: batchId, code: generateCode("payrollProvisionAccountingBatches"), companyName: draft.companyName, branchName: draft.branchName,
+          competence: draft.competence, provisionType: draft.provisionType, postingDate: draft.postingDate,
+          history: draft.history, batchNumber: draft.batchNumber, grouping: draft.grouping,
+          lines: preview.lines.map((line) => ({ ...line, id: generateId() })), totalDebit: preview.totalDebit, totalCredit: preview.totalCredit,
+          status: "Contabilizada", userName: "Usuário local", generatedAt: now, createdAt: now, updatedAt: now
+        };
+        const moduleEntries = batch.lines.map((line, index) => ({
+          id: `auto-payroll-provision-${batchId}-${index + 1}`, code: payrollCode("accountingEntries", index), entryDate: draft.postingDate,
+          description: line.history, costCenterId: line.costCenterId, debitAccountId: line.debitAccountId, creditAccountId: line.creditAccountId,
+          amount: line.amount, origin: "payroll-provision", batchName: draft.batchNumber, competence: draft.competence,
+          sourcePayrollProvisionBatchId: batchId, sourcePayrollProvisionBatchCode: batch.code, sourceEmployeeIds: line.employeeIds,
+          createdAt: now, updatedAt: now
+        }));
+        state.data.payrollProvisionAccountingBatches.push(batch);
+        state.data.accountingEntries.push(...moduleEntries);
+        const accountedTypes = new Set(competenceRecord.accountedTypes || []);
+        if (draft.provisionType === "all") ["vacation", "vacationCharges", "thirteenth", "thirteenthCharges"].forEach((item) => accountedTypes.add(item));
+        else accountedTypes.add(draft.provisionType);
+        const fullyAccounted = ["vacation", "vacationCharges", "thirteenth", "thirteenthCharges"].every((item) => accountedTypes.has(item));
+        competenceRecord.accountedTypes = [...accountedTypes];
+        competenceRecord.accountingBatchIds = [...new Set([...(competenceRecord.accountingBatchIds || []), batchId])];
+        competenceRecord.status = fullyAccounted ? "Contabilizada" : "Calculada";
+        competenceRecord.accountedAt = now;
+        competenceRecord.updatedAt = now;
+        state.data.payrollProvisions.forEach((item) => {
+          if (item.schemaVersion === 2 && item.companyName === draft.companyName && item.branchName === draft.branchName && item.competence === draft.competence) {
+            item.status = fullyAccounted ? "Contabilizada" : "Calculada";
+            item.accountedAt = now;
+            item.accountingBatchIds = [...new Set([...(item.accountingBatchIds || []), batchId])];
+            item.updatedAt = now;
+          }
+        });
+        ["payrollProvisionAccountingBatches", "accountingEntries", "payrollProvisionCompetences", "payrollProvisions"].forEach(persistCollection);
+        CLOUD.schedulePush(getDataSnapshot());
+        state.ui.payrollProvisionPreview = null;
+        notify("success", "Provisões contabilizadas", `Lote ${draft.batchNumber} integrado ao módulo contábil.`);
+        renderApp();
+      }
+
+      function reversePayrollProvisionAccountingBatch(id) {
+        const batch = state.data.payrollProvisionAccountingBatches.find((item) => item.id === id);
+        if (!batch || batch.status === "Estornado") return;
+        const reason = window.prompt("Informe o motivo do estorno:", "Correção da contabilização das provisões");
+        if (!reason) return;
+        const now = payrollNow();
+        const reversalEntries = batch.lines.map((line, index) => ({
+          id: `auto-payroll-provision-reversal-${batch.id}-${index + 1}`, code: payrollCode("accountingEntries", index), entryDate: new Date().toISOString().slice(0, 10),
+          description: `Estorno: ${line.history} - ${reason}`, costCenterId: line.costCenterId,
+          debitAccountId: line.creditAccountId, creditAccountId: line.debitAccountId, amount: line.amount,
+          origin: "payroll-provision-reversal", batchName: `EST-${batch.batchNumber}`, competence: batch.competence,
+          sourcePayrollProvisionBatchId: batch.id, sourcePayrollProvisionBatchCode: batch.code, sourceEmployeeIds: line.employeeIds,
+          createdAt: now, updatedAt: now
+        }));
+        state.data.accountingEntries.push(...reversalEntries);
+        batch.status = "Estornado";
+        batch.reversedAt = now;
+        batch.reversalReason = reason;
+        batch.reversedBy = "Usuário local";
+        batch.updatedAt = now;
+        const competenceRecord = getPayrollProvisionCompetence(batch.companyName, batch.branchName, batch.competence);
+        if (competenceRecord) {
+          const remaining = state.data.payrollProvisionAccountingBatches.filter((item) => item.id !== batch.id && item.companyName === batch.companyName && item.branchName === batch.branchName && item.competence === batch.competence && item.status !== "Estornado");
+          const types = new Set();
+          remaining.forEach((item) => item.provisionType === "all" ? ["vacation", "vacationCharges", "thirteenth", "thirteenthCharges"].forEach((type) => types.add(type)) : types.add(item.provisionType));
+          competenceRecord.accountedTypes = [...types];
+          competenceRecord.status = "Reaberta";
+          competenceRecord.updatedAt = now;
+        }
+        state.data.payrollProvisions.forEach((item) => {
+          if (item.schemaVersion === 2 && item.companyName === batch.companyName && item.branchName === batch.branchName && item.competence === batch.competence) {
+            item.status = "Reaberta";
+            item.updatedAt = now;
+          }
+        });
+        ["accountingEntries", "payrollProvisionAccountingBatches", "payrollProvisionCompetences", "payrollProvisions"].forEach(persistCollection);
+        CLOUD.schedulePush(getDataSnapshot());
+        notify("success", "Estorno concluído", `Foram gerados ${reversalEntries.length} lançamento(s) inverso(s).`);
+        renderApp();
+      }
+
+      function renderPayrollProvisionPreview() {
+        const preview = state.ui.payrollProvisionPreview;
+        if (!preview) return `<section class="empty-card"><strong>Nenhuma prévia gerada.</strong><p>Preencha os parâmetros e clique em Gerar prévia para validar contas, centros de custo e balanceamento.</p></section>`;
+        return `<section class="table-card"><div class="table-toolbar"><div><h4>Prévia dos lançamentos</h4><p class="page-subtitle">${escapeHtml(preview.draft.batchNumber)} · ${escapeHtml(preview.draft.competence)}</p></div><div class="inline-actions"><button class="ghost-button" type="button" data-action="export-payroll-provision-preview">Exportar CSV</button><button class="primary-button" type="button" data-action="payroll-confirm-provision-accounting" ${preview.errors.length ? "disabled" : ""}>Confirmar contabilização</button></div></div>${preview.errors.length ? `<div class="notice-card" style="margin:16px"><div class="notice-icon">!</div><div><strong>Validações pendentes</strong><p>${preview.errors.map(escapeHtml).join("<br>")}</p></div></div>` : ""}<div class="table-scroll"><table style="min-width:1500px"><thead><tr><th>Linha</th><th>Conta débito</th><th>Conta crédito</th><th>Valor</th><th>Centro de custo</th><th>Departamento</th><th>Filial</th><th>Histórico</th><th>Tipo</th><th>Funcionários</th></tr></thead><tbody>${preview.lines.length ? preview.lines.map((line) => `<tr><td>${line.lineNumber}</td><td><strong>${escapeHtml(getChartAccountById(line.debitAccountId)?.code || "-")}</strong><div class="table-muted">${escapeHtml(getChartAccountById(line.debitAccountId)?.name || "-")}</div></td><td><strong>${escapeHtml(getChartAccountById(line.creditAccountId)?.code || "-")}</strong><div class="table-muted">${escapeHtml(getChartAccountById(line.creditAccountId)?.name || "-")}</div></td><td>${formatCurrency(line.amount)}</td><td>${escapeHtml(getCostCenterById(line.costCenterId)?.name || "-")}</td><td>${escapeHtml(getPayrollDepartmentById(line.departmentId)?.name || "-")}</td><td>${escapeHtml(line.branchName)}</td><td>${escapeHtml(line.history)}</td><td>${escapeHtml(line.provisionLabel)}</td><td>${line.employeeIds.length}</td></tr>`).join("") : renderPayrollEmptyRow(10, "Nenhuma linha gerada.")}</tbody></table></div><div class="totals-grid" style="padding:16px"><div class="total-card"><span>Total dos débitos</span><strong>${formatCurrency(preview.totalDebit)}</strong></div><div class="total-card"><span>Total dos créditos</span><strong>${formatCurrency(preview.totalCredit)}</strong></div><div class="total-card"><span>Diferença</span><strong>${formatCurrency(preview.difference)}</strong></div></div></section>`;
+      }
+
+      function renderPayrollProvisionAccountingPanel() {
+        const draft = state.ui.payrollProvisionAccountingDraft;
+        const companies = [...new Set(state.data.payrollProvisionSettings.map((item) => item.companyName).filter(Boolean))];
+        const branches = [...new Set(state.data.payrollProvisionSettings.map((item) => item.branchName).filter(Boolean))];
+        const batches = [...state.data.payrollProvisionAccountingBatches].sort((a, b) => String(b.generatedAt || "").localeCompare(String(a.generatedAt || "")));
+        return `<section class="card"><div class="section-head"><div><h3>Contabilização das Provisões</h3><p>A contabilização usa somente a movimentação da competência: saldo atual menos o saldo contabilizado anteriormente.</p></div></div><form data-form="payroll-provision-accounting"><div class="form-grid">${renderPayrollSelect("companyName", "Empresa", draft.companyName, companies.map((item) => [item, item]))}${renderPayrollSelect("branchName", "Filial", draft.branchName, branches.map((item) => [item, item]))}${renderPayrollInput("competence", "Competência", draft.competence, "2026-07", "month")}${renderPayrollSelect("provisionType", "Tipo de provisão", draft.provisionType, PAYROLL_PROVISION_TYPES)}${renderPayrollInput("postingDate", "Data do lançamento", draft.postingDate, "", "date")}${renderPayrollInput("history", "Histórico padrão", draft.history, "Deixe em branco para gerar automaticamente")}${renderPayrollInput("batchNumber", "Lote contábil", draft.batchNumber, "PROV-202607")}${renderPayrollSelect("grouping", "Forma de agrupamento", draft.grouping, PAYROLL_PROVISION_GROUPINGS)}</div><div class="form-actions"><button class="primary-button" type="button" data-action="payroll-preview-provision-accounting">Gerar prévia</button></div></form></section>${renderPayrollProvisionPreview()}${renderPayrollProvisionAccountingConfigForm()}<section class="table-card"><div class="table-toolbar"><h4>Configurações contábeis salvas</h4></div><div class="table-scroll"><table><thead><tr><th>Código</th><th>Empresa/Filial</th><th>Departamento</th><th>Centro de custo</th><th>Status</th><th>Ações</th></tr></thead><tbody>${state.data.payrollProvisionAccountingConfigs.length ? state.data.payrollProvisionAccountingConfigs.map((item) => `<tr><td>${escapeHtml(item.code)}</td><td>${escapeHtml(item.companyName)} / ${escapeHtml(item.branchName)}</td><td>${escapeHtml(getPayrollDepartmentById(item.departmentId)?.name || "Todos")}</td><td>${escapeHtml(getCostCenterById(item.costCenterId)?.name || "Todos")}</td><td>${renderStatusBadge(item.status)}</td><td><div class="table-actions"><button class="action-chip" type="button" data-action="edit-payroll-provision-account-config" data-id="${item.id}">Editar</button><button class="action-chip danger" type="button" data-action="delete-payroll-provision-account-config" data-id="${item.id}">Excluir</button></div></td></tr>`).join("") : renderPayrollEmptyRow(6, "Nenhuma configuração de contas cadastrada.")}</tbody></table></div></section><section class="table-card"><div class="table-toolbar"><h4>Histórico de contabilizações</h4></div><div class="table-scroll"><table><thead><tr><th>Lote</th><th>Competência</th><th>Empresa/Filial</th><th>Tipo</th><th>Agrupamento</th><th>Total</th><th>Usuário/Data</th><th>Status</th><th>Ações</th></tr></thead><tbody>${batches.length ? batches.map((item) => `<tr><td><strong>${escapeHtml(item.batchNumber)}</strong><div class="table-muted">${escapeHtml(item.code)}</div></td><td>${escapeHtml(item.competence)}</td><td>${escapeHtml(item.companyName)} / ${escapeHtml(item.branchName)}</td><td>${escapeHtml(PAYROLL_PROVISION_TYPES.find((type) => type[0] === item.provisionType)?.[1] || item.provisionType)}</td><td>${escapeHtml(PAYROLL_PROVISION_GROUPINGS.find((type) => type[0] === item.grouping)?.[1] || item.grouping)}</td><td>${formatCurrency(item.totalDebit)}</td><td>${escapeHtml(item.userName || "Usuário local")}<div class="table-muted">${formatDateTime(item.generatedAt)}</div></td><td>${renderStatusBadge(item.status)}</td><td><div class="table-actions"><button class="action-chip" type="button" data-action="export-payroll-provision-batch" data-id="${item.id}">Exportar</button>${item.status !== "Estornado" ? `<button class="action-chip danger" type="button" data-action="payroll-reverse-provision-batch" data-id="${item.id}">Estornar</button>` : ""}</div></td></tr>`).join("") : renderPayrollEmptyRow(9, "Nenhuma contabilização de provisões gerada.")}</tbody></table></div></section>`;
+      }
+
+      function payrollCsvCell(value) {
+        const text = String(value ?? "").replace(/"/g, '""');
+        return `"${text}"`;
+      }
+
+      function downloadPayrollCsv(filename, headers, rows) {
+        const content = "\ufeff" + [headers, ...rows].map((row) => row.map(payrollCsvCell).join(";")).join("\r\n");
+        const url = URL.createObjectURL(new Blob([content], { type: "text/csv;charset=utf-8" }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function exportPayrollProvisionsCsv() {
+        const records = getFilteredPayrollProvisions();
+        if (!records.length) { notify("error", "Exportação", "Não há provisões para exportar."); return; }
+        const headers = ["Empresa", "Filial", "Competência", "Código", "Matrícula", "Funcionário", "Departamento", "Centro de custo", "Salário", "Avos férias", "Valor férias", "Adicional 1/3", "Provisão férias", "INSS férias", "Terceiros férias", "RAT férias", "FGTS férias", "Total férias", "Avos 13º", "Provisão 13º", "INSS 13º", "Terceiros 13º", "RAT 13º", "FGTS 13º", "Total 13º", "Ajuste férias", "Baixa férias", "Ajuste 13º", "Baixa 13º", "INSS %", "Terceiros %", "RAT %", "FGTS %", "Saldo anterior total", "Movimentação contábil total", "Variação líquida total", "Saldo final total", "Status", "Observações"];
+        const rows = records.map((item) => {
+          const previousTotal = PAYROLL_PROVISION_COMPONENTS.reduce((sum, component) => sum + toDecimal(item.previousAccounted?.[component.key]), 0);
+          const movementTotal = PAYROLL_PROVISION_COMPONENTS.reduce((sum, component) => sum + toDecimal(item.netMovements?.[component.key] ?? item.movements?.[component.key]), 0);
+          const accountingMovementTotal = PAYROLL_PROVISION_COMPONENTS.reduce((sum, component) => sum + toDecimal(item.movements?.[component.key]), 0);
+          const balanceTotal = PAYROLL_PROVISION_COMPONENTS.reduce((sum, component) => sum + toDecimal(item.balances?.[component.key]), 0);
+          return [item.companyName, item.branchName, item.competence, item.employeeCode, item.registration, item.employeeName, item.departmentName, item.costCenterName, item.salaryBase, item.vacationAvos, item.vacationValue, item.vacationOneThird, item.balances?.vacation, item.vacationInss, item.vacationThirdParty, item.vacationRat, item.vacationFgts, item.totalVacation, item.thirteenthAvos, item.balances?.thirteenth, item.thirteenthInss, item.thirteenthThirdParty, item.thirteenthRat, item.thirteenthFgts, item.totalThirteenth, item.adjustments?.vacation, item.payments?.vacation, item.adjustments?.thirteenth, item.payments?.thirteenth, item.ratesSnapshot?.inssCompanyRate, item.ratesSnapshot?.thirdPartyRate, item.ratesSnapshot?.ratRate, item.ratesSnapshot?.fgtsRate, roundCurrency(previousTotal), roundCurrency(accountingMovementTotal), roundCurrency(movementTotal), roundCurrency(balanceTotal), item.status, item.notes || ""];
+        });
+        downloadPayrollCsv(`provisoes-${state.ui.payrollProvisionFilters.competence}.csv`, headers, rows);
+      }
+
+      function payrollProvisionAccountingCsvRows(lines, batchNumber, competence, postingDate) {
+        return lines.map((line) => [postingDate, getChartAccountById(line.debitAccountId)?.code || "", getChartAccountById(line.debitAccountId)?.name || "", getChartAccountById(line.creditAccountId)?.code || "", getChartAccountById(line.creditAccountId)?.name || "", line.amount, line.history, getCostCenterById(line.costCenterId)?.name || "", line.branchName, competence, batchNumber, line.employeeIds.length]);
+      }
+
+      function exportPayrollProvisionPreviewCsv() {
+        const preview = state.ui.payrollProvisionPreview;
+        if (!preview?.lines?.length) return;
+        const headers = ["Data", "Conta débito", "Descrição débito", "Conta crédito", "Descrição crédito", "Valor", "Histórico", "Centro de custo", "Filial", "Competência", "Lote", "Funcionários"];
+        downloadPayrollCsv(`previa-${preview.draft.batchNumber}.csv`, headers, payrollProvisionAccountingCsvRows(preview.lines, preview.draft.batchNumber, preview.draft.competence, preview.draft.postingDate));
+      }
+
+      function exportPayrollProvisionBatchCsv(id) {
+        const batch = state.data.payrollProvisionAccountingBatches.find((item) => item.id === id);
+        if (!batch) return;
+        const headers = ["Data", "Conta débito", "Descrição débito", "Conta crédito", "Descrição crédito", "Valor", "Histórico", "Centro de custo", "Filial", "Competência", "Lote", "Funcionários"];
+        downloadPayrollCsv(`lote-${batch.batchNumber}.csv`, headers, payrollProvisionAccountingCsvRows(batch.lines, batch.batchNumber, batch.competence, batch.postingDate));
+      }
+
       function renderPayrollView() {
         const panel = state.ui.payrollPanel || "dashboard";
         return `
@@ -11467,6 +12453,8 @@
           case "parameters": return renderPayrollParametersPanel();
           case "tables": return renderPayrollTablesPanel();
           case "processing": return renderPayrollProcessingPanel();
+          case "provisions": return renderPayrollProvisionsPanel();
+          case "provisionAccounting": return renderPayrollProvisionAccountingPanel();
           case "integration": return renderPayrollIntegrationPanel();
           case "reports": return renderPayrollReportsPanel();
           case "dashboard":
@@ -11484,7 +12472,7 @@
           { label: "Competências abertas", value: openRuns, helper: "Processadas e aguardando fechamento" },
           { label: "Líquido calculado", value: formatCurrency(totalNet), helper: "Somatório local das folhas" }
         ];
-        const modules = ["Funcionários", "Cargos e salários", "Rubricas/verbas", "Configurações da folha", "Processamento mensal", "Encargos", "Provisões", "Integração contábil", "Relatórios"];
+        const modules = ["Funcionários", "Cargos e salários", "Rubricas/verbas", "Configurações da folha", "Processamento mensal", "Encargos", "Provisões Trabalhistas", "Contabilização das Provisões", "Integração contábil", "Relatórios"];
         return `
           <section class="hero-panel">
             <div>
@@ -12347,7 +13335,7 @@
       }
 
       function renderPayrollInput(name, label, value, placeholder = "", type = "text") {
-        return `<div class="field"><label for="payroll-${name}">${escapeHtml(label)}</label><input id="payroll-${name}" name="${name}" type="${type}" value="${escapeHtml(value ?? "")}" placeholder="${escapeHtml(placeholder)}"></div>`;
+        return `<div class="field"><label for="payroll-${name}">${escapeHtml(label)}</label><input id="payroll-${name}" name="${name}" type="${type}" ${type === "number" ? 'step="any"' : ""} value="${escapeHtml(value ?? "")}" placeholder="${escapeHtml(placeholder)}"></div>`;
       }
       function renderPayrollTextarea(name, label, value, placeholder = "") {
         return `<div class="field full"><label for="payroll-${name}">${escapeHtml(label)}</label><textarea id="payroll-${name}" name="${name}" placeholder="${escapeHtml(placeholder)}">${escapeHtml(value ?? "")}</textarea></div>`;
