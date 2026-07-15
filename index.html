@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -4096,10 +4095,18 @@
       function createEmptyFinancialNatureDraft(nature) {
         return {
           id: nature?.id || "",
+          code: nature?.code || "",
           name: nature?.name || "",
-          accountMappings: Array.isArray(nature?.accountMappings) ? nature.accountMappings.map((mapping) => ({ ...mapping })) : [],
+          type: nature?.type || "Analítica",
+          status: nature?.isActive === false ? "Inativa" : "Ativa",
+          accountMappings: Array.isArray(nature?.accountMappings) ? nature.accountMappings.map((mapping) => ({
+            ...mapping,
+            debitAccountId: mapping.debitAccountId || mapping.chartAccountId || "",
+            creditAccountId: mapping.creditAccountId || ""
+          })) : [],
           mappingForm: {
-            chartAccountId: "",
+            debitAccountId: "",
+            creditAccountId: "",
             costCenterId: ""
           }
         };
@@ -4180,28 +4187,40 @@
         migratePayrollCollections();
       }
 
-      // Converte naturezas financeiras do formato antigo (uma única conta contábil) para o
-      // novo formato de Cadastro Contábil (lista de vínculos conta x centro de custo).
+      // Atualiza naturezas antigas para o modelo hierárquico e para contabilização com débito e crédito.
       function migrateFinancialNatures() {
         if (!Array.isArray(state.data.financialNatures) || !state.data.financialNatures.length) {
           return;
         }
         let changed = false;
-        state.data.financialNatures = state.data.financialNatures.map((nature) => {
-          if (Array.isArray(nature.accountMappings)) {
-            return nature;
+        const usedCodes = new Set();
+        state.data.financialNatures = state.data.financialNatures.map((nature, index) => {
+          const migrated = { ...nature };
+          if (!/^\d+(?:\.\d+)*$/.test(clean(migrated.code))) {
+            let candidate = String(index + 1);
+            while (usedCodes.has(candidate)) candidate = String(Number(candidate) + 1);
+            migrated.code = candidate;
+            changed = true;
           }
-          changed = true;
-          const accountMappings = nature.chartAccountId
-            ? [{ id: generateId(), chartAccountId: nature.chartAccountId, costCenterId: "" }]
-            : [];
-          const migrated = { ...nature, accountMappings };
-          delete migrated.chartAccountId;
+          usedCodes.add(migrated.code);
+          if (!migrated.type) { migrated.type = "Analítica"; changed = true; }
+          if (typeof migrated.isActive !== "boolean") { migrated.isActive = true; changed = true; }
+          const oldMappings = Array.isArray(migrated.accountMappings)
+            ? migrated.accountMappings
+            : (migrated.chartAccountId ? [{ id: generateId(), chartAccountId: migrated.chartAccountId, costCenterId: "" }] : []);
+          migrated.accountMappings = oldMappings.map((mapping) => {
+            const next = {
+              ...mapping,
+              debitAccountId: mapping.debitAccountId || mapping.chartAccountId || "",
+              creditAccountId: mapping.creditAccountId || ""
+            };
+            if ("chartAccountId" in next) { delete next.chartAccountId; changed = true; }
+            return next;
+          });
+          if ("chartAccountId" in migrated) { delete migrated.chartAccountId; changed = true; }
           return migrated;
         });
-        if (changed) {
-          persistCollection("financialNatures");
-        }
+        if (changed) persistCollection("financialNatures");
       }
 
       function migrateDocumentTypes() {
@@ -4985,6 +5004,16 @@
             state.ui.financialNatureFormDraft = createEmptyFinancialNatureDraft();
             state.ui.financialNatureModalOpen = true;
             navigate("financialNatures");
+            break;
+          case "open-financial-nature-child-modal":
+            {
+              const parentNature = getFinancialNatureById(id);
+              if (!parentNature || parentNature.type !== "Sintética") {
+                notify("error", "Plano de naturezas", "Somente naturezas sintéticas podem receber novas naturezas filhas por este atalho.");
+                break;
+              }
+              openFinancialNatureChildModal(parentNature);
+            }
             break;
           case "close-financial-nature-modal":
             state.ui.editing.financialNatureId = null;
@@ -6202,30 +6231,56 @@
 
       function submitFinancialNature(formData) {
         const id = clean(formData.get("id"));
+        const code = clean(formData.get("code"));
         const name = clean(formData.get("name"));
+        const type = clean(formData.get("type")) || "Analítica";
+        const isActive = clean(formData.get("status")) !== "Inativa";
 
+        if (!code || !/^\d+(?:\.\d+)*$/.test(code)) {
+          notify("error", "Natureza financeira", "Informe um código hierárquico válido, usando números separados por pontos. Ex.: 1.01.001.");
+          return;
+        }
         if (!name) {
           notify("error", "Natureza financeira", "Informe o nome da natureza financeira.");
           return;
         }
-
-        const mappings = state.ui.financialNatureFormDraft.accountMappings || [];
-        if (!mappings.length) {
-          notify("error", "Natureza financeira", "Cadastre pelo menos uma contabilização (débito x centro de custo) antes de salvar.");
+        const duplicateCode = state.data.financialNatures.find((record) => record.id !== id && clean(record.code) === code);
+        if (duplicateCode) {
+          notify("error", "Natureza financeira", "Já existe uma natureza financeira com esse código.");
+          return;
+        }
+        const parentCode = code.includes(".") ? code.split(".").slice(0, -1).join(".") : "";
+        if (parentCode && !state.data.financialNatures.some((record) => record.id !== id && clean(record.code) === parentCode && record.type === "Sintética")) {
+          notify("error", "Natureza financeira", `Cadastre primeiro a natureza sintética pai ${parentCode}.`);
+          return;
+        }
+        if (type === "Analítica" && state.data.financialNatures.some((record) => record.id !== id && clean(record.code).startsWith(`${code}.`))) {
+          notify("error", "Natureza financeira", "Uma natureza com filhas deve permanecer do tipo Sintética.");
           return;
         }
 
-        const invalidMapping = mappings.find((mapping) => !isChartAccountAvailableForLinks(getChartAccountById(mapping.chartAccountId)));
+        const mappings = state.ui.financialNatureFormDraft.accountMappings || [];
+        const invalidMapping = mappings.find((mapping) => {
+          const debit = mapping.debitAccountId ? getChartAccountById(mapping.debitAccountId) : null;
+          const credit = mapping.creditAccountId ? getChartAccountById(mapping.creditAccountId) : null;
+          return (mapping.debitAccountId && !isChartAccountAvailableForLinks(debit))
+            || (mapping.creditAccountId && !isChartAccountAvailableForLinks(credit))
+            || (mapping.debitAccountId && mapping.debitAccountId === mapping.creditAccountId);
+        });
         if (invalidMapping) {
-          notify("error", "Natureza financeira", "Existe uma contabilização com conta contábil inativa, inválida ou não analítica. Remova ou corrija antes de salvar.");
+          notify("error", "Natureza financeira", "Existe uma contabilização inválida. Revise as contas de débito e crédito.");
           return;
         }
 
         const existing = state.data.financialNatures.find((record) => record.id === id);
         const record = {
           id: existing?.id || generateId(),
-          code: existing?.code || generateCode("financialNatures"),
+          code,
           name,
+          type,
+          level: code.split(".").length,
+          parentCode,
+          isActive,
           accountMappings: mappings.map((mapping) => ({ ...mapping })),
           createdAt: existing?.createdAt || new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -6239,40 +6294,41 @@
         renderApp();
       }
 
-      // Adiciona uma contabilização (débito x centro de custo) ao rascunho da natureza financeira em edição.
-      // Um centro de custo em branco representa a contabilização padrão, usada quando não há uma regra específica.
+      // Adiciona uma contabilização opcional por centro de custo. Débito e crédito podem ser informados separadamente.
       function submitFinancialNatureMapping(formData) {
-        const chartAccountId = clean(formData.get("chartAccountId"));
+        const debitAccountId = clean(formData.get("debitAccountId"));
+        const creditAccountId = clean(formData.get("creditAccountId"));
         const costCenterId = clean(formData.get("costCenterId"));
 
-        const account = getChartAccountById(chartAccountId);
-        if (!account || !isChartAccountAvailableForLinks(account)) {
-          notify("error", "Contabilização", "Selecione uma conta contábil de débito analítica, ativa e válida.");
+        if (!debitAccountId && !creditAccountId) {
+          notify("error", "Contabilização", "Informe ao menos a conta de débito ou a conta de crédito para adicionar esta linha.");
           return;
         }
-
+        const debitAccount = debitAccountId ? getChartAccountById(debitAccountId) : null;
+        const creditAccount = creditAccountId ? getChartAccountById(creditAccountId) : null;
+        if (debitAccountId && !isChartAccountAvailableForLinks(debitAccount)) {
+          notify("error", "Contabilização", "Selecione uma conta de débito analítica, ativa e válida.");
+          return;
+        }
+        if (creditAccountId && !isChartAccountAvailableForLinks(creditAccount)) {
+          notify("error", "Contabilização", "Selecione uma conta de crédito analítica, ativa e válida.");
+          return;
+        }
+        if (debitAccountId && debitAccountId === creditAccountId) {
+          notify("error", "Contabilização", "As contas de débito e crédito devem ser diferentes.");
+          return;
+        }
         if (costCenterId && !getCostCenterById(costCenterId)) {
           notify("error", "Contabilização", "Selecione um centro de custo válido ou deixe em branco para a contabilização padrão.");
           return;
         }
-
         const duplicate = state.ui.financialNatureFormDraft.accountMappings.find((mapping) => (mapping.costCenterId || "") === (costCenterId || ""));
         if (duplicate) {
-          notify("error", "Contabilização", costCenterId ? "Já existe uma contabilização para esse centro de custo." : "Já existe uma contabilização padrão cadastrada (sem centro de custo).");
+          notify("error", "Contabilização", costCenterId ? "Já existe uma contabilização para esse centro de custo." : "Já existe uma contabilização padrão cadastrada.");
           return;
         }
-
-        state.ui.financialNatureFormDraft.accountMappings.push({
-          id: generateId(),
-          chartAccountId,
-          costCenterId
-        });
-
-        state.ui.financialNatureFormDraft.mappingForm = {
-          chartAccountId: "",
-          costCenterId: ""
-        };
-
+        state.ui.financialNatureFormDraft.accountMappings.push({ id: generateId(), debitAccountId, creditAccountId, costCenterId });
+        state.ui.financialNatureFormDraft.mappingForm = { debitAccountId: "", creditAccountId: "", costCenterId: "" };
         notify("success", "Contabilização", "Contabilização adicionada à natureza financeira.");
         renderApp();
       }
@@ -6301,7 +6357,7 @@
         }
 
         if (!isFinancialNatureAvailableForLinks(financialNature)) {
-          notify("error", "Item", "A natureza financeira precisa possuir ao menos uma contabilização válida (conta analítica e ativa) para uso nos lançamentos.");
+          notify("error", "Item", "Selecione uma natureza financeira analítica e ativa.");
           return;
         }
 
@@ -7347,6 +7403,48 @@
         renderApp();
       }
 
+      function getNextChildFinancialNatureCode(parentNature) {
+        if (!parentNature || parentNature.type !== "Sintética") {
+          return "";
+        }
+
+        const parentCode = clean(parentNature.code);
+        const childLevel = parentCode.split(".").length + 1;
+        const segmentLength = childLevel === 2 ? 2 : 3;
+        const directChildren = state.data.financialNatures.filter((nature) => {
+          const natureCode = clean(nature.code);
+          const natureParentCode = clean(nature.parentCode)
+            || (natureCode.includes(".") ? natureCode.split(".").slice(0, -1).join(".") : "");
+          return natureParentCode === parentCode;
+        });
+        const maxSegment = directChildren.reduce((highest, child) => {
+          const segment = clean(child.code).split(".").pop() || "";
+          const numeric = Number(segment);
+          return Number.isFinite(numeric) && numeric > highest ? numeric : highest;
+        }, 0);
+        const nextSegment = String(maxSegment + 1).padStart(segmentLength, "0");
+        if (nextSegment.length > segmentLength) {
+          return "";
+        }
+        return `${parentCode}.${nextSegment}`;
+      }
+
+      function openFinancialNatureChildModal(parentNature) {
+        const suggestedCode = getNextChildFinancialNatureCode(parentNature);
+        if (!suggestedCode) {
+          notify("error", "Plano de naturezas", "Essa natureza sintética já atingiu o limite de códigos filhos disponíveis.");
+          return;
+        }
+
+        state.ui.editing.financialNatureId = null;
+        state.ui.financialNatureFormDraft = createEmptyFinancialNatureDraft();
+        state.ui.financialNatureFormDraft.code = suggestedCode;
+        state.ui.financialNatureFormDraft.type = "Analítica";
+        state.ui.financialNatureFormDraft.status = "Ativa";
+        state.ui.financialNatureModalOpen = true;
+        renderApp();
+      }
+
       function closeChartAccountChildModal(shouldRender = true) {
         state.ui.chartAccountChildModalOpen = false;
         state.ui.chartAccountChildParentId = "";
@@ -7446,7 +7544,7 @@
       }
 
       function getChartAccountLinkSummary(account) {
-        const linkedNatures = state.data.financialNatures.filter((nature) => (nature.accountMappings || []).some((mapping) => mapping.chartAccountId === account.id));
+        const linkedNatures = state.data.financialNatures.filter((nature) => (nature.accountMappings || []).some((mapping) => mapping.debitAccountId === account.id || mapping.creditAccountId === account.id || mapping.chartAccountId === account.id));
         const linkedItems = state.data.items.filter((item) => linkedNatures.some((nature) => nature.id === item.financialNatureId));
         const linkedInvoices = state.data.invoices.filter((invoice) => invoice.items.some((item) => item.chartAccountId === account.id));
         return {
@@ -7471,7 +7569,7 @@
         }
         const mappings = Array.isArray(nature.accountMappings) ? nature.accountMappings : [];
         const fallback = mappings.find((mapping) => !mapping.costCenterId);
-        return fallback ? getChartAccountById(fallback.chartAccountId) : null;
+        return fallback ? getChartAccountById(fallback.debitAccountId || fallback.chartAccountId) : null;
       }
 
       // Resolve a conta contábil de débito de uma natureza financeira para um centro de custo específico:
@@ -7483,21 +7581,19 @@
         const mappings = Array.isArray(nature.accountMappings) ? nature.accountMappings : [];
         const exact = costCenterId ? mappings.find((mapping) => mapping.costCenterId === costCenterId) : null;
         if (exact) {
-          return getChartAccountById(exact.chartAccountId);
+          return getChartAccountById(exact.debitAccountId || exact.chartAccountId);
         }
         return getFinancialNatureDefaultAccount(nature);
       }
 
       function isFinancialNatureAvailableForLinks(nature) {
-        if (!nature) {
-          return false;
-        }
-        const mappings = Array.isArray(nature.accountMappings) ? nature.accountMappings : [];
-        return mappings.some((mapping) => isChartAccountAvailableForLinks(getChartAccountById(mapping.chartAccountId)));
+        return Boolean(nature && nature.type !== "Sintética" && nature.isActive !== false);
       }
 
       function getSelectableFinancialNatures() {
-        return state.data.financialNatures.filter((nature) => isFinancialNatureAvailableForLinks(nature));
+        return state.data.financialNatures
+          .filter((nature) => isFinancialNatureAvailableForLinks(nature))
+          .sort((a, b) => String(a.code || "").localeCompare(String(b.code || ""), "pt-BR", { numeric: true }));
       }
 
       function getSelectableItems() {
@@ -9660,133 +9756,78 @@
         `;
       }
 
+      function getFinancialNatureTreeRows(filters) {
+        const records = getFilteredFinancialNatures(filters).slice().sort((a, b) => String(a.code || "").localeCompare(String(b.code || ""), "pt-BR", { numeric: true }));
+        return records.map((record) => ({ ...record, treeDepth: Math.max(String(record.code || "").split(".").length - 1, 0) }));
+      }
+
       function renderFinancialNaturesView() {
         const filters = state.ui.financialNatureFilters || createEmptyFinancialNatureFilters();
         const selectableAccounts = getSelectableChartAccounts();
-        const records = getFilteredFinancialNatures(filters);
-        const canCreate = selectableAccounts.length > 0;
+        const records = getFinancialNatureTreeRows(filters);
         const hasFilters = Object.values(filters).some((value) => String(value || "").trim() !== "");
         return `
-          <section class="financeiro-legacy-shell">
-            <div class="financeiro-legacy-head">
-              <h3 class="financeiro-legacy-title">Naturezas financeiras</h3>
-              <p class="financeiro-legacy-note">Bloco superior com os parâmetros do módulo e, abaixo, o resultado da consulta das naturezas financeiras.</p>
+          <section class="card">
+            <div class="section-head">
+              <div>
+                <h3>Plano de naturezas financeiras</h3>
+                <p>Organize as naturezas em uma estrutura hierárquica, com grupos sintéticos e naturezas analíticas, seguindo a lógica do plano de contas.</p>
+              </div>
+              <div class="inline-actions">
+                <button class="secondary-button" type="button" data-action="reset-financial-nature-filters">Limpar filtros</button>
+                <button class="primary-button" type="button" data-action="new-financial-nature">Nova natureza</button>
+              </div>
             </div>
-            <div class="financeiro-legacy-body">
-              ${!canCreate ? `
-                <section class="notice-card">
-                  <div class="notice-icon">AT</div>
-                  <div>
-                    <strong>Cadastre primeiro as contas contábeis</strong>
-                    <p>A contabilização da natureza financeira depende de contas analíticas ativas. Crie ou ajuste ao menos uma conta válida antes de montar as regras de débito por centro de custo.</p>
-                  </div>
-                </section>
-              ` : ""}
-
-              <section class="financeiro-legacy-panel">
-                <div class="financeiro-legacy-toolbar">
-                  <div>
-                    <h4 class="financeiro-legacy-section-title">Parâmetros do módulo</h4>
-                    <p class="page-subtitle">Os parâmetros de consulta seguem os mesmos campos usados no cadastro da natureza financeira.</p>
-                  </div>
-                  <div class="inline-actions">
-                    <button class="secondary-button" type="button" data-action="reset-financial-nature-filters">Limpar</button>
-                    <button class="primary-button" type="button" data-action="new-financial-nature" ${canCreate ? "" : "disabled"}>Novo</button>
-                  </div>
+            <form data-form="financial-nature-filters" autocomplete="off">
+              <div class="form-grid">
+                <div class="field">
+                  <label for="financial-nature-filter-name">Código ou nome</label>
+                  <input id="financial-nature-filter-name" name="name" value="${escapeHtml(filters.name)}" placeholder="Pesquisar no plano de naturezas">
                 </div>
-                <form data-form="financial-nature-filters" autocomplete="off">
-                  <div class="form-grid">
-                    <div class="field">
-                      <label for="financial-nature-filter-name">Nome da natureza financeira</label>
-                      <input id="financial-nature-filter-name" name="name" maxlength="160" value="${escapeHtml(filters.name)}" placeholder="Filtrar por nome">
-                    </div>
-                    <div class="field">
-                      <label for="financial-nature-filter-account">Conta contábil</label>
-                      <select id="financial-nature-filter-account" name="chartAccountId">
-                        <option value="">Todas</option>
-                        ${selectableAccounts.map((account) => `
-                          <option value="${escapeHtml(account.id)}" ${filters.chartAccountId === account.id ? "selected" : ""}>
-                            ${escapeHtml(account.code)} - ${escapeHtml(account.name)}
-                          </option>
-                        `).join("")}
-                      </select>
-                    </div>
-                    <div class="field">
-                      <label for="financial-nature-filter-cost-center">Centro de custo</label>
-                      <select id="financial-nature-filter-cost-center" name="costCenterId">
-                        <option value="">Todos</option>
-                        ${state.data.costCenters.map((record) => `
-                          <option value="${escapeHtml(record.id)}" ${filters.costCenterId === record.id ? "selected" : ""}>
-                            ${escapeHtml(record.code)} - ${escapeHtml(record.name)}
-                          </option>
-                        `).join("")}
-                      </select>
-                    </div>
-                  </div>
-                  <div class="form-actions">
-                    <button class="primary-button" type="submit">Consultar</button>
-                  </div>
-                </form>
-              </section>
-
-              <section class="financeiro-legacy-panel">
-                <div class="financeiro-legacy-toolbar">
-                  <div>
-                    <h4 class="financeiro-legacy-section-title">Resultado da consulta</h4>
-                    <p class="page-subtitle">Naturezas financeiras cadastradas no sistema.</p>
-                  </div>
+                <div class="field">
+                  <label for="financial-nature-filter-account">Conta de débito ou crédito</label>
+                  <select id="financial-nature-filter-account" name="chartAccountId">
+                    <option value="">Todas</option>
+                    ${selectableAccounts.map((account) => `<option value="${escapeHtml(account.id)}" ${filters.chartAccountId === account.id ? "selected" : ""}>${escapeHtml(account.code)} - ${escapeHtml(account.name)}</option>`).join("")}
+                  </select>
                 </div>
-                ${records.length ? `
-                  <div class="financeiro-legacy-table-wrap">
-                    <table class="financeiro-legacy-table">
-                      <thead>
-                        <tr>
-                          <th>Código</th>
-                          <th>Natureza financeira</th>
-                          <th>Contabilização</th>
-                          <th>Ações</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        ${records.map((record) => {
-                          const mappings = record.accountMappings || [];
-                          return `
-                            <tr>
-                              <td class="mono">${escapeHtml(record.code)}</td>
-                              <td>${escapeHtml(record.name)}</td>
-                              <td>
-                                ${mappings.length ? mappings.map((mapping) => {
-                                  const account = getChartAccountById(mapping.chartAccountId);
-                                  const costCenter = mapping.costCenterId ? getCostCenterById(mapping.costCenterId) : null;
-                                  const valid = isChartAccountAvailableForLinks(account);
-                                  return `
-                                    <div class="badge-row" style="margin-bottom:4px;">
-                                      <span class="badge ${valid ? "" : "danger"}">${escapeHtml(account?.code || "Conta indisponível")}</span>
-                                      <span class="table-muted">${costCenter ? escapeHtml(costCenter.name) : "Todos (padrão)"}</span>
-                                    </div>
-                                  `;
-                                }).join("") : `<span class="table-muted">Nenhuma contabilização cadastrada</span>`}
-                              </td>
-                              <td>
-                                <div class="table-actions">
-                                  <button class="action-chip" type="button" data-action="edit-financial-nature" data-id="${escapeHtml(record.id)}">Editar</button>
-                                  <button class="action-chip danger" type="button" data-action="delete-financial-nature" data-id="${escapeHtml(record.id)}">Excluir</button>
-                                </div>
-                              </td>
-                            </tr>
-                          `;
-                        }).join("")}
-                      </tbody>
-                    </table>
-                  </div>
-                ` : `
-                  <div class="empty-card" style="border-radius:4px;">
-                    <strong>Nenhuma natureza financeira encontrada.</strong>
-                    <p>${hasFilters ? "Nenhum registro combina com os parâmetros informados." : "Cadastre a primeira natureza financeira para liberar o cadastro de itens."}</p>
-                  </div>
-                `}
-              </section>
+                <div class="field">
+                  <label for="financial-nature-filter-cost-center">Centro de custo</label>
+                  <select id="financial-nature-filter-cost-center" name="costCenterId">
+                    <option value="">Todos</option>
+                    ${state.data.costCenters.map((record) => `<option value="${escapeHtml(record.id)}" ${filters.costCenterId === record.id ? "selected" : ""}>${escapeHtml(record.code)} - ${escapeHtml(record.name)}</option>`).join("")}
+                  </select>
+                </div>
+              </div>
+              <div class="form-actions"><button class="primary-button" type="submit">Consultar</button></div>
+            </form>
+          </section>
+          <section class="table-card chart-blueprint-card">
+            <div class="table-toolbar chart-blueprint-toolbar">
+              <div><h4>Árvore das naturezas</h4><p class="page-subtitle">As naturezas sintéticas agrupam as analíticas. Use o botão <strong>+</strong> para cadastrar a próxima natureza filha com o código sugerido automaticamente.</p></div>
             </div>
+            ${records.length ? `<div class="chart-blueprint-sheet"><div class="chart-blueprint-title">PLANO DE NATUREZAS FINANCEIRAS</div><div class="chart-blueprint-list">
+              ${records.map((record) => {
+                const mappings = record.accountMappings || [];
+                return `<div class="chart-blueprint-row ${record.type === "Sintética" ? "synthetic" : "analytical"} ${record.isActive === false ? "inactive" : ""}">
+                  <div class="chart-blueprint-main">
+                    <div class="chart-blueprint-code mono">${escapeHtml(record.code || "-")}</div>
+                    <div class="chart-blueprint-content"><div class="tree-account-line">
+                      ${Array.from({ length: record.treeDepth }).map(() => `<span class="tree-account-indent" aria-hidden="true"></span>`).join("")}
+                      <span class="tree-toggle placeholder" aria-hidden="true">•</span>
+                      <div class="chart-blueprint-text"><strong class="chart-blueprint-name">${escapeHtml(record.name)}</strong><div class="table-muted">${escapeHtml(record.type || "Analítica")} · ${record.isActive === false ? "Inativa" : "Ativa"} · ${mappings.length} contabilização(ões)</div></div>
+                    </div></div>
+                  </div>
+                  <div class="chart-blueprint-actions">
+                    ${record.type === "Sintética"
+                      ? `<button class="blueprint-icon-button add" type="button" data-action="open-financial-nature-child-modal" data-id="${escapeHtml(record.id)}" aria-label="Adicionar natureza filha a ${escapeHtml(record.code)}" title="Adicionar natureza filha">+</button>`
+                      : ""}
+                    <button class="action-chip" type="button" data-action="edit-financial-nature" data-id="${escapeHtml(record.id)}">Editar</button>
+                    <button class="action-chip danger" type="button" data-action="delete-financial-nature" data-id="${escapeHtml(record.id)}">Excluir</button>
+                  </div>
+                </div>`;
+              }).join("")}
+            </div></div>` : `<div class="empty-card"><strong>Nenhuma natureza financeira encontrada.</strong><p>${hasFilters ? "Nenhum registro corresponde aos filtros." : "Cadastre a primeira natureza para iniciar o plano."}</p></div>`}
           </section>
         `;
       }
@@ -9972,123 +10013,38 @@
         const editing = getActiveEditRecord("financialNatures", state.ui.editing.financialNatureId);
         const natureDraft = state.ui.financialNatureFormDraft;
         const selectableAccounts = getSelectableChartAccounts();
-        const canCreate = selectableAccounts.length > 0;
         const draftMappings = natureDraft.accountMappings || [];
         return `
-          <div class="modal-overlay">
-            <button class="modal-backdrop" type="button" data-action="close-financial-nature-modal" aria-label="Fechar modal"></button>
+          <div class="modal-overlay"><button class="modal-backdrop" type="button" data-action="close-financial-nature-modal" aria-label="Fechar modal"></button>
             <div class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="financial-nature-modal-title">
-              <div class="modal-header">
-                <div>
-                  <h3 class="modal-title" id="financial-nature-modal-title">${editing ? "Editar natureza financeira" : "Nova natureza financeira"}</h3>
-                  <p class="modal-subtitle">Cadastro em modal com a montagem completa da contabilização da natureza.</p>
-                </div>
-                <div class="inline-actions">
-                  <button class="ghost-button" type="button" data-action="close-financial-nature-modal">Fechar</button>
-                </div>
-              </div>
+              <div class="modal-header"><div><h3 class="modal-title" id="financial-nature-modal-title">${editing ? "Editar natureza financeira" : "Nova natureza financeira"}</h3><p class="modal-subtitle">Cadastro hierárquico no padrão do plano de contas, com contabilização opcional.</p></div><button class="ghost-button" type="button" data-action="close-financial-nature-modal">Fechar</button></div>
               <div class="modal-body">
-                ${!canCreate ? `
-                  <section class="notice-card" style="margin-bottom:16px;">
-                    <div class="notice-icon">AT</div>
-                    <div>
-                      <strong>Cadastre primeiro as contas contábeis</strong>
-                      <p>A contabilização da natureza financeira depende de contas analíticas ativas.</p>
-                    </div>
-                  </section>
-                ` : ""}
                 <form data-form="financial-nature" autocomplete="off">
                   <input type="hidden" name="id" value="${escapeHtml(natureDraft.id || editing?.id || "")}">
-                  <div class="form-grid single-column">
-                    <div class="field">
-                      <label for="financial-nature-name-modal">Nome da natureza financeira</label>
-                      <input id="financial-nature-name-modal" name="name" maxlength="160" value="${escapeHtml(natureDraft.name || "")}" placeholder="Ex.: Serviços" required>
-                    </div>
+                  <div class="form-grid">
+                    <div class="field"><label for="financial-nature-code-modal">Código da natureza</label><input id="financial-nature-code-modal" name="code" value="${escapeHtml(natureDraft.code || "")}" placeholder="Ex.: 1.01.001" required><span class="field-hint">Use números separados por pontos para formar a hierarquia.</span></div>
+                    <div class="field"><label for="financial-nature-name-modal">Nome da natureza financeira</label><input id="financial-nature-name-modal" name="name" maxlength="160" value="${escapeHtml(natureDraft.name || "")}" placeholder="Ex.: Receitas de serviços" required></div>
+                    <div class="field"><label for="financial-nature-type-modal">Tipo</label><select id="financial-nature-type-modal" name="type"><option value="Sintética" ${natureDraft.type === "Sintética" ? "selected" : ""}>Sintética</option><option value="Analítica" ${natureDraft.type !== "Sintética" ? "selected" : ""}>Analítica</option></select></div>
+                    <div class="field"><label for="financial-nature-status-modal">Status</label><select id="financial-nature-status-modal" name="status"><option value="Ativa" ${natureDraft.status !== "Inativa" ? "selected" : ""}>Ativa</option><option value="Inativa" ${natureDraft.status === "Inativa" ? "selected" : ""}>Inativa</option></select></div>
                   </div>
-                  <div class="financeiro-legacy-subpanel">
-                    <strong>Contabilização</strong>
-                    <p>Cada linha define a conta contábil de débito usada em um centro de custo. Deixe o centro de custo em branco para criar a contabilização padrão.</p>
-                  </div>
-                  <div class="form-actions">
-                    <button class="primary-button" type="submit" ${canCreate || draftMappings.length ? "" : "disabled"}>${editing ? "Salvar alterações" : "Cadastrar natureza financeira"}</button>
-                  </div>
+                  <div class="form-actions"><button class="primary-button" type="submit">${editing ? "Salvar alterações" : "Cadastrar natureza financeira"}</button></div>
                 </form>
-
-                <div class="financeiro-legacy-subpanel">
-                  <strong>Adicionar contabilização</strong>
-                  <p>Monte a combinação débito x centro de custo antes de salvar a natureza.</p>
-                  <form data-form="financial-nature-mapping" autocomplete="off" style="margin-top:12px;">
-                    <div class="form-grid">
-                      <div class="field">
-                        <label for="financial-nature-mapping-account-modal">Débito</label>
-                        <select id="financial-nature-mapping-account-modal" name="chartAccountId" ${canCreate ? "required" : "disabled"}>
-                          <option value="">Selecione uma conta contábil</option>
-                          ${selectableAccounts.map((account) => `
-                            <option value="${escapeHtml(account.id)}" ${natureDraft.mappingForm.chartAccountId === account.id ? "selected" : ""}>
-                              ${escapeHtml(account.code)} - ${escapeHtml(account.name)}
-                            </option>
-                          `).join("")}
-                        </select>
-                      </div>
-                      <div class="field">
-                        <label for="financial-nature-mapping-cost-center-modal">Centro de custo</label>
-                        <select id="financial-nature-mapping-cost-center-modal" name="costCenterId" ${canCreate ? "" : "disabled"}>
-                          <option value="" ${!natureDraft.mappingForm.costCenterId ? "selected" : ""}>Todos os centros de custo (padrão)</option>
-                          ${state.data.costCenters.map((record) => `
-                            <option value="${escapeHtml(record.id)}" ${natureDraft.mappingForm.costCenterId === record.id ? "selected" : ""}>
-                              ${escapeHtml(record.code)} - ${escapeHtml(record.name)}
-                            </option>
-                          `).join("")}
-                        </select>
-                      </div>
-                    </div>
-                    <div class="form-actions">
-                      <button class="secondary-button" type="submit" ${canCreate ? "" : "disabled"}>Adicionar contabilização</button>
-                    </div>
-                  </form>
+                <div class="financeiro-legacy-subpanel"><strong>Adicionar contabilização</strong><p>Débito e crédito não são obrigatórios no cadastro da natureza. Ao adicionar uma linha, informe pelo menos uma das contas; o centro de custo em branco cria a regra padrão.</p>
+                  <form data-form="financial-nature-mapping" autocomplete="off" style="margin-top:12px;"><div class="form-grid">
+                    <div class="field"><label for="financial-nature-debit-modal">Conta de débito</label><select id="financial-nature-debit-modal" name="debitAccountId"><option value="">Não informar</option>${selectableAccounts.map((account) => `<option value="${escapeHtml(account.id)}" ${natureDraft.mappingForm.debitAccountId === account.id ? "selected" : ""}>${escapeHtml(account.code)} - ${escapeHtml(account.name)}</option>`).join("")}</select></div>
+                    <div class="field"><label for="financial-nature-credit-modal">Conta de crédito</label><select id="financial-nature-credit-modal" name="creditAccountId"><option value="">Não informar</option>${selectableAccounts.map((account) => `<option value="${escapeHtml(account.id)}" ${natureDraft.mappingForm.creditAccountId === account.id ? "selected" : ""}>${escapeHtml(account.code)} - ${escapeHtml(account.name)}</option>`).join("")}</select></div>
+                    <div class="field"><label for="financial-nature-cost-center-modal">Centro de custo</label><select id="financial-nature-cost-center-modal" name="costCenterId"><option value="">Todos os centros de custo (padrão)</option>${state.data.costCenters.map((record) => `<option value="${escapeHtml(record.id)}" ${natureDraft.mappingForm.costCenterId === record.id ? "selected" : ""}>${escapeHtml(record.code)} - ${escapeHtml(record.name)}</option>`).join("")}</select></div>
+                  </div><div class="form-actions"><button class="secondary-button" type="submit">Adicionar contabilização</button></div></form>
                 </div>
-
-                ${draftMappings.length ? `
-                  <div class="financeiro-legacy-table-wrap" style="margin-top:16px;">
-                    <table class="financeiro-legacy-table">
-                      <thead>
-                        <tr>
-                          <th>Débito</th>
-                          <th>Centro de custo</th>
-                          <th>Ações</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        ${draftMappings.map((mapping) => {
-                          const account = getChartAccountById(mapping.chartAccountId);
-                          const costCenter = mapping.costCenterId ? getCostCenterById(mapping.costCenterId) : null;
-                          const valid = isChartAccountAvailableForLinks(account);
-                          return `
-                            <tr>
-                              <td>
-                                <div class="badge-row">
-                                  <span class="badge ${valid ? "" : "danger"}">${escapeHtml(account?.code || "Conta indisponível")}</span>
-                                </div>
-                                <div class="table-muted">${escapeHtml(account?.name || "Conta contábil removida")}</div>
-                              </td>
-                              <td>${costCenter ? escapeHtml(`${costCenter.code} - ${costCenter.name}`) : `<span class="badge">Todos (padrão)</span>`}</td>
-                              <td><button class="action-chip danger" type="button" data-action="remove-financial-nature-mapping" data-id="${escapeHtml(mapping.id)}">Remover</button></td>
-                            </tr>
-                          `;
-                        }).join("")}
-                      </tbody>
-                    </table>
-                  </div>
-                ` : `
-                  <div class="empty-card" style="margin-top:16px;">
-                    <strong>Nenhuma contabilização cadastrada ainda.</strong>
-                    <p>Adicione ao menos uma contabilização antes de salvar a natureza financeira.</p>
-                  </div>
-                `}
+                ${draftMappings.length ? `<div class="financeiro-legacy-table-wrap" style="margin-top:16px;"><table class="financeiro-legacy-table"><thead><tr><th>Débito</th><th>Crédito</th><th>Centro de custo</th><th>Ações</th></tr></thead><tbody>${draftMappings.map((mapping) => {
+                  const debit = mapping.debitAccountId ? getChartAccountById(mapping.debitAccountId) : null;
+                  const credit = mapping.creditAccountId ? getChartAccountById(mapping.creditAccountId) : null;
+                  const costCenter = mapping.costCenterId ? getCostCenterById(mapping.costCenterId) : null;
+                  return `<tr><td>${debit ? `${escapeHtml(debit.code)} - ${escapeHtml(debit.name)}` : '<span class="table-muted">Não informada</span>'}</td><td>${credit ? `${escapeHtml(credit.code)} - ${escapeHtml(credit.name)}` : '<span class="table-muted">Não informada</span>'}</td><td>${costCenter ? escapeHtml(`${costCenter.code} - ${costCenter.name}`) : '<span class="badge">Todos (padrão)</span>'}</td><td><button class="action-chip danger" type="button" data-action="remove-financial-nature-mapping" data-id="${escapeHtml(mapping.id)}">Remover</button></td></tr>`;
+                }).join("")}</tbody></table></div>` : `<div class="empty-card" style="margin-top:16px;"><strong>Contabilização não informada.</strong><p>Isso não impede o cadastro da natureza. Você pode configurar débito e crédito posteriormente.</p></div>`}
               </div>
             </div>
-          </div>
-        `;
+          </div>`;
       }
 
       function renderItemModal() {
@@ -11601,9 +11557,9 @@
       function getFilteredFinancialNatures(filters) {
         return state.data.financialNatures.filter((record) => {
           const mappings = record.accountMappings || [];
-          const accountMatch = !filters.chartAccountId || mappings.some((mapping) => mapping.chartAccountId === filters.chartAccountId);
+          const accountMatch = !filters.chartAccountId || mappings.some((mapping) => mapping.debitAccountId === filters.chartAccountId || mapping.creditAccountId === filters.chartAccountId || mapping.chartAccountId === filters.chartAccountId);
           const costCenterMatch = !filters.costCenterId || mappings.some((mapping) => mapping.costCenterId === filters.costCenterId);
-          return includesFilterValue(record.name, filters.name) && accountMatch && costCenterMatch;
+          return (includesFilterValue(record.name, filters.name) || includesFilterValue(record.code, filters.name)) && accountMatch && costCenterMatch;
         });
       }
 
