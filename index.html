@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -3306,7 +3308,21 @@
 
     .account-picker-shell {
       width: min(1180px, calc(100vw - 28px));
+      height: min(92vh, 900px);
       max-height: min(92vh, 900px);
+      min-height: 0;
+    }
+
+    .account-picker-shell .modal-body {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .account-picker-shell .account-lookup-results-host {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
     }
 
     .account-picker-filters {
@@ -3316,7 +3332,24 @@
     }
 
     .account-picker-results {
-      min-height: 330px;
+      display: flex;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .account-picker-results .table-scroll {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+    }
+
+    .account-picker-results thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
     }
 
     .account-picker-table {
@@ -3529,6 +3562,95 @@
     @media (max-width: 680px) {
       .payroll-process-flow { grid-template-columns: 1fr 1fr; }
       .payroll-comparison-cards { grid-template-columns: 1fr; }
+    }
+
+  
+
+    /* Seletor de contas no formato compacto demonstrado no vídeo */
+    .account-picker-shell {
+      width: min(760px, calc(100vw - 28px));
+      height: min(560px, calc(100vh - 28px));
+      max-height: min(560px, calc(100vh - 28px));
+      border-radius: 10px;
+    }
+    .account-picker-shell .modal-header {
+      padding: 10px 12px;
+      min-height: 48px;
+      align-items: center;
+      flex-wrap: nowrap;
+    }
+    .account-picker-shell .modal-subtitle { display: none; }
+    .account-picker-shell .modal-title { font-size: .92rem; }
+    .account-picker-shell .modal-body {
+      padding: 0;
+      gap: 0;
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .account-picker-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-2);
+      flex-wrap: wrap;
+    }
+    .account-picker-toolbar label {
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--ink-2);
+      white-space: nowrap;
+    }
+    .account-picker-toolbar select,
+    .account-picker-toolbar input {
+      min-height: 32px;
+      border: 1px solid var(--border-2);
+      border-radius: 4px;
+      background: var(--surface);
+      color: var(--ink);
+      padding: 5px 8px;
+      font-size: .8rem;
+    }
+    .account-picker-toolbar select { width: 150px; }
+    .account-picker-toolbar input { flex: 1; min-width: 180px; }
+    .account-picker-filter-button {
+      width: 34px;
+      height: 32px;
+      padding: 0;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 4px;
+    }
+    .account-picker-results,
+    .account-picker-results .table-scroll {
+      height: 100%;
+      min-height: 0;
+    }
+    .account-picker-results .table-scroll {
+      overflow-y: scroll;
+      overflow-x: auto;
+      scrollbar-gutter: stable;
+    }
+    .account-picker-table { min-width: 700px; }
+    .account-picker-table th,
+    .account-picker-table td { padding: 6px 9px; font-size: .76rem; }
+    .account-picker-table th { background: #eef1f4; }
+    .account-picker-table tbody tr.selected { background: var(--accent-soft-2); }
+    .account-picker-table tbody tr:hover { background: var(--accent-soft); }
+    .account-picker-footer {
+      padding: 8px 10px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: var(--surface-2);
+    }
+    @media (max-width: 680px) {
+      .account-picker-shell { width: calc(100vw - 16px); height: calc(100vh - 16px); max-height: calc(100vh - 16px); }
+      .account-picker-toolbar select { width: 125px; }
+      .account-picker-toolbar input { min-width: 120px; }
     }
 
   </style>
@@ -8229,10 +8351,10 @@
           label: accountLookupFieldLabel(select),
           selectedId: select.value || "",
           page: 1,
-          pageSize: 20,
-          sortField: "reducedCode",
+          pageSize: 99999,
+          sortField: "code",
           sortDirection: "asc",
-          filters: { reducedCode: "", code: "", description: "", nature: "", type: "", status: "" },
+          filters: { field: "description", query: "" },
           scope: getAccountLookupScope(select)
         };
         renderApp();
@@ -8255,29 +8377,24 @@
       function getAccountLookupFilteredAccounts() {
         const lookup = state.ui.accountLookup;
         const filters = lookup.filters || {};
-        const reduced = normalizedAccountSearchTerm(filters.reducedCode);
-        const code = normalizedAccountSearchTerm(filters.code);
-        const description = normalizedAccountSearchTerm(filters.description);
-        let records = state.data.chartAccounts.filter((account) => {
-          const scope = lookup.scope || {};
+        const field = filters.field || "description";
+        const rawQuery = clean(filters.query || "").trim();
+        const listAllAccounts = /^%+$/.test(rawQuery);
+        const query = normalizedAccountSearchTerm(rawQuery);
+        const scope = lookup.scope || {};
+        const records = state.data.chartAccounts.filter((account) => {
+          if (!isAnalyticalAccount(account)) return false;
+          if (account.isActive === false) return false;
           if (scope.companyName && account.companyName && account.companyName !== scope.companyName) return false;
           if (scope.branchName && account.branchName && account.branchName !== scope.branchName) return false;
           if (scope.planName && account.planName && account.planName !== scope.planName) return false;
-          return (!reduced || normalizeReducedCode(account.reducedCode).includes(reduced))
-            && (!code || String(account.code || "").toLocaleLowerCase("pt-BR").includes(code))
-            && (!description || String(account.name || "").toLocaleLowerCase("pt-BR").includes(description))
-            && (!filters.nature || account.balanceNature === filters.nature)
-            && (!filters.type || account.type === filters.type)
-            && (!filters.status || (filters.status === "Ativa" ? account.isActive !== false : account.isActive === false));
+          if (listAllAccounts) return true;
+          if (!query) return false;
+          if (field === "code") return String(account.code || "").toLocaleLowerCase("pt-BR").includes(query);
+          if (field === "reducedCode") return normalizeReducedCode(account.reducedCode).toLocaleLowerCase("pt-BR").includes(query);
+          return String(account.name || "").toLocaleLowerCase("pt-BR").includes(query);
         });
-        const field = lookup.sortField || "reducedCode";
-        const direction = lookup.sortDirection === "desc" ? -1 : 1;
-        records.sort((a, b) => {
-          if (field === "reducedCode") return direction * ((parseInt(normalizeReducedCode(a.reducedCode), 10) || 0) - (parseInt(normalizeReducedCode(b.reducedCode), 10) || 0));
-          const left = field === "description" ? a.name : field === "nature" ? a.balanceNature : field === "status" ? (a.isActive === false ? "Inativa" : "Ativa") : a[field];
-          const right = field === "description" ? b.name : field === "nature" ? b.balanceNature : field === "status" ? (b.isActive === false ? "Inativa" : "Ativa") : b[field];
-          return direction * String(left || "").localeCompare(String(right || ""), "pt-BR", { numeric: true });
-        });
+        records.sort((a, b) => String(a.code || "").localeCompare(String(b.code || ""), "pt-BR", { numeric: true }));
         return records;
       }
 
@@ -8299,53 +8416,29 @@
       function renderAccountLookupResults() {
         const lookup = state.ui.accountLookup;
         const records = getAccountLookupFilteredAccounts();
-        const pageSize = lookup.pageSize || 20;
-        const totalPages = Math.max(1, Math.ceil(records.length / pageSize));
-        lookup.page = Math.min(Math.max(1, lookup.page || 1), totalPages);
-        const start = (lookup.page - 1) * pageSize;
-        const pageRecords = records.slice(start, start + pageSize);
-        const pages = [];
-        const from = Math.max(1, lookup.page - 2);
-        const to = Math.min(totalPages, lookup.page + 2);
-        for (let page = from; page <= to; page += 1) pages.push(page);
         return `
           <div class="account-picker-results">
             <div class="table-scroll">
               <table class="account-picker-table">
                 <thead><tr>
-                  <th><button type="button" data-action="account-lookup-sort" data-sort="reducedCode">Código reduzido ${accountLookupSortIndicator("reducedCode")}</button></th>
-                  <th><button type="button" data-action="account-lookup-sort" data-sort="code">Código contábil ${accountLookupSortIndicator("code")}</button></th>
-                  <th><button type="button" data-action="account-lookup-sort" data-sort="description">Descrição ${accountLookupSortIndicator("description")}</button></th>
-                  <th><button type="button" data-action="account-lookup-sort" data-sort="nature">Natureza ${accountLookupSortIndicator("nature")}</button></th>
-                  <th><button type="button" data-action="account-lookup-sort" data-sort="type">Tipo ${accountLookupSortIndicator("type")}</button></th>
-                  <th><button type="button" data-action="account-lookup-sort" data-sort="status">Status ${accountLookupSortIndicator("status")}</button></th>
+                  <th>Código</th>
+                  <th>Reduzido</th>
+                  <th>Descrição</th>
+                  <th>Natureza</th>
                 </tr></thead>
                 <tbody>
-                  ${pageRecords.length ? pageRecords.map((account) => {
-                    const blocked = Boolean(validateAccountForLookup(account, lookup.scope));
-                    return `<tr tabindex="0" class="${lookup.selectedId === account.id ? "selected" : ""} ${blocked ? "blocked" : ""}"
+                  ${records.length ? records.map((account) => `
+                    <tr tabindex="0" class="${lookup.selectedId === account.id ? "selected" : ""}"
                       data-action="account-lookup-row" data-account-lookup-row="true" data-id="${escapeHtml(account.id)}">
-                      <td class="account-picker-code-cell">${escapeHtml(normalizeReducedCode(account.reducedCode) || "-")}</td>
                       <td class="mono">${escapeHtml(account.code || "-")}</td>
-                      <td><strong>${escapeHtml(account.name || "-")}</strong>${blocked ? `<div class="table-muted">${escapeHtml(validateAccountForLookup(account, lookup.scope))}</div>` : ""}</td>
+                      <td>${escapeHtml(normalizeReducedCode(account.reducedCode) || "-")}</td>
+                      <td>${escapeHtml(account.name || "-")}</td>
                       <td>${escapeHtml(account.balanceNature || "-")}</td>
-                      <td>${escapeHtml(account.type || "-")}</td>
-                      <td>${renderStatusBadge(account.isActive === false ? "Inativa" : "Ativa")}</td>
-                    </tr>`;
-                  }).join("") : `<tr><td colspan="6"><div class="empty-card"><strong>Nenhuma conta encontrada.</strong><p>Altere os filtros ou use % para listar todas as contas disponíveis neste plano.</p></div></td></tr>`}
+                    </tr>`).join("") : `<tr><td colspan="4"><div class="empty-card"><strong>${(lookup.filters?.query || "").trim() ? "Nenhuma conta encontrada." : "Informe um filtro."}</strong><p>Digite parte da descrição, código ou reduzido. Use % para listar todas as contas analíticas ativas.</p></div></td></tr>`}
                 </tbody>
               </table>
             </div>
-          </div>
-          <div class="account-picker-pagination">
-            <div class="account-picker-summary">${records.length ? `${start + 1}–${Math.min(start + pageSize, records.length)} de ${records.length} conta(s)` : "0 contas"}</div>
-            <div class="page-buttons">
-              <button class="ghost-button" type="button" data-action="account-lookup-page" data-page="${lookup.page - 1}" ${lookup.page <= 1 ? "disabled" : ""}>Anterior</button>
-              ${pages.map((page) => `<button class="${page === lookup.page ? "secondary-button" : "ghost-button"}" type="button" data-action="account-lookup-page" data-page="${page}">${page}</button>`).join("")}
-              <button class="ghost-button" type="button" data-action="account-lookup-page" data-page="${lookup.page + 1}" ${lookup.page >= totalPages ? "disabled" : ""}>Próxima</button>
-            </div>
-          </div>
-        `;
+          </div>`;
       }
 
       function renderAccountLookupModal() {
@@ -8357,37 +8450,31 @@
             <button class="modal-backdrop" type="button" data-action="close-account-lookup" aria-label="Fechar pesquisa de contas"></button>
             <div class="modal-shell account-picker-shell" role="dialog" aria-modal="true" aria-labelledby="account-lookup-title">
               <div class="modal-header">
-                <div>
-                  <h3 class="modal-title" id="account-lookup-title">Plano de Contas Contábil</h3>
-                  <p class="modal-subtitle">Selecione ${escapeHtml(lookup.label || "uma conta contábil")}. Somente contas analíticas e ativas podem ser confirmadas.</p>
-                </div>
-                <button class="ghost-button" type="button" data-action="close-account-lookup">Fechar</button>
+                <div><h3 class="modal-title" id="account-lookup-title">Plano de Contas Contábil</h3></div>
+                <button class="ghost-button" type="button" data-action="close-account-lookup">×</button>
               </div>
               <div class="modal-body">
-                <section class="card">
-                  <div class="section-head"><div><h3>Pesquisa das contas</h3><p>Use correspondência parcial. Campo vazio ou % lista todas as contas do escopo atual.</p></div></div>
-                  <div class="account-picker-filters">
-                    <div class="field"><label>Código reduzido</label><input data-account-lookup-filter="reducedCode" value="${escapeHtml(filters.reducedCode || "")}" placeholder="Ex.: 100 ou %"></div>
-                    <div class="field"><label>Código contábil</label><input data-account-lookup-filter="code" value="${escapeHtml(filters.code || "")}" placeholder="Ex.: 1.1.01"></div>
-                    <div class="field"><label>Descrição</label><input data-account-lookup-filter="description" value="${escapeHtml(filters.description || "")}" placeholder="Ex.: Banco"></div>
-                    <div class="field"><label>Natureza</label><select data-account-lookup-filter="nature"><option value="">Todas</option><option value="Devedora" ${filters.nature === "Devedora" ? "selected" : ""}>Devedora</option><option value="Credora" ${filters.nature === "Credora" ? "selected" : ""}>Credora</option></select></div>
-                    <div class="field"><label>Tipo</label><select data-account-lookup-filter="type"><option value="">Todos</option><option value="Sintética" ${filters.type === "Sintética" ? "selected" : ""}>Sintética</option><option value="Analítica" ${filters.type === "Analítica" ? "selected" : ""}>Analítica</option></select></div>
-                    <div class="field"><label>Status</label><select data-account-lookup-filter="status"><option value="">Todos</option><option value="Ativa" ${filters.status === "Ativa" ? "selected" : ""}>Ativa</option><option value="Inativa" ${filters.status === "Inativa" ? "selected" : ""}>Inativa</option></select></div>
-                  </div>
-                  <div class="form-actions"><button class="primary-button" type="button" data-action="search-account-lookup">Pesquisar</button></div>
-                </section>
+                <div class="account-picker-toolbar">
+                  <label for="account-picker-field">Filtrar por:</label>
+                  <select id="account-picker-field" data-account-lookup-filter="field">
+                    <option value="description" ${filters.field === "description" ? "selected" : ""}>Descrição</option>
+                    <option value="code" ${filters.field === "code" ? "selected" : ""}>Código</option>
+                    <option value="reducedCode" ${filters.field === "reducedCode" ? "selected" : ""}>Reduzido</option>
+                  </select>
+                  <input autofocus data-account-lookup-filter="query" value="${escapeHtml(filters.query || "")}" placeholder="Digite o filtro ou % para listar todas">
+                  <button class="secondary-button account-picker-filter-button" type="button" data-action="search-account-lookup" title="Filtrar">⌕</button>
+                </div>
                 <section class="table-card account-lookup-results-host">${renderAccountLookupResults()}</section>
               </div>
-              <div class="modal-header" style="border-top:1px solid var(--border); border-bottom:0;">
-                <div class="account-picker-summary">Dê duplo clique na linha ou pressione Enter para confirmar.</div>
+              <div class="account-picker-footer">
+                <div class="account-picker-summary">${getAccountLookupFilteredAccounts().length} conta(s) analítica(s)</div>
                 <div class="inline-actions">
                   <button class="primary-button" type="button" data-action="account-lookup-select" ${lookup.selectedId ? "" : "disabled"}>Selecionar</button>
                   <button class="ghost-button" type="button" data-action="close-account-lookup">Cancelar</button>
                 </div>
               </div>
             </div>
-          </div>
-        `;
+          </div>`;
       }
 
       function refreshAccountLookupModal() {
@@ -8395,6 +8482,8 @@
         if (host) host.innerHTML = renderAccountLookupResults();
         const selectButton = document.querySelector('[data-action="account-lookup-select"]');
         if (selectButton) selectButton.disabled = !state.ui.accountLookup.selectedId;
+        const summary = document.querySelector(".account-picker-footer .account-picker-summary");
+        if (summary) summary.textContent = `${getAccountLookupFilteredAccounts().length} conta(s) analítica(s)`;
       }
 
       function scheduleAccountLookupRefresh() {
