@@ -4003,7 +4003,15 @@
             issueDate: invoice.issueDate,
             description: invoice.description,
             items: Array.isArray(invoice.items) ? invoice.items.map((item) => ({ ...item })) : [],
+            hasWithholding: Boolean(invoice.hasWithholding ?? (Array.isArray(invoice.retentions) && invoice.retentions.length)),
+            retentions: Array.isArray(invoice.retentions) ? invoice.retentions.map((retention) => ({ ...retention })) : [],
             installments: Array.isArray(invoice.installments) ? invoice.installments.map((installment) => ({ ...installment })) : [],
+            retentionForm: {
+              taxType: "IRRF",
+              baseAmount: "",
+              rate: "",
+              description: ""
+            },
             lineForm: {
               itemId: "",
               quantity: 1,
@@ -4030,7 +4038,15 @@
           issueDate: getToday(),
           description: "",
           items: [],
+          hasWithholding: false,
+          retentions: [],
           installments: [],
+          retentionForm: {
+            taxType: "IRRF",
+            baseAmount: "",
+            rate: "",
+            description: ""
+          },
           lineForm: {
             itemId: "",
             quantity: 1,
@@ -5480,6 +5496,9 @@
           case "remove-invoice-line":
             removeInvoiceLine(id);
             break;
+          case "remove-invoice-retention":
+            removeInvoiceRetention(id);
+            break;
           case "remove-installment":
             removeInstallment(id);
             break;
@@ -5547,6 +5566,9 @@
             break;
           case "invoice-line":
             submitInvoiceLine(new FormData(form));
+            break;
+          case "invoice-retention":
+            submitInvoiceRetention(new FormData(form));
             break;
           case "invoice-installment":
             submitInstallment(new FormData(form));
@@ -5787,7 +5809,32 @@
         }
 
         if (formType === "invoice") {
-          state.ui.invoiceDraft[fieldName] = target.value;
+          state.ui.invoiceDraft[fieldName] = target.type === "checkbox" ? target.checked : target.value;
+        }
+
+        if (formType === "invoice-fiscal-settings") {
+          const enabled = target.type === "checkbox" ? target.checked : target.value === "true";
+          state.ui.invoiceDraft.hasWithholding = enabled;
+          if (!enabled) {
+            state.ui.invoiceDraft.retentions = [];
+          }
+          if (event.type === "change") {
+            renderApp();
+          }
+          return;
+        }
+
+        if (formType === "invoice-retention") {
+          state.ui.invoiceDraft.retentionForm[fieldName] = target.value;
+          if (["baseAmount", "rate"].includes(fieldName) && event.type === "input") {
+            const preview = document.querySelector("[data-retention-preview]");
+            if (preview) {
+              const base = toDecimal(state.ui.invoiceDraft.retentionForm.baseAmount);
+              const rate = toDecimal(state.ui.invoiceDraft.retentionForm.rate);
+              preview.textContent = formatCurrency(roundCurrency(base * rate / 100));
+            }
+          }
+          return;
         }
 
         if (formType === "invoice-line") {
@@ -6579,8 +6626,12 @@
         }
 
         const totals = getInvoiceTotals(draft);
-        if (Math.abs(totals.totalItemsAmount - totals.totalInstallmentsAmount) > 0.009) {
-          notify("error", noun, "O total das parcelas precisa ser igual ao total dos itens para salvar o registro.");
+        if (totals.totalWithholdingAmount - totals.totalItemsAmount > 0.009) {
+          notify("error", noun, "O total das retenções não pode ser maior que o valor bruto do lançamento.");
+          return;
+        }
+        if (Math.abs(totals.netAmount - totals.totalInstallmentsAmount) > 0.009) {
+          notify("error", noun, `O total das parcelas precisa ser igual ao valor líquido de ${formatCurrency(totals.netAmount)}.`);
           return;
         }
 
@@ -6596,8 +6647,14 @@
           issueDate: draft.issueDate,
           description: draft.description,
           items: draft.items.map((item) => ({ ...item })),
+          hasWithholding: draft.kind === "lancamento" && Boolean(draft.hasWithholding),
+          retentions: draft.kind === "lancamento" && draft.hasWithholding
+            ? draft.retentions.map((retention) => ({ ...retention }))
+            : [],
           installments: draft.installments.map((installment) => ({ ...installment })),
           totalItemsAmount: totals.totalItemsAmount,
+          totalWithholdingAmount: totals.totalWithholdingAmount,
+          netAmount: totals.netAmount,
           totalInstallmentsAmount: totals.totalInstallmentsAmount,
           createdAt: existing?.createdAt || new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -6712,6 +6769,79 @@
         renderApp();
       }
 
+      function submitInvoiceRetention(formData) {
+        const draft = state.ui.invoiceDraft;
+        if (draft.kind !== "lancamento") {
+          notify("error", "Retenção", "As retenções estão disponíveis somente para lançamentos.");
+          return;
+        }
+        if (!draft.hasWithholding) {
+          notify("error", "Retenção", "Marque que o lançamento possui retenção antes de adicionar os tributos.");
+          return;
+        }
+
+        const taxType = clean(formData.get("taxType"));
+        const baseAmount = roundCurrency(toDecimal(formData.get("baseAmount")));
+        const rate = roundCurrency(toDecimal(formData.get("rate")));
+        const description = clean(formData.get("description"));
+        const amount = roundCurrency(baseAmount * rate / 100);
+
+        if (!taxType) {
+          notify("error", "Retenção", "Selecione o tributo retido.");
+          return;
+        }
+        if (!baseAmount || baseAmount <= 0) {
+          notify("error", "Retenção", "Informe uma base de cálculo maior que zero.");
+          return;
+        }
+        if (!rate || rate <= 0) {
+          notify("error", "Retenção", "Informe uma alíquota maior que zero.");
+          return;
+        }
+        if (!amount || amount <= 0) {
+          notify("error", "Retenção", "O valor calculado da retenção deve ser maior que zero.");
+          return;
+        }
+
+        const currentGross = getInvoiceTotals(draft).totalItemsAmount;
+        const currentWithholding = draft.retentions.reduce((sum, retention) => sum + toDecimal(retention.amount), 0);
+        if (roundCurrency(currentWithholding + amount) - currentGross > 0.009) {
+          notify("error", "Retenção", "A soma das retenções não pode ultrapassar o valor bruto dos itens.");
+          return;
+        }
+
+        draft.retentions.push({
+          id: generateId(),
+          taxType,
+          baseAmount,
+          rate,
+          amount,
+          description,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+        draft.retentionForm = {
+          taxType: taxType,
+          baseAmount: "",
+          rate: "",
+          description: ""
+        };
+        notify("success", "Retenção", `${taxType} adicionada. Valor retido: ${formatCurrency(amount)}.`);
+        renderApp();
+      }
+
+      function removeInvoiceRetention(retentionId) {
+        const draft = state.ui.invoiceDraft;
+        const initialLength = draft.retentions.length;
+        draft.retentions = draft.retentions.filter((retention) => retention.id !== retentionId);
+        if (draft.retentions.length === initialLength) {
+          notify("error", "Retenção", "Retenção não encontrada para remoção.");
+          return;
+        }
+        notify("success", "Retenção", "Retenção removida com sucesso.");
+        renderApp();
+      }
+
       function submitInstallment(formData) {
         const draft = state.ui.invoiceDraft;
         const installmentNumber = parseInt(clean(formData.get("installmentNumber")) || "0", 10);
@@ -6742,6 +6872,13 @@
 
         if (!paymentMethod) {
           notify("error", "Parcela", "Informe a forma de pagamento.");
+          return;
+        }
+
+        const totalsBeforeInstallment = getInvoiceTotals(draft);
+        const remainingNet = Math.max(0, roundCurrency(totalsBeforeInstallment.netAmount - totalsBeforeInstallment.totalInstallmentsAmount));
+        if (amount - remainingNet > 0.009) {
+          notify("error", "Parcela", `O valor informado ultrapassa o saldo líquido a parcelar de ${formatCurrency(remainingNet)}.`);
           return;
         }
 
@@ -8088,10 +8225,15 @@
       }
 
       function getInvoiceTotals(invoice) {
-        const totalItemsAmount = roundCurrency(invoice.items.reduce((sum, item) => sum + Number(item.totalPrice || 0), 0));
-        const totalInstallmentsAmount = roundCurrency(invoice.installments.reduce((sum, installment) => sum + Number(installment.amount || 0), 0));
-        const difference = roundCurrency(totalItemsAmount - totalInstallmentsAmount);
-        return { totalItemsAmount, totalInstallmentsAmount, difference };
+        const totalItemsAmount = roundCurrency((invoice.items || []).reduce((sum, item) => sum + Number(item.totalPrice || 0), 0));
+        const withholdingEnabled = invoice.kind === "lancamento" && Boolean(invoice.hasWithholding);
+        const totalWithholdingAmount = withholdingEnabled
+          ? roundCurrency((invoice.retentions || []).reduce((sum, retention) => sum + Number(retention.amount || 0), 0))
+          : 0;
+        const netAmount = Math.max(0, roundCurrency(totalItemsAmount - totalWithholdingAmount));
+        const totalInstallmentsAmount = roundCurrency((invoice.installments || []).reduce((sum, installment) => sum + Number(installment.amount || 0), 0));
+        const difference = roundCurrency(netAmount - totalInstallmentsAmount);
+        return { totalItemsAmount, totalWithholdingAmount, netAmount, totalInstallmentsAmount, difference };
       }
 
       function getInvoiceStatusClass(difference) {
@@ -8454,7 +8596,7 @@
         if (!lookup.open) return "";
         const filters = lookup.filters || {};
         return `
-          <div class="modal-overlay">
+          <div class="modal-overlay stacked account-lookup-overlay">
             <button class="modal-backdrop" type="button" data-action="close-account-lookup" aria-label="Fechar pesquisa de contas"></button>
             <div class="modal-shell account-picker-shell" role="dialog" aria-modal="true" aria-labelledby="account-lookup-title">
               <div class="modal-header">
@@ -10236,7 +10378,7 @@
             <div class="section-head">
               <div>
                 <h3>${draft.id ? `Editar ${isLancamento ? "lançamento" : "nota fiscal"} ${escapeHtml(draft.code)}` : `Dados ${isLancamento ? "do novo lançamento" : "da nova nota fiscal"}`}</h3>
-                <p>Preencha os dados principais primeiro. Depois siga para as abas de itens e financeiro.</p>
+                <p>Preencha os dados principais primeiro. Depois siga para as abas de itens, fiscal e financeiro.</p>
               </div>
               ${draft.id ? `<button class="ghost-button" type="button" data-action="${isLancamento ? "new-lancamento" : "new-invoice"}">Novo rascunho</button>` : ""}
             </div>
@@ -10308,7 +10450,7 @@
               </div>
               <div class="inline-actions">
                 <button class="ghost-button" type="button" data-invoice-tab="dados">Voltar aos dados</button>
-                <button class="secondary-button" type="button" data-invoice-tab="financeiro">Ir para financeiro</button>
+                <button class="secondary-button" type="button" data-invoice-tab="${draft.kind === "lancamento" ? "fiscal" : "financeiro"}">${draft.kind === "lancamento" ? "Ir para fiscal" : "Ir para financeiro"}</button>
               </div>
             </div>
             <form data-form="invoice-line" autocomplete="off">
@@ -10404,19 +10546,158 @@
         `;
       }
 
-      function renderInvoiceFinancialTab(draft, canLaunch) {
+      function renderInvoiceFiscalTab(draft, canLaunch) {
+        const totals = getInvoiceTotals(draft);
+        const form = draft.retentionForm || {};
+        const previewAmount = roundCurrency(toDecimal(form.baseAmount) * toDecimal(form.rate) / 100);
+        const taxTypes = ["INSS", "IRRF", "ISS", "PIS", "COFINS", "CSLL", "PCC", "Outro"];
+
         return `
           <section class="card">
             <div class="section-head">
               <div>
-                <h3>Financeiro da nota</h3>
-                <p>Adicione uma ou mais parcelas com status, forma de pagamento, vencimento e valor.</p>
+                <h3>Fiscal e retenções</h3>
+                <p>Informe os tributos retidos. O valor líquido será o valor bruto dos itens menos o total das retenções.</p>
               </div>
               <div class="inline-actions">
                 <button class="ghost-button" type="button" data-invoice-tab="itens">Voltar aos itens</button>
+                <button class="secondary-button" type="button" data-invoice-tab="financeiro">Ir para financeiro</button>
+              </div>
+            </div>
+
+            <form data-form="invoice-fiscal-settings" autocomplete="off">
+              <label class="checkbox-item" style="max-width:420px;">
+                <input type="checkbox" name="hasWithholding" ${draft.hasWithholding ? "checked" : ""} ${canLaunch ? "" : "disabled"}>
+                <span>Este lançamento possui retenção de tributos</span>
+              </label>
+            </form>
+
+            <div class="totals-grid" style="margin-top:16px; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));">
+              <article class="total-card">
+                <span>Valor bruto</span>
+                <strong class="mono">${escapeHtml(formatCurrency(totals.totalItemsAmount))}</strong>
+                <small>Total dos itens do lançamento.</small>
+              </article>
+              <article class="total-card">
+                <span>Total retido</span>
+                <strong class="mono">${escapeHtml(formatCurrency(totals.totalWithholdingAmount))}</strong>
+                <small>Soma dos tributos informados abaixo.</small>
+              </article>
+              <article class="total-card">
+                <span>Valor líquido</span>
+                <strong class="mono">${escapeHtml(formatCurrency(totals.netAmount))}</strong>
+                <small>Valor que deverá ser parcelado e enviado ao financeiro.</small>
+              </article>
+            </div>
+
+            ${draft.hasWithholding ? `
+              <form data-form="invoice-retention" autocomplete="off" style="margin-top:20px;">
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="retention-tax-type">Tributo retido</label>
+                    <select id="retention-tax-type" name="taxType" ${canLaunch ? "required" : "disabled"}>
+                      ${taxTypes.map((taxType) => `<option value="${escapeHtml(taxType)}" ${form.taxType === taxType ? "selected" : ""}>${escapeHtml(taxType)}</option>`).join("")}
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="retention-base">Valor base</label>
+                    <input id="retention-base" type="number" name="baseAmount" min="0.01" step="0.01" value="${escapeHtml(String(form.baseAmount || ""))}" ${canLaunch ? "required" : "disabled"} placeholder="0,00">
+                  </div>
+                  <div class="field">
+                    <label for="retention-rate">Alíquota (%)</label>
+                    <input id="retention-rate" type="number" name="rate" min="0.0001" step="0.0001" value="${escapeHtml(String(form.rate || ""))}" ${canLaunch ? "required" : "disabled"} placeholder="0,00">
+                  </div>
+                  <div class="field">
+                    <label>Valor da retenção</label>
+                    <div class="field-readonly mono" data-retention-preview>${escapeHtml(formatCurrency(previewAmount))}</div>
+                  </div>
+                  <div class="field full">
+                    <label for="retention-description">Observação (opcional)</label>
+                    <input id="retention-description" name="description" maxlength="120" value="${escapeHtml(form.description || "")}" ${canLaunch ? "" : "disabled"} placeholder="Ex.: Retenção conforme nota ou contrato">
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button class="secondary-button" type="submit" ${canLaunch ? "" : "disabled"}>Adicionar retenção</button>
+                </div>
+              </form>
+
+              ${draft.retentions.length ? `
+                <div class="table-card" style="margin-top:20px;">
+                  <div class="table-scroll">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Tributo</th>
+                          <th>Base</th>
+                          <th>Alíquota</th>
+                          <th>Valor retido</th>
+                          <th>Observação</th>
+                          <th>Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${draft.retentions.map((retention) => `
+                          <tr>
+                            <td><strong>${escapeHtml(retention.taxType)}</strong></td>
+                            <td class="mono">${escapeHtml(formatCurrency(retention.baseAmount))}</td>
+                            <td class="mono">${escapeHtml(String(retention.rate))}%</td>
+                            <td class="mono"><strong>${escapeHtml(formatCurrency(retention.amount))}</strong></td>
+                            <td class="table-muted">${escapeHtml(retention.description || "-")}</td>
+                            <td><button class="action-chip danger" type="button" data-action="remove-invoice-retention" data-id="${escapeHtml(retention.id)}">Remover</button></td>
+                          </tr>
+                        `).join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ` : `
+                <div class="empty-card" style="margin-top:20px;">
+                  <strong>Nenhuma retenção adicionada.</strong>
+                  <p>Informe o tributo, a base e a alíquota para calcular o valor líquido do lançamento.</p>
+                </div>
+              `}
+            ` : `
+              <div class="notice-card" style="margin-top:20px;">
+                <div class="notice-icon">FS</div>
+                <div>
+                  <strong>Lançamento sem retenção</strong>
+                  <p>O valor líquido será igual ao valor bruto dos itens e esse será o total esperado no financeiro.</p>
+                </div>
+              </div>
+            `}
+          </section>
+        `;
+      }
+
+      function renderInvoiceFinancialTab(draft, canLaunch) {
+        const totals = getInvoiceTotals(draft);
+        const remainingNet = Math.max(0, roundCurrency(totals.netAmount - totals.totalInstallmentsAmount));
+        const suggestedAmount = draft.installmentForm.amount !== "" && draft.installmentForm.amount !== null
+          ? draft.installmentForm.amount
+          : (remainingNet > 0 ? remainingNet : "");
+        const backTab = draft.kind === "lancamento" ? "fiscal" : "itens";
+        const backLabel = draft.kind === "lancamento" ? "Voltar ao fiscal" : "Voltar aos itens";
+
+        return `
+          <section class="card">
+            <div class="section-head">
+              <div>
+                <h3>Financeiro ${draft.kind === "lancamento" ? "do lançamento" : "da nota"}</h3>
+                <p>As parcelas devem somar o valor líquido. Quando houver retenções, somente o líquido ficará disponível para baixa.</p>
+              </div>
+              <div class="inline-actions">
+                <button class="ghost-button" type="button" data-invoice-tab="${backTab}">${backLabel}</button>
                 <button class="secondary-button" type="button" data-invoice-tab="resumo">Ir para resumo</button>
               </div>
             </div>
+
+            <div class="totals-grid" style="margin-bottom:20px; grid-template-columns:repeat(auto-fit,minmax(165px,1fr));">
+              <article class="total-card"><span>Bruto</span><strong class="mono">${escapeHtml(formatCurrency(totals.totalItemsAmount))}</strong><small>Total dos itens.</small></article>
+              <article class="total-card"><span>Retenções</span><strong class="mono">${escapeHtml(formatCurrency(totals.totalWithholdingAmount))}</strong><small>Tributos deduzidos.</small></article>
+              <article class="total-card"><span>Líquido</span><strong class="mono">${escapeHtml(formatCurrency(totals.netAmount))}</strong><small>Total que irá ao financeiro.</small></article>
+              <article class="total-card"><span>Saldo a parcelar</span><strong class="mono">${escapeHtml(formatCurrency(remainingNet))}</strong><small>Líquido ainda não distribuído.</small></article>
+            </div>
+
             <form data-form="invoice-installment" autocomplete="off">
               <div class="form-grid">
                 <div class="field">
@@ -10428,16 +10709,17 @@
                   <input id="installment-due-date" type="date" name="dueDate" value="${escapeHtml(draft.installmentForm.dueDate || "")}" ${canLaunch ? "required" : "disabled"}>
                 </div>
                 <div class="field">
-                  <label for="installment-amount">Valor da parcela</label>
-                  <input id="installment-amount" type="number" name="amount" min="0.01" step="0.01" value="${escapeHtml(String(draft.installmentForm.amount || ""))}" ${canLaunch ? "required" : "disabled"}>
+                  <label for="installment-amount">Valor líquido da parcela</label>
+                  <input id="installment-amount" type="number" name="amount" min="0.01" step="0.01" value="${escapeHtml(String(suggestedAmount))}" ${canLaunch && remainingNet > 0 ? "required" : "disabled"}>
+                  <p class="field-hint">Máximo disponível nesta parcela: ${escapeHtml(formatCurrency(remainingNet))}.</p>
                 </div>
                 <div class="field">
                   <label for="installment-method">Forma de pagamento</label>
-                  <input id="installment-method" name="paymentMethod" maxlength="60" value="${escapeHtml(draft.installmentForm.paymentMethod || "")}" placeholder="Boleto, PIX, TED..." ${canLaunch ? "required" : "disabled"}>
+                  <input id="installment-method" name="paymentMethod" maxlength="60" value="${escapeHtml(draft.installmentForm.paymentMethod || "")}" placeholder="Boleto, PIX, TED..." ${canLaunch && remainingNet > 0 ? "required" : "disabled"}>
                 </div>
                 <div class="field full">
                   <label for="installment-status">Status da parcela</label>
-                  <select id="installment-status" name="status" ${canLaunch ? "" : "disabled"}>
+                  <select id="installment-status" name="status" ${canLaunch && remainingNet > 0 ? "" : "disabled"}>
                     <option value="Em aberto" ${draft.installmentForm.status === "Em aberto" ? "selected" : ""}>Em aberto</option>
                     <option value="Pago" ${draft.installmentForm.status === "Pago" ? "selected" : ""}>Pago</option>
                     <option value="Cancelado" ${draft.installmentForm.status === "Cancelado" ? "selected" : ""}>Cancelado</option>
@@ -10445,7 +10727,7 @@
                 </div>
               </div>
               <div class="form-actions">
-                <button class="secondary-button" type="submit" ${canLaunch ? "" : "disabled"}>Adicionar parcela</button>
+                <button class="secondary-button" type="submit" ${canLaunch && remainingNet > 0 ? "" : "disabled"}>Adicionar parcela</button>
               </div>
             </form>
             ${draft.installments.length ? `
@@ -10456,7 +10738,7 @@
                       <tr>
                         <th>Parcela</th>
                         <th>Vencimento</th>
-                        <th>Valor</th>
+                        <th>Valor líquido</th>
                         <th>Forma de pagamento</th>
                         <th>Status</th>
                         <th>Ações</th>
@@ -10469,12 +10751,8 @@
                           <td>${escapeHtml(formatDate(installment.dueDate))}</td>
                           <td class="mono">${escapeHtml(formatCurrency(installment.amount))}</td>
                           <td>${escapeHtml(installment.paymentMethod)}</td>
-                          <td>
-                            <span class="badge ${installment.status === "Pago" ? "positive" : installment.status === "Cancelado" ? "danger" : "warning"}">${escapeHtml(installment.status)}</span>
-                          </td>
-                          <td>
-                            <button class="action-chip danger" type="button" data-action="remove-installment" data-id="${escapeHtml(installment.id)}">Remover</button>
-                          </td>
+                          <td><span class="badge ${installment.status === "Pago" ? "positive" : installment.status === "Cancelado" ? "danger" : "warning"}">${escapeHtml(installment.status)}</span></td>
+                          <td><button class="action-chip danger" type="button" data-action="remove-installment" data-id="${escapeHtml(installment.id)}">Remover</button></td>
                         </tr>
                       `).join("")}
                     </tbody>
@@ -10484,7 +10762,7 @@
             ` : `
               <div class="empty-card" style="margin-top:20px;">
                 <strong>Nenhuma parcela adicionada.</strong>
-                <p>Inclua uma ou mais parcelas para registrar a parte financeira da nota fiscal.</p>
+                <p>Inclua uma ou mais parcelas até completar o valor líquido de ${escapeHtml(formatCurrency(totals.netAmount))}.</p>
               </div>
             `}
           </section>
@@ -10492,39 +10770,31 @@
       }
 
       function renderInvoiceSummaryTab(draft, supplier, totals, canLaunch) {
+        const isLancamento = draft.kind === "lancamento";
+        const noun = isLancamento ? "lançamento" : "nota fiscal";
         return `
           <section class="card">
             <div class="section-head">
               <div>
                 <h3>Resumo financeiro e consistência</h3>
-                <p>Confira os totais antes de concluir o lançamento da nota fiscal.</p>
+                <p>Confira o bruto, as retenções e o líquido antes de concluir o ${noun}.</p>
               </div>
               <div class="status-highlight ${getInvoiceStatusClass(totals.difference)}">
-                ${Math.abs(totals.difference) <= 0.009 ? "Totais conciliados" : "Diferença entre itens e parcelas"}
+                ${Math.abs(totals.difference) <= 0.009 ? "Financeiro conciliado com o líquido" : "Diferença entre líquido e parcelas"}
               </div>
             </div>
-            <div class="totals-grid">
-              <article class="total-card">
-                <span>Total dos itens</span>
-                <strong class="mono">${escapeHtml(formatCurrency(totals.totalItemsAmount))}</strong>
-                <small>Soma de quantidade x valor unitário de todos os itens adicionados à nota.</small>
-              </article>
-              <article class="total-card">
-                <span>Total das parcelas</span>
-                <strong class="mono">${escapeHtml(formatCurrency(totals.totalInstallmentsAmount))}</strong>
-                <small>Soma de todas as parcelas registradas na seção financeira da nota.</small>
-              </article>
-              <article class="total-card">
-                <span>Diferença</span>
-                <strong class="mono">${escapeHtml(formatCurrency(totals.difference))}</strong>
-                <small>${Math.abs(totals.difference) <= 0.009 ? "A nota pode ser salva normalmente." : "Ajuste itens ou parcelas para permitir o salvamento da nota."}</small>
-              </article>
+            <div class="totals-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));">
+              <article class="total-card"><span>Valor bruto</span><strong class="mono">${escapeHtml(formatCurrency(totals.totalItemsAmount))}</strong><small>Soma dos itens.</small></article>
+              <article class="total-card"><span>Retenções</span><strong class="mono">${escapeHtml(formatCurrency(totals.totalWithholdingAmount))}</strong><small>Tributos deduzidos do bruto.</small></article>
+              <article class="total-card"><span>Valor líquido</span><strong class="mono">${escapeHtml(formatCurrency(totals.netAmount))}</strong><small>Valor que ficará no financeiro.</small></article>
+              <article class="total-card"><span>Total das parcelas</span><strong class="mono">${escapeHtml(formatCurrency(totals.totalInstallmentsAmount))}</strong><small>Soma registrada no financeiro.</small></article>
+              <article class="total-card"><span>Diferença</span><strong class="mono">${escapeHtml(formatCurrency(totals.difference))}</strong><small>${Math.abs(totals.difference) <= 0.009 ? "O registro pode ser salvo." : "Ajuste as parcelas para igualar o líquido."}</small></article>
             </div>
           </section>
           <section class="summary-grid">
             <article class="summary-card">
               <span>Tipo</span>
-              <strong>${escapeHtml(draft.type || "Nota de serviço")}</strong>
+              <strong>${escapeHtml(draft.type || (isLancamento ? "Lançamento" : "Nota de serviço"))}</strong>
               <p>Fornecedor: ${escapeHtml(supplier ? `${supplier.code} - ${supplier.legalName}` : "Não selecionado")}</p>
             </article>
             <article class="summary-card">
@@ -10533,20 +10803,23 @@
               <p>${escapeHtml(draft.description || "Sem descrição informada.")}</p>
             </article>
           </section>
+          ${isLancamento && draft.hasWithholding && draft.retentions.length ? `
+            <section class="card">
+              <div class="section-head"><div><h3>Retenções informadas</h3><p>${draft.retentions.length} tributo(s) compondo o valor líquido.</p></div></div>
+              <div class="badge-row">${draft.retentions.map((retention) => `<span class="badge warning">${escapeHtml(retention.taxType)}: ${escapeHtml(formatCurrency(retention.amount))}</span>`).join("")}</div>
+            </section>
+          ` : ""}
           <section class="card">
-            <div class="section-head">
-              <div>
-                <h3>Finalizar lançamento</h3>
-                <p>Se estiver tudo certo, salve a nota por aqui. Se precisar ajustar algo, volte para as abas anteriores.</p>
-              </div>
-            </div>
+            <div class="section-head"><div><h3>Finalizar lançamento</h3><p>Salve o registro quando o total das parcelas estiver conciliado com o valor líquido.</p></div></div>
             <form data-form="invoice" autocomplete="off">
               <input type="hidden" name="type" value="${escapeHtml(draft.type || "Nota de serviço")}">
+              <input type="hidden" name="documentNumber" value="${escapeHtml(draft.documentNumber || "")}">
+              <input type="hidden" name="costCenterId" value="${escapeHtml(draft.costCenterId || "")}">
               <input type="hidden" name="supplierId" value="${escapeHtml(draft.supplierId || "")}">
               <input type="hidden" name="issueDate" value="${escapeHtml(draft.issueDate || "")}">
               <input type="hidden" name="description" value="${escapeHtml(draft.description || "")}">
               <div class="form-actions">
-                <button class="primary-button" type="submit" ${canLaunch ? "" : "disabled"}>${draft.id ? "Salvar alterações da nota" : "Salvar nota fiscal"}</button>
+                <button class="primary-button" type="submit" ${canLaunch ? "" : "disabled"}>${draft.id ? `Salvar alterações do ${noun}` : `Salvar ${noun}`}</button>
                 <button class="ghost-button" type="button" data-invoice-tab="dados">Voltar aos dados</button>
               </div>
             </form>
@@ -10570,6 +10843,7 @@
         const tabItems = [
           { key: "dados", label: "Dados" },
           { key: "itens", label: `Itens (${draft.items.length})` },
+          ...(isLancamento ? [{ key: "fiscal", label: `Fiscal (${draft.retentions.length})` }] : []),
           { key: "financeiro", label: `Financeiro (${draft.installments.length})` },
           { key: "resumo", label: "Resumo" }
         ];
@@ -10577,6 +10851,8 @@
         let tabContent = "";
         if (activeTab === "itens") {
           tabContent = renderInvoiceItemsTab(draft, selectableItems, canLaunch, lineItem, lineNature, lineAccount);
+        } else if (activeTab === "fiscal" && isLancamento) {
+          tabContent = renderInvoiceFiscalTab(draft, canLaunch);
         } else if (activeTab === "financeiro") {
           tabContent = renderInvoiceFinancialTab(draft, canLaunch);
         } else if (activeTab === "resumo") {
@@ -10609,7 +10885,7 @@
                     </div>
                   </section>
                 ` : ""}
-                <div class="modal-tabs" aria-label="Etapas da nota fiscal">
+                <div class="modal-tabs" aria-label="Etapas do lançamento fiscal">
                   ${tabItems.map((tab) => `
                     <button class="modal-tab ${activeTab === tab.key ? "active" : ""}" type="button" data-invoice-tab="${tab.key}">
                       ${escapeHtml(tab.label)}
@@ -15203,14 +15479,16 @@
                           <th>Descrição</th>
                           <th>Itens</th>
                           <th>Parcelas</th>
-                          <th>Total</th>
+                          <th>Bruto / líquido</th>
                           <th>Ações</th>
                         </tr>
                       </thead>
                       <tbody>
                         ${records.map((record) => {
                           const supplierRecord = getSupplierById(record.supplierId);
-                          const difference = roundCurrency(record.totalItemsAmount - record.totalInstallmentsAmount);
+                          const recordNetAmount = Number(record.netAmount ?? record.totalItemsAmount ?? 0);
+                          const recordWithholding = Number(record.totalWithholdingAmount ?? 0);
+                          const difference = roundCurrency(recordNetAmount - Number(record.totalInstallmentsAmount || 0));
                           return `
                             <tr>
                               <td class="mono">${escapeHtml(record.code)}</td>
@@ -15229,7 +15507,12 @@
                                   <span class="badge ${Math.abs(difference) <= 0.009 ? "positive" : "warning"}">${Math.abs(difference) <= 0.009 ? "Conciliada" : "Divergente"}</span>
                                 </div>
                               </td>
-                              <td class="mono">${escapeHtml(formatCurrency(record.totalItemsAmount))}</td>
+                              <td>
+                                <div class="mono">${escapeHtml(formatCurrency(record.totalItemsAmount))}</div>
+                                ${record.kind === "lancamento" && recordWithholding > 0
+                                  ? `<div class="table-muted">Retido ${escapeHtml(formatCurrency(recordWithholding))}</div><div class="mono"><strong>Líquido ${escapeHtml(formatCurrency(recordNetAmount))}</strong></div>`
+                                  : `<div class="table-muted">Líquido ${escapeHtml(formatCurrency(recordNetAmount))}</div>`}
+                              </td>
                               <td>
                                 <div class="table-actions">
                                   <button class="action-chip" type="button" data-action="edit-invoice" data-id="${escapeHtml(record.id)}">Editar</button>
