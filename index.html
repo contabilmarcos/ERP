@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -5778,6 +5776,16 @@
           return;
         }
 
+        if (formType === "accounting-event") {
+          state.ui.accountingEventFormDraft[fieldName] = target.value;
+          return;
+        }
+
+        if (formType === "settlement-event") {
+          state.ui.settlementEventFormDraft[fieldName] = target.value;
+          return;
+        }
+
         if (formType === "invoice") {
           state.ui.invoiceDraft[fieldName] = target.value;
         }
@@ -9216,14 +9224,14 @@
                 </div>
               </div>
               <form data-form="accounting-event" autocomplete="off">
-                <input type="hidden" name="id" value="${escapeHtml(editing?.id || draft.id || "")}">
+                <input type="hidden" name="id" value="${escapeHtml(draft.id || "")}">
                 <div class="form-grid single-column">
                   <div class="field">
                     <label for="accounting-event-document-type">Tipo de documento</label>
                     <select id="accounting-event-document-type" name="documentTypeId" required>
                       <option value="">Selecione o tipo de documento</option>
                       ${getActiveDocumentTypes().map((docType) => `
-                        <option value="${escapeHtml(docType.id)}" ${(editing?.documentTypeId ?? draft.documentTypeId) === docType.id ? "selected" : ""}>${escapeHtml(docType.name)}</option>
+                        <option value="${escapeHtml(docType.id)}" ${draft.documentTypeId === docType.id ? "selected" : ""}>${escapeHtml(docType.name)}</option>
                       `).join("")}
                     </select>
                   </div>
@@ -9232,19 +9240,19 @@
                     <select id="accounting-event-credit-account" name="creditAccountId" required>
                       <option value="">Selecione a conta contábil</option>
                       ${accounts.map((account) => `
-                        <option value="${escapeHtml(account.id)}" ${(editing?.creditAccountId ?? draft.creditAccountId) === account.id ? "selected" : ""}>${escapeHtml(account.code)} - ${escapeHtml(account.name)}</option>
+                        <option value="${escapeHtml(account.id)}" ${draft.creditAccountId === account.id ? "selected" : ""}>${escapeHtml(account.code)} - ${escapeHtml(account.name)}</option>
                       `).join("")}
                     </select>
                   </div>
                   <div class="field">
                     <label for="accounting-event-description">Descrição (opcional)</label>
-                    <input id="accounting-event-description" name="description" maxlength="140" value="${escapeHtml(editing?.description ?? draft.description ?? "")}" placeholder="Ex.: Provisão de fornecedores">
+                    <input id="accounting-event-description" name="description" maxlength="140" value="${escapeHtml(draft.description || "")}" placeholder="Ex.: Provisão de fornecedores">
                   </div>
                   <div class="field">
                     <label for="accounting-event-status">Situação</label>
                     <select id="accounting-event-status" name="status">
-                      <option value="Ativo" ${(editing?.isActive !== false) ? "selected" : ""}>Ativo</option>
-                      <option value="Inativo" ${editing?.isActive === false ? "selected" : ""}>Inativo</option>
+                      <option value="Ativo" ${draft.status !== "Inativo" ? "selected" : ""}>Ativo</option>
+                      <option value="Inativo" ${draft.status === "Inativo" ? "selected" : ""}>Inativo</option>
                     </select>
                   </div>
                 </div>
@@ -9343,14 +9351,14 @@
                 </div>
               </div>
               <form data-form="settlement-event" autocomplete="off">
-                <input type="hidden" name="id" value="${escapeHtml(editing?.id || draft.id || "")}">
+                <input type="hidden" name="id" value="${escapeHtml(draft.id || "")}">
                 <div class="form-grid single-column">
                   <div class="field">
                     <label for="settlement-event-document-type">Tipo de documento</label>
                     <select id="settlement-event-document-type" name="documentTypeId" required>
                       <option value="">Selecione o tipo de documento</option>
                       ${getActiveDocumentTypes().map((docType) => `
-                        <option value="${escapeHtml(docType.id)}" ${(editing?.documentTypeId ?? draft.documentTypeId) === docType.id ? "selected" : ""}>${escapeHtml(docType.name)}</option>
+                        <option value="${escapeHtml(docType.id)}" ${draft.documentTypeId === docType.id ? "selected" : ""}>${escapeHtml(docType.name)}</option>
                       `).join("")}
                     </select>
                   </div>
@@ -9359,19 +9367,19 @@
                     <select id="settlement-event-debit-account" name="debitAccountId" required>
                       <option value="">Selecione a conta contábil</option>
                       ${accounts.map((account) => `
-                        <option value="${escapeHtml(account.id)}" ${(editing?.debitAccountId ?? draft.debitAccountId) === account.id ? "selected" : ""}>${escapeHtml(account.code)} - ${escapeHtml(account.name)}</option>
+                        <option value="${escapeHtml(account.id)}" ${draft.debitAccountId === account.id ? "selected" : ""}>${escapeHtml(account.code)} - ${escapeHtml(account.name)}</option>
                       `).join("")}
                     </select>
                   </div>
                   <div class="field">
                     <label for="settlement-event-description">Descrição (opcional)</label>
-                    <input id="settlement-event-description" name="description" maxlength="140" value="${escapeHtml(editing?.description ?? draft.description ?? "")}" placeholder="Ex.: Baixa de fornecedores">
+                    <input id="settlement-event-description" name="description" maxlength="140" value="${escapeHtml(draft.description || "")}" placeholder="Ex.: Baixa de fornecedores">
                   </div>
                   <div class="field">
                     <label for="settlement-event-status">Situação</label>
                     <select id="settlement-event-status" name="status">
-                      <option value="Ativo" ${(editing?.isActive !== false) ? "selected" : ""}>Ativo</option>
-                      <option value="Inativo" ${editing?.isActive === false ? "selected" : ""}>Inativo</option>
+                      <option value="Ativo" ${draft.status !== "Inativo" ? "selected" : ""}>Ativo</option>
+                      <option value="Inativo" ${draft.status === "Inativo" ? "selected" : ""}>Inativo</option>
                     </select>
                   </div>
                 </div>
