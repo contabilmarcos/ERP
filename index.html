@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -3760,6 +3762,8 @@
       };
       const CLOUD_CONFIG_STORAGE_KEY = "erp_cloud_sync_config";
       const CLOUD_LAST_MODIFIED_STORAGE_KEY = "erp_cloud_last_modified";
+      const CLOUD_LAST_REMOTE_STORAGE_KEY = "erp_cloud_last_remote_modified";
+      const INTEGRATED_PAYROLL_STORAGE_KEY = "sistema_folha_provisoes_v3";
 
       const CODE_CONFIG = {
         costCenters: { prefix: "CC", digits: 4 },
@@ -4507,10 +4511,18 @@
       }
 
       function getDataSnapshot() {
-        return Object.keys(STORAGE_KEYS).reduce((snapshot, key) => {
-          snapshot[key] = Array.isArray(state.data[key]) ? [...state.data[key]] : [];
-          return snapshot;
+        const snapshot = Object.keys(STORAGE_KEYS).reduce((result, key) => {
+          result[key] = Array.isArray(state.data[key]) ? [...state.data[key]] : [];
+          return result;
         }, {});
+        try {
+          const payrollRaw = localStorage.getItem(INTEGRATED_PAYROLL_STORAGE_KEY);
+          snapshot.integratedPayrollState = payrollRaw ? JSON.parse(payrollRaw) : null;
+        } catch (error) {
+          console.warn("Não foi possível incluir a Folha integrada no snapshot:", error);
+          snapshot.integratedPayrollState = null;
+        }
+        return snapshot;
       }
 
       function getLastCloudModified() {
@@ -4519,6 +4531,14 @@
 
       function setLastCloudModified(value) {
         localStorage.setItem(CLOUD_LAST_MODIFIED_STORAGE_KEY, String(value || 0));
+      }
+
+      function getLastRemoteModified() {
+        return parseInt(localStorage.getItem(CLOUD_LAST_REMOTE_STORAGE_KEY) || "0", 10);
+      }
+
+      function setLastRemoteModified(value) {
+        localStorage.setItem(CLOUD_LAST_REMOTE_STORAGE_KEY, String(value || 0));
       }
 
       function saveCollection(collectionKey, records) {
@@ -4571,6 +4591,9 @@
         });
         migrateCollections();
         persistAllCollections();
+        if (snapshot?.integratedPayrollState && typeof snapshot.integratedPayrollState === "object") {
+          localStorage.setItem(INTEGRATED_PAYROLL_STORAGE_KEY, JSON.stringify(snapshot.integratedPayrollState));
+        }
         if (options.lastModified) {
           setLastCloudModified(options.lastModified);
         }
@@ -4619,6 +4642,8 @@
           this.binId = null;
           this.status = "offline";
           localStorage.removeItem(CLOUD_CONFIG_STORAGE_KEY);
+          localStorage.removeItem(CLOUD_LAST_MODIFIED_STORAGE_KEY);
+          localStorage.removeItem(CLOUD_LAST_REMOTE_STORAGE_KEY);
           state.ui.cloudDraft = createEmptyCloudDraft();
         },
 
@@ -4662,19 +4687,26 @@
           if (!this.isConfigured()) {
             return null;
           }
-          const response = await fetch(`https://api.jsonbin.io/v3/b/${this.binId}/latest`, {
+          const requestUrl = `https://api.jsonbin.io/v3/b/${encodeURIComponent(this.binId)}/latest?_=${Date.now()}`;
+          const response = await fetch(requestUrl, {
+            method: "GET",
+            cache: "no-store",
             headers: {
-              "X-Master-Key": this.apiKey
+              "X-Master-Key": this.apiKey,
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+              "Pragma": "no-cache"
             }
           });
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
           }
           const json = await response.json();
-          return json.record || null;
+          const record = json.record || null;
+          setLastRemoteModified(parseInt(record?.lastModified || "0", 10));
+          return record;
         },
 
-        async syncIfNewer(silent = false) {
+        async syncIfNewer(silent = false, force = false) {
           if (!this.isConfigured()) {
             this.status = "offline";
             renderApp();
@@ -4688,20 +4720,19 @@
             const remote = await this.pull();
             const hasKnownData = remote && Object.keys(STORAGE_KEYS).some((key) => Array.isArray(remote[key]));
             if (!hasKnownData) {
-              this.status = "ok";
-              renderApp();
-              return false;
+              throw new Error("O JSONBin não contém um snapshot reconhecido do ERP.");
             }
 
             const localTs = getLastCloudModified();
             const remoteTs = parseInt(remote.lastModified || "0", 10);
+            const remoteDate = remoteTs ? new Date(remoteTs).toLocaleString("pt-BR") : "sem data informada";
 
-            if (remoteTs > localTs) {
-              applyDataSnapshot(remote, { lastModified: remoteTs });
+            if (force || remoteTs > localTs) {
+              applyDataSnapshot(remote, { lastModified: remoteTs || Date.now() });
               this.status = "ok";
               renderApp();
               if (!silent) {
-                notify("success", "Sincronização", "Os dados mais novos da nuvem foram aplicados ao ERP.");
+                notify("success", "Sincronização", `Dados da nuvem aplicados. Versão remota: ${remoteDate}.`);
               }
               return true;
             }
@@ -4709,7 +4740,7 @@
             this.status = "ok";
             renderApp();
             if (!silent) {
-              notify("success", "Sincronização", "A cópia local já está atualizada em relação à nuvem.");
+              notify("success", "Sincronização", `Nenhuma versão mais nova encontrada. Nuvem: ${remoteDate}.`);
             }
             return false;
           } catch (error) {
@@ -4717,7 +4748,7 @@
             console.error("Erro ao sincronizar dados do JSONBin:", error);
             renderApp();
             if (!silent) {
-              notify("error", "Sincronização", "Não foi possível verificar os dados na nuvem.");
+              notify("error", "Sincronização", `Não foi possível buscar os dados: ${error?.message || "erro desconhecido"}.`);
             }
             return false;
           }
@@ -5574,7 +5605,10 @@
               notify("error", "Sincronização", "Informe a Master Key e o Bin ID antes de buscar dados.");
               break;
             }
-            CLOUD.syncIfNewer(false);
+            if (!window.confirm("Buscar a cópia atual da nuvem e substituir os dados locais deste computador? Faça isso somente no computador desatualizado.")) {
+              break;
+            }
+            CLOUD.syncIfNewer(false, true);
             break;
           case "delete-financial-nature":
             deleteFinancialNature(id);
@@ -9601,6 +9635,7 @@
         const cloudStatus = getCloudStatusMeta();
         const cloudDraft = state.ui.cloudDraft;
         const lastCloudSync = getLastCloudModified();
+        const lastRemoteSync = getLastRemoteModified();
         const records = filterRecords(
           state.data.costCenters,
           searchTerm,
@@ -9638,7 +9673,8 @@
                 <ul class="subtle-list">
                   <li>Informe a Master Key e o Bin ID do JSONBin.</li>
                   <li>O ERP envia um snapshot completo com carimbo <code>lastModified</code>.</li>
-                  <li>Ao puxar da nuvem, o sistema aplica os dados apenas quando o remoto estiver mais novo.</li>
+                  <li>A leitura ignora o cache do navegador e consulta diretamente a versão atual do JSONBin.</li>
+                  <li>O botão de busca forçada substitui a cópia local pela cópia remota.</li>
                 </ul>
               </div>
               <form data-form="cloud-config" autocomplete="off">
@@ -9654,14 +9690,20 @@
                   <div class="field full">
                     <label>Status atual</label>
                     <div class="field-readonly">
-                      ${escapeHtml(cloudStatus.label)}${lastCloudSync ? ` | Ultima confirmacao: ${escapeHtml(new Date(lastCloudSync).toLocaleString("pt-BR"))}` : " | Nenhuma sincronizacao confirmada ainda"}
+                      ${escapeHtml(cloudStatus.label)}${lastCloudSync ? ` | Dados locais confirmados em: ${escapeHtml(new Date(lastCloudSync).toLocaleString("pt-BR"))}` : " | Nenhuma sincronização confirmada ainda"}
+                    </div>
+                  </div>
+                  <div class="field full">
+                    <label>Diagnóstico da conexão</label>
+                    <div class="field-readonly">
+                      Bin ID: ${escapeHtml(CLOUD.binId || "-")} ${lastRemoteSync ? ` | Última versão lida da nuvem: ${escapeHtml(new Date(lastRemoteSync).toLocaleString("pt-BR"))}` : " | A nuvem ainda não foi consultada nesta sessão"}
                     </div>
                   </div>
                 </div>
                 <div class="form-actions">
                   <button class="primary-button" type="submit">${CLOUD.isConfigured() ? "Salvar configuracao" : "Conectar JSONBin"}</button>
-                  <button class="secondary-button" type="button" data-action="cloud-pull-now" ${CLOUD.isConfigured() ? "" : "disabled"}>Buscar da nuvem</button>
-                  <button class="secondary-button" type="button" data-action="cloud-sync-now" ${CLOUD.isConfigured() ? "" : "disabled"}>Enviar agora</button>
+                  <button class="secondary-button" type="button" data-action="cloud-pull-now" ${CLOUD.isConfigured() ? "" : "disabled"}>Forçar busca da nuvem</button>
+                  <button class="secondary-button" type="button" data-action="cloud-sync-now" ${CLOUD.isConfigured() ? "" : "disabled"}>Enviar este computador</button>
                   <button class="ghost-button" type="button" data-action="cloud-disconnect" ${CLOUD.isConfigured() ? "" : "disabled"}>Desconectar</button>
                 </div>
               </form>
