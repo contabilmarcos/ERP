@@ -3435,6 +3435,40 @@
       }
     }
 
+    /* Pesquisa de itens com o mesmo padrão visual do plano de contas */
+    .item-lookup-native {
+      display: none !important;
+    }
+
+    .item-picker-table {
+      min-width: 940px;
+    }
+
+    .item-picker-table tbody tr {
+      cursor: pointer;
+    }
+
+    .item-picker-table tbody tr.selected {
+      background: var(--accent-soft-2);
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
+
+    .item-picker-status {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: .72rem;
+      font-weight: 600;
+      background: var(--success-soft);
+      color: var(--success);
+    }
+
+    .item-picker-status.warning {
+      background: var(--warning-soft);
+      color: var(--warning);
+    }
+
   
 
     /* Aprimoramentos do processamento da folha */
@@ -3911,6 +3945,13 @@
             scope: { companyName: "", branchName: "", planName: "" }
           },
           accountLookupFocusNextKey: "",
+          itemLookup: {
+            open: false,
+            targetKey: "",
+            selectedId: "",
+            filters: { field: "description", query: "" }
+          },
+          itemLookupFocusNextKey: "",
           trialBalanceFilters: createEmptyTrialBalanceFilters(),
           trialBalanceModalOpen: false,
           trialBalanceReportModalOpen: false,
@@ -4010,6 +4051,8 @@
               taxType: "IRRF",
               baseAmount: "",
               rate: "",
+              debitAccountId: "",
+              creditAccountId: "",
               description: ""
             },
             lineForm: {
@@ -4045,6 +4088,8 @@
             taxType: "IRRF",
             baseAmount: "",
             rate: "",
+            debitAccountId: "",
+            creditAccountId: "",
             description: ""
           },
           lineForm: {
@@ -4664,8 +4709,11 @@
         document.addEventListener("input", handleInputOrChange);
         document.addEventListener("change", handleInputOrChange);
         document.addEventListener("focusout", handleAccountLookupFocusOut);
+        document.addEventListener("focusout", handleItemLookupFocusOut);
         document.addEventListener("keydown", handleAccountLookupKeyDown);
+        document.addEventListener("keydown", handleItemLookupKeyDown);
         document.addEventListener("dblclick", handleAccountLookupDoubleClick);
+        document.addEventListener("dblclick", handleItemLookupDoubleClick);
       }
 
       function handleClick(event) {
@@ -4716,6 +4764,22 @@
             break;
           case "account-lookup-sort":
             setAccountLookupSort(target.dataset.sort || "reducedCode");
+            break;
+          case "open-item-lookup":
+            openItemLookup(target.dataset.key || "");
+            break;
+          case "close-item-lookup":
+            closeItemLookup();
+            break;
+          case "search-item-lookup":
+            refreshItemLookupModal();
+            break;
+          case "item-lookup-row":
+            state.ui.itemLookup.selectedId = id || "";
+            refreshItemLookupModal();
+            break;
+          case "item-lookup-select":
+            confirmItemLookupSelection();
             break;
           case "switch-payroll-panel":
             state.ui.payrollPanel = target.dataset.panel || "dashboard";
@@ -5678,6 +5742,18 @@
           return;
         }
 
+        if (target.dataset.itemCodeInput) {
+          handleItemCodeInput(target);
+          return;
+        }
+
+        if (target.dataset.itemLookupFilter) {
+          const field = target.dataset.itemLookupFilter;
+          state.ui.itemLookup.filters[field] = target.value || "";
+          scheduleItemLookupRefresh();
+          return;
+        }
+
         const searchKey = target.dataset.search;
         if (searchKey) {
           state.ui.search[searchKey] = target.value || "";
@@ -6625,6 +6701,21 @@
           return;
         }
 
+        const invalidRetention = draft.hasWithholding
+          ? draft.retentions.find((retention) => {
+              const debit = getChartAccountById(retention.debitAccountId);
+              const credit = getChartAccountById(retention.creditAccountId);
+              return !debit || !credit
+                || !isChartAccountAvailableForLinks(debit)
+                || !isChartAccountAvailableForLinks(credit)
+                || retention.debitAccountId === retention.creditAccountId;
+            })
+          : null;
+        if (invalidRetention) {
+          notify("error", noun, `A retenção ${invalidRetention.taxType || "informada"} possui contabilização inválida. Revise as contas de débito e crédito na aba Fiscal.`);
+          return;
+        }
+
         const totals = getInvoiceTotals(draft);
         if (totals.totalWithholdingAmount - totals.totalItemsAmount > 0.009) {
           notify("error", noun, "O total das retenções não pode ser maior que o valor bruto do lançamento.");
@@ -6783,6 +6874,8 @@
         const taxType = clean(formData.get("taxType"));
         const baseAmount = roundCurrency(toDecimal(formData.get("baseAmount")));
         const rate = roundCurrency(toDecimal(formData.get("rate")));
+        const debitAccountId = clean(formData.get("debitAccountId"));
+        const creditAccountId = clean(formData.get("creditAccountId"));
         const description = clean(formData.get("description"));
         const amount = roundCurrency(baseAmount * rate / 100);
 
@@ -6803,6 +6896,21 @@
           return;
         }
 
+        const debitAccount = getChartAccountById(debitAccountId);
+        const creditAccount = getChartAccountById(creditAccountId);
+        if (!debitAccount || !isChartAccountAvailableForLinks(debitAccount)) {
+          notify("error", "Retenção", "Selecione uma conta de débito analítica e ativa para a contabilização da retenção.");
+          return;
+        }
+        if (!creditAccount || !isChartAccountAvailableForLinks(creditAccount)) {
+          notify("error", "Retenção", "Selecione uma conta de crédito analítica e ativa para a contabilização da retenção.");
+          return;
+        }
+        if (debitAccountId === creditAccountId) {
+          notify("error", "Retenção", "As contas de débito e crédito da retenção devem ser diferentes.");
+          return;
+        }
+
         const currentGross = getInvoiceTotals(draft).totalItemsAmount;
         const currentWithholding = draft.retentions.reduce((sum, retention) => sum + toDecimal(retention.amount), 0);
         if (roundCurrency(currentWithholding + amount) - currentGross > 0.009) {
@@ -6816,6 +6924,8 @@
           baseAmount,
           rate,
           amount,
+          debitAccountId,
+          creditAccountId,
           description,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -6824,6 +6934,8 @@
           taxType: taxType,
           baseAmount: "",
           rate: "",
+          debitAccountId,
+          creditAccountId,
           description: ""
         };
         notify("success", "Retenção", `${taxType} adicionada. Valor retido: ${formatCurrency(amount)}.`);
@@ -6918,13 +7030,18 @@
 
       function syncAccountingEventEntries(invoice) {
         const prefix = `auto-event-${invoice.id}-`;
+        const retentionPrefix = `auto-retention-${invoice.id}-`;
         const currentLineIds = new Set(invoice.items.map((line) => line.id));
+        const currentRetentionIds = new Set((invoice.retentions || []).map((retention) => retention.id));
 
         let entries = state.data.accountingEntries.filter((entry) => {
-          if (!entry.id.startsWith(prefix)) {
-            return true;
+          if (entry.id.startsWith(prefix)) {
+            return currentLineIds.has(entry.id.slice(prefix.length));
           }
-          return currentLineIds.has(entry.id.slice(prefix.length));
+          if (entry.id.startsWith(retentionPrefix)) {
+            return currentRetentionIds.has(entry.id.slice(retentionPrefix.length));
+          }
+          return true;
         });
 
         const documentType = getDocumentTypeByName(invoice.type);
@@ -6956,13 +7073,44 @@
           });
         }
 
+        (invoice.retentions || []).forEach((retention) => {
+          const debit = getChartAccountById(retention.debitAccountId);
+          const credit = getChartAccountById(retention.creditAccountId);
+          if (!debit || !credit || !isChartAccountAvailableForLinks(debit) || !isChartAccountAvailableForLinks(credit)) {
+            return;
+          }
+          const id = retentionPrefix + retention.id;
+          const record = {
+            id,
+            code: id,
+            entryDate: invoice.issueDate,
+            description: `Retenção ${retention.taxType} - ${invoice.documentNumber || invoice.code}${retention.description ? ` - ${retention.description}` : ""}`,
+            costCenterId: invoice.costCenterId || "",
+            debitAccountId: retention.debitAccountId,
+            creditAccountId: retention.creditAccountId,
+            amount: retention.amount,
+            origin: "fiscal-retention",
+            sourceInvoiceId: invoice.id,
+            sourceRetentionId: retention.id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+          const idx = entries.findIndex((entry) => entry.id === id);
+          if (idx >= 0) {
+            entries[idx] = record;
+          } else {
+            entries.push(record);
+          }
+        });
+
         saveCollection("accountingEntries", entries);
       }
 
       function removeInvoiceGeneratedEntries(invoiceId) {
         const eventPrefix = `auto-event-${invoiceId}-`;
+        const retentionPrefix = `auto-retention-${invoiceId}-`;
         const remainingEntries = state.data.accountingEntries.filter((entry) => {
-          if (entry.id.startsWith(eventPrefix)) {
+          if (entry.id.startsWith(eventPrefix) || entry.id.startsWith(retentionPrefix)) {
             return false;
           }
           if (entry.origin === "settlement-event" && entry.sourceInvoiceId === invoiceId) {
@@ -8673,6 +8821,323 @@
         next?.focus();
       }
 
+      let itemLookupSearchTimer = null;
+
+      function getItemLookupSelectByKey(key) {
+        return [...document.querySelectorAll("select[data-item-lookup-key]")].find((select) => select.dataset.itemLookupKey === key) || null;
+      }
+
+      function enhanceItemLookupFields(root = document) {
+        const selects = [...root.querySelectorAll('select[data-item-lookup="true"]')].filter((select) => !select.dataset.itemLookupEnhanced);
+        selects.forEach((select, index) => {
+          const formType = select.closest("form")?.dataset.form || "global";
+          const key = `${formType}::${select.name}::${index + 1}`;
+          const selectId = select.id || `item-native-${Math.random().toString(36).slice(2, 9)}`;
+          select.id = selectId;
+          select.dataset.itemLookupEnhanced = "true";
+          select.dataset.itemLookupKey = key;
+          select.classList.add("item-lookup-native");
+          select.tabIndex = -1;
+          const item = getItemById(select.value);
+          const inputId = `${selectId}-code`;
+          const disabled = select.disabled ? "disabled" : "";
+          select.required = false;
+          select.dataset.itemRequired = "true";
+          const description = item
+            ? `<strong>${escapeHtml(item.code)}</strong> — ${escapeHtml(item.name)}`
+            : "Nenhum item selecionado.";
+          select.insertAdjacentHTML("afterend", `
+            <div class="account-lookup-component" data-item-component-key="${escapeHtml(key)}">
+              <div class="account-lookup-row">
+                <input id="${escapeHtml(inputId)}" class="account-lookup-code" autocomplete="off"
+                  data-item-code-input="true" data-key="${escapeHtml(key)}"
+                  value="${escapeHtml(item?.code || "")}" placeholder="Código do item" ${disabled}>
+                <button class="account-lookup-button" type="button" data-action="open-item-lookup" data-key="${escapeHtml(key)}"
+                  title="Pesquisar itens" aria-label="Pesquisar item" ${disabled}>⋯</button>
+              </div>
+              <div class="account-lookup-description" data-item-description="${escapeHtml(key)}">${description}</div>
+              <div class="account-lookup-error" data-item-error="${escapeHtml(key)}" aria-live="polite"></div>
+            </div>
+          `);
+          const label = select.closest(".field")?.querySelector(`label[for="${selectId}"]`) || select.closest(".field")?.querySelector("label");
+          if (label) label.htmlFor = inputId;
+        });
+        if (state.ui.itemLookupFocusNextKey) {
+          const key = state.ui.itemLookupFocusNextKey;
+          state.ui.itemLookupFocusNextKey = "";
+          window.setTimeout(() => focusNextAfterItemField(key), 0);
+        }
+      }
+
+      function setItemLookupFieldMessage(key, message = "", invalid = false) {
+        const component = [...document.querySelectorAll("[data-item-component-key]")].find((node) => node.dataset.itemComponentKey === key);
+        const input = component?.querySelector("[data-item-code-input]");
+        const error = component?.querySelector("[data-item-error]");
+        if (input) input.classList.toggle("invalid", Boolean(invalid));
+        if (error) error.textContent = message;
+      }
+
+      function getItemByCode(code) {
+        const normalized = clean(code).toLocaleLowerCase("pt-BR");
+        if (!normalized) return null;
+        return getSelectableItems().find((item) => clean(item.code).toLocaleLowerCase("pt-BR") === normalized) || null;
+      }
+
+      function handleItemCodeInput(input) {
+        const key = input.dataset.key || "";
+        const select = getItemLookupSelectByKey(key);
+        if (!select) return;
+        const selected = getItemById(select.value);
+        if (clean(input.value).toLocaleLowerCase("pt-BR") !== clean(selected?.code).toLocaleLowerCase("pt-BR")) {
+          select.value = "";
+          if (select.closest("form")?.dataset.form === "invoice-line" && select.name === "itemId") {
+            state.ui.invoiceDraft.lineForm.itemId = "";
+          }
+          const description = [...document.querySelectorAll("[data-item-description]")].find((node) => node.dataset.itemDescription === key);
+          if (description) description.textContent = input.value ? "Código alterado. Aguardando validação..." : "Nenhum item selecionado.";
+          setItemLookupFieldMessage(key, "", false);
+        }
+      }
+
+      function resolveItemCodeInput(input, moveNext = false) {
+        const key = input.dataset.key || "";
+        const select = getItemLookupSelectByKey(key);
+        if (!select) return false;
+        const code = clean(input.value);
+        if (!code) {
+          select.value = "";
+          input.value = "";
+          setItemLookupFieldMessage(key, "Informe ou pesquise um item.", true);
+          select.dispatchEvent(new Event("change", { bubbles: true }));
+          return false;
+        }
+        const item = getItemByCode(code);
+        if (!item) {
+          select.value = "";
+          setItemLookupFieldMessage(key, "Item não encontrado ou indisponível para lançamento.", true);
+          notify("error", "Seleção de item", "Item não encontrado ou indisponível para lançamento.");
+          select.dispatchEvent(new Event("change", { bubbles: true }));
+          return false;
+        }
+        input.value = item.code || "";
+        select.value = item.id;
+        if (select.closest("form")?.dataset.form === "invoice-line" && select.name === "itemId") {
+          state.ui.invoiceDraft.lineForm.itemId = item.id;
+        }
+        const description = [...document.querySelectorAll("[data-item-description]")].find((node) => node.dataset.itemDescription === key);
+        if (description) description.innerHTML = `<strong>${escapeHtml(item.code)}</strong> — ${escapeHtml(item.name)}`;
+        state.ui.itemLookupFocusNextKey = moveNext ? key : "";
+        setItemLookupFieldMessage(key, "", false);
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        return true;
+      }
+
+      function handleItemLookupFocusOut(event) {
+        const input = event.target.closest?.("[data-item-code-input]");
+        if (!input) return;
+        const component = input.closest("[data-item-component-key]");
+        if (event.relatedTarget && component?.contains(event.relatedTarget)) return;
+        resolveItemCodeInput(input, false);
+      }
+
+      function handleItemLookupKeyDown(event) {
+        const input = event.target.closest?.("[data-item-code-input]");
+        if (input && event.key === "Enter") {
+          event.preventDefault();
+          resolveItemCodeInput(input, true);
+          return;
+        }
+        if (event.target.dataset?.itemLookupFilter && event.key === "Enter") {
+          event.preventDefault();
+          refreshItemLookupModal();
+          return;
+        }
+        const row = event.target.closest?.("[data-item-lookup-row]");
+        if (row && event.key === "Enter") {
+          event.preventDefault();
+          state.ui.itemLookup.selectedId = row.dataset.id || "";
+          confirmItemLookupSelection();
+          return;
+        }
+        if (state.ui.itemLookup.open && event.key === "Escape") {
+          event.preventDefault();
+          closeItemLookup();
+        }
+      }
+
+      function handleItemLookupDoubleClick(event) {
+        const row = event.target.closest?.("[data-item-lookup-row]");
+        if (!row) return;
+        state.ui.itemLookup.selectedId = row.dataset.id || "";
+        confirmItemLookupSelection();
+      }
+
+      function openItemLookup(key) {
+        const select = getItemLookupSelectByKey(key);
+        if (!select) {
+          notify("error", "Seleção de item", "Não foi possível identificar o campo de item.");
+          return;
+        }
+        state.ui.itemLookup = {
+          open: true,
+          targetKey: key,
+          selectedId: select.value || "",
+          filters: { field: "description", query: "" }
+        };
+        renderApp();
+      }
+
+      function closeItemLookup() {
+        const key = state.ui.itemLookup.targetKey;
+        state.ui.itemLookup.open = false;
+        renderApp();
+        window.setTimeout(() => {
+          const component = [...document.querySelectorAll("[data-item-component-key]")].find((node) => node.dataset.itemComponentKey === key);
+          component?.querySelector("[data-item-code-input]")?.focus();
+        }, 0);
+      }
+
+      function getItemLookupFilteredItems() {
+        const filters = state.ui.itemLookup.filters || {};
+        const field = filters.field || "description";
+        const rawQuery = clean(filters.query || "").trim();
+        const listAll = /^%+$/.test(rawQuery);
+        const query = rawQuery.replace(/%/g, "").toLocaleLowerCase("pt-BR");
+        const records = getSelectableItems().filter((item) => {
+          if (listAll) return true;
+          if (!query) return false;
+          const nature = getFinancialNatureById(item.financialNatureId);
+          if (field === "code") return String(item.code || "").toLocaleLowerCase("pt-BR").includes(query);
+          if (field === "nature") return `${nature?.code || ""} ${nature?.name || ""}`.toLocaleLowerCase("pt-BR").includes(query);
+          return String(item.name || "").toLocaleLowerCase("pt-BR").includes(query);
+        });
+        records.sort((a, b) => String(a.code || "").localeCompare(String(b.code || ""), "pt-BR", { numeric: true }));
+        return records;
+      }
+
+      function renderItemLookupResults() {
+        const records = getItemLookupFilteredItems();
+        const selectedId = state.ui.itemLookup.selectedId;
+        const costCenterId = state.ui.invoiceDraft.costCenterId;
+        return `
+          <div class="account-picker-results">
+            <div class="table-scroll">
+              <table class="account-picker-table item-picker-table">
+                <thead><tr>
+                  <th>Código</th>
+                  <th>Descrição</th>
+                  <th>Natureza financeira</th>
+                  <th>Conta de débito</th>
+                  <th>Situação</th>
+                </tr></thead>
+                <tbody>
+                  ${records.length ? records.map((item) => {
+                    const nature = getFinancialNatureById(item.financialNatureId);
+                    const account = nature ? getFinancialNatureAccountForCostCenter(nature, costCenterId) : null;
+                    return `
+                      <tr tabindex="0" class="${selectedId === item.id ? "selected" : ""}"
+                        data-action="item-lookup-row" data-item-lookup-row="true" data-id="${escapeHtml(item.id)}">
+                        <td class="mono"><strong>${escapeHtml(item.code || "-")}</strong></td>
+                        <td>${escapeHtml(item.name || "-")}</td>
+                        <td><strong>${escapeHtml(nature?.code || "-")}</strong><div class="table-muted">${escapeHtml(nature?.name || "Natureza removida")}</div></td>
+                        <td>${account ? `<strong>${escapeHtml(account.code)}</strong><div class="table-muted">${escapeHtml(account.name)}</div>` : `<span class="table-muted">Sem conta para o centro de custo</span>`}</td>
+                        <td><span class="item-picker-status ${account ? "" : "warning"}">${account ? "Pronto para lançar" : "Requer ajuste"}</span></td>
+                      </tr>`;
+                  }).join("") : `<tr><td colspan="5"><div class="empty-card"><strong>${(state.ui.itemLookup.filters?.query || "").trim() ? "Nenhum item encontrado." : "Informe um filtro."}</strong><p>Digite parte da descrição, código ou natureza. Use % para listar todos os itens disponíveis.</p></div></td></tr>`}
+                </tbody>
+              </table>
+            </div>
+          </div>`;
+      }
+
+      function renderItemLookupModal() {
+        if (!state.ui.itemLookup.open) return "";
+        const filters = state.ui.itemLookup.filters || {};
+        return `
+          <div class="modal-overlay stacked item-lookup-overlay">
+            <button class="modal-backdrop" type="button" data-action="close-item-lookup" aria-label="Fechar pesquisa de itens"></button>
+            <div class="modal-shell account-picker-shell item-picker-shell" role="dialog" aria-modal="true" aria-labelledby="item-lookup-title">
+              <div class="modal-header">
+                <div>
+                  <h3 class="modal-title" id="item-lookup-title">Seleção de Itens</h3>
+                  <p class="modal-subtitle">Escolha o item visualizando sua natureza financeira e a conta contábil aplicada ao centro de custo do lançamento.</p>
+                </div>
+                <button class="ghost-button" type="button" data-action="close-item-lookup">×</button>
+              </div>
+              <div class="modal-body">
+                <div class="account-picker-toolbar">
+                  <label for="item-picker-field">Filtrar por:</label>
+                  <select id="item-picker-field" data-item-lookup-filter="field">
+                    <option value="description" ${filters.field === "description" ? "selected" : ""}>Descrição</option>
+                    <option value="code" ${filters.field === "code" ? "selected" : ""}>Código</option>
+                    <option value="nature" ${filters.field === "nature" ? "selected" : ""}>Natureza</option>
+                  </select>
+                  <input autofocus data-item-lookup-filter="query" value="${escapeHtml(filters.query || "")}" placeholder="Digite o filtro ou % para listar todos">
+                  <button class="secondary-button account-picker-filter-button" type="button" data-action="search-item-lookup" title="Filtrar">⌕</button>
+                </div>
+                <section class="table-card item-lookup-results-host">${renderItemLookupResults()}</section>
+              </div>
+              <div class="account-picker-footer item-picker-footer">
+                <div class="account-picker-summary">${getItemLookupFilteredItems().length} item(ns) disponível(is)</div>
+                <div class="inline-actions">
+                  <button class="primary-button" type="button" data-action="item-lookup-select" ${state.ui.itemLookup.selectedId ? "" : "disabled"}>Selecionar</button>
+                  <button class="ghost-button" type="button" data-action="close-item-lookup">Cancelar</button>
+                </div>
+              </div>
+            </div>
+          </div>`;
+      }
+
+      function refreshItemLookupModal() {
+        const host = document.querySelector(".item-lookup-results-host");
+        if (host) host.innerHTML = renderItemLookupResults();
+        const selectButton = document.querySelector('[data-action="item-lookup-select"]');
+        if (selectButton) selectButton.disabled = !state.ui.itemLookup.selectedId;
+        const summary = document.querySelector(".item-picker-footer .account-picker-summary");
+        if (summary) summary.textContent = `${getItemLookupFilteredItems().length} item(ns) disponível(is)`;
+      }
+
+      function scheduleItemLookupRefresh() {
+        clearTimeout(itemLookupSearchTimer);
+        itemLookupSearchTimer = window.setTimeout(refreshItemLookupModal, 280);
+      }
+
+      function confirmItemLookupSelection() {
+        const lookup = state.ui.itemLookup;
+        const item = getItemById(lookup.selectedId);
+        if (!item || !getSelectableItems().some((record) => record.id === item.id)) {
+          notify("error", "Seleção de item", "Selecione um item válido e disponível.");
+          return;
+        }
+        const select = getItemLookupSelectByKey(lookup.targetKey);
+        if (!select) {
+          notify("error", "Seleção de item", "O campo de origem não está mais disponível.");
+          return;
+        }
+        const key = lookup.targetKey;
+        state.ui.itemLookup.open = false;
+        state.ui.itemLookupFocusNextKey = key;
+        select.value = item.id;
+        const isInvoiceLineItem = select.closest("form")?.dataset.form === "invoice-line" && select.name === "itemId";
+        if (isInvoiceLineItem) {
+          state.ui.invoiceDraft.lineForm.itemId = item.id;
+        } else {
+          select.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        renderApp();
+      }
+
+      function focusNextAfterItemField(key) {
+        const component = [...document.querySelectorAll("[data-item-component-key]")].find((node) => node.dataset.itemComponentKey === key);
+        const form = component?.closest("form");
+        if (!component || !form) return;
+        const controls = [...form.querySelectorAll('input:not([type="hidden"]):not([disabled]), select:not([disabled]):not(.item-lookup-native), textarea:not([disabled]), button:not([disabled])')];
+        const currentInput = component.querySelector("[data-item-code-input]");
+        const currentIndex = controls.indexOf(currentInput);
+        const next = controls.slice(currentIndex + 1).find((control) => !component.contains(control));
+        next?.focus();
+      }
+
       function renderApp() {
         const meta = VIEW_META[state.ui.activeView] || VIEW_META.dashboard;
         const app = document.getElementById("app");
@@ -8689,6 +9154,7 @@
           || state.ui.accountingEntriesModalOpen
           || state.ui.accountingEntryFormModalOpen
           || state.ui.accountLookup.open
+          || state.ui.itemLookup.open
           || state.ui.trialBalanceModalOpen
           || state.ui.trialBalanceReportModalOpen
           || state.ui.eventEntriesModalOpen
@@ -8748,6 +9214,7 @@
           ${state.ui.accountingEntriesModalOpen ? renderAccountingEntriesModal() : ""}
           ${state.ui.accountingEntryFormModalOpen ? renderAccountingEntryFormModal() : ""}
           ${state.ui.accountLookup.open ? renderAccountLookupModal() : ""}
+          ${state.ui.itemLookup.open ? renderItemLookupModal() : ""}
           ${state.ui.trialBalanceModalOpen ? renderTrialBalanceModal() : ""}
           ${state.ui.trialBalanceReportModalOpen ? renderTrialBalanceReportModal() : ""}
           ${state.ui.eventEntriesModalOpen ? renderEventEntriesModal() : ""}
@@ -8758,6 +9225,7 @@
           ${state.ui.payrollSelectedRunEmployeeId ? renderPayrollRunEmployeeDrawer() : ""}
         `;
         enhanceAccountLookupFields(app);
+        enhanceItemLookupFields(app);
       }
 
       function renderSidebar() {
@@ -10457,7 +10925,7 @@
               <div class="form-grid">
                 <div class="field full">
                   <label for="invoice-line-item">Item</label>
-                  <select id="invoice-line-item" name="itemId" ${canLaunch ? "required" : "disabled"}>
+                  <select id="invoice-line-item" name="itemId" data-item-lookup="true" ${canLaunch ? "required" : "disabled"}>
                     <option value="">Selecione um item</option>
                     ${selectableItems.map((item) => {
                       const nature = getFinancialNatureById(item.financialNatureId);
@@ -10611,6 +11079,20 @@
                     <label>Valor da retenção</label>
                     <div class="field-readonly mono" data-retention-preview>${escapeHtml(formatCurrency(previewAmount))}</div>
                   </div>
+                  <div class="field">
+                    <label for="retention-debit-account">Conta de débito</label>
+                    <select id="retention-debit-account" name="debitAccountId" ${canLaunch ? "required" : "disabled"}>
+                      <option value="">Selecione a conta de débito</option>
+                      ${getSelectableChartAccounts().map((account) => `<option value="${escapeHtml(account.id)}" ${form.debitAccountId === account.id ? "selected" : ""}>${escapeHtml(account.code)} - ${escapeHtml(account.name)}</option>`).join("")}
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="retention-credit-account">Conta de crédito</label>
+                    <select id="retention-credit-account" name="creditAccountId" ${canLaunch ? "required" : "disabled"}>
+                      <option value="">Selecione a conta de crédito</option>
+                      ${getSelectableChartAccounts().map((account) => `<option value="${escapeHtml(account.id)}" ${form.creditAccountId === account.id ? "selected" : ""}>${escapeHtml(account.code)} - ${escapeHtml(account.name)}</option>`).join("")}
+                    </select>
+                  </div>
                   <div class="field full">
                     <label for="retention-description">Observação (opcional)</label>
                     <input id="retention-description" name="description" maxlength="120" value="${escapeHtml(form.description || "")}" ${canLaunch ? "" : "disabled"} placeholder="Ex.: Retenção conforme nota ou contrato">
@@ -10631,6 +11113,8 @@
                           <th>Base</th>
                           <th>Alíquota</th>
                           <th>Valor retido</th>
+                          <th>Débito</th>
+                          <th>Crédito</th>
                           <th>Observação</th>
                           <th>Ações</th>
                         </tr>
@@ -10642,6 +11126,8 @@
                             <td class="mono">${escapeHtml(formatCurrency(retention.baseAmount))}</td>
                             <td class="mono">${escapeHtml(String(retention.rate))}%</td>
                             <td class="mono"><strong>${escapeHtml(formatCurrency(retention.amount))}</strong></td>
+                            <td>${(() => { const account = getChartAccountById(retention.debitAccountId); return account ? `<strong>${escapeHtml(account.code)}</strong><div class="table-muted">${escapeHtml(account.name)}</div>` : `<span class="badge danger">Não informada</span>`; })()}</td>
+                            <td>${(() => { const account = getChartAccountById(retention.creditAccountId); return account ? `<strong>${escapeHtml(account.code)}</strong><div class="table-muted">${escapeHtml(account.name)}</div>` : `<span class="badge danger">Não informada</span>`; })()}</td>
                             <td class="table-muted">${escapeHtml(retention.description || "-")}</td>
                             <td><button class="action-chip danger" type="button" data-action="remove-invoice-retention" data-id="${escapeHtml(retention.id)}">Remover</button></td>
                           </tr>
@@ -10653,7 +11139,7 @@
               ` : `
                 <div class="empty-card" style="margin-top:20px;">
                   <strong>Nenhuma retenção adicionada.</strong>
-                  <p>Informe o tributo, a base e a alíquota para calcular o valor líquido do lançamento.</p>
+                  <p>Informe o tributo, a base, a alíquota e as contas de débito e crédito para calcular e contabilizar a retenção.</p>
                 </div>
               `}
             ` : `
@@ -10806,7 +11292,11 @@
           ${isLancamento && draft.hasWithholding && draft.retentions.length ? `
             <section class="card">
               <div class="section-head"><div><h3>Retenções informadas</h3><p>${draft.retentions.length} tributo(s) compondo o valor líquido.</p></div></div>
-              <div class="badge-row">${draft.retentions.map((retention) => `<span class="badge warning">${escapeHtml(retention.taxType)}: ${escapeHtml(formatCurrency(retention.amount))}</span>`).join("")}</div>
+              <div class="badge-row">${draft.retentions.map((retention) => {
+                const debit = getChartAccountById(retention.debitAccountId);
+                const credit = getChartAccountById(retention.creditAccountId);
+                return `<span class="badge warning">${escapeHtml(retention.taxType)}: ${escapeHtml(formatCurrency(retention.amount))} · D ${escapeHtml(debit?.code || "-")} / C ${escapeHtml(credit?.code || "-")}</span>`;
+              }).join("")}</div>
             </section>
           ` : ""}
           <section class="card">
@@ -10905,7 +11395,7 @@
         const reportCount = state.data.accountingEntries.length;
         const costCenterCount = state.data.costCenters.length;
         const accountCount = getSelectableChartAccounts().length;
-        const eventEntriesCount = state.data.accountingEntries.filter((entry) => entry.origin === "accounting-event").length;
+        const eventEntriesCount = state.data.accountingEntries.filter((entry) => ["accounting-event", "fiscal-retention"].includes(entry.origin)).length;
         const payrollAccountingCount = state.data.accountingEntries.filter((entry) => entry.origin === "payroll-accounting").length;
         const payableEntriesCount = state.data.accountingEntries.filter((entry) => entry.origin === "settlement-event").length;
 
@@ -10929,8 +11419,8 @@
               </article>
               <article class="option-card">
                 <h3>Lançamentos</h3>
-                <p>Lançamentos gerados automaticamente pelos eventos contábeis configurados para cada tipo de documento fiscal.</p>
-                <small>${escapeHtml(String(eventEntriesCount))} lançamento(s) gerado(s) por eventos contábeis.</small>
+                <p>Lançamentos gerados automaticamente pelos eventos contábeis e pelas contabilizações das retenções fiscais.</p>
+                <small>${escapeHtml(String(eventEntriesCount))} lançamento(s) automático(s) de documentos e retenções.</small>
                 <div class="form-actions">
                   <button class="secondary-button" type="button" data-action="open-event-entries-modal">Abrir lançamentos</button>
                 </div>
@@ -11046,7 +11536,7 @@
 
       function renderEventEntriesModal() {
         const records = state.data.accountingEntries
-          .filter((entry) => entry.origin === "accounting-event")
+          .filter((entry) => ["accounting-event", "fiscal-retention"].includes(entry.origin))
           .slice()
           .sort((a, b) => (b.entryDate || "").localeCompare(a.entryDate || ""));
 
@@ -11057,7 +11547,7 @@
               <div class="modal-header">
                 <div>
                   <h3 class="modal-title" id="event-entries-modal-title">Lançamentos</h3>
-                  <p class="modal-subtitle">Lançamentos contábeis gerados automaticamente pelos eventos contábeis ao lançar notas fiscais e outros documentos.</p>
+                  <p class="modal-subtitle">Lançamentos contábeis gerados automaticamente pelos eventos contábeis e pelas retenções dos documentos fiscais.</p>
                 </div>
                 <div class="inline-actions">
                   <button class="ghost-button" type="button" data-action="close-event-entries-modal">Fechar</button>
@@ -11067,7 +11557,7 @@
                 <section class="table-card">
                   <div class="table-toolbar">
                     <div>
-                      <h4>Lançamentos gerados por eventos contábeis</h4>
+                      <h4>Lançamentos automáticos fiscais</h4>
                       <p class="page-subtitle">${escapeHtml(String(records.length))} lançamento(s) encontrado(s).</p>
                     </div>
                   </div>
@@ -11211,6 +11701,9 @@
       function getAccountingEntryOriginLabel(entry) {
         if (entry.origin === "accounting-event") {
           return "Evento contábil";
+        }
+        if (entry.origin === "fiscal-retention") {
+          return "Retenção fiscal";
         }
         if (entry.origin === "settlement-event") {
           return entry.sourcePayrollTitleId ? "Baixa financeira da folha" : "Evento de baixa";
