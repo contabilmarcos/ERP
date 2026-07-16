@@ -6752,11 +6752,15 @@
         };
 
         upsertRecord("invoices", record);
-        syncAccountingEventEntries(record);
+        const accountingSync = syncAccountingEventEntries(record);
         state.ui.invoiceDraft = createEmptyInvoiceDraft();
         state.ui.invoiceModalOpen = false;
         state.ui.activeInvoiceTab = "dados";
-        notify("success", noun, existing ? "Registro atualizado com sucesso." : `${noun} lançado(a) com sucesso.`);
+        const baseSuccessMessage = existing ? "Registro atualizado com sucesso." : `${noun} lançado(a) com sucesso.`;
+        const retentionSuccessMessage = accountingSync.retentionEntries
+          ? ` ${accountingSync.retentionEntries} lançamento(s) de retenção gerado(s) em Contábil > Lançamentos.`
+          : "";
+        notify("success", noun, `${baseSuccessMessage}${retentionSuccessMessage}`);
         renderApp();
       }
 
@@ -7029,81 +7033,97 @@
       }
 
       function syncAccountingEventEntries(invoice) {
-        const prefix = `auto-event-${invoice.id}-`;
+        const eventPrefix = `auto-event-${invoice.id}-`;
         const retentionPrefix = `auto-retention-${invoice.id}-`;
-        const currentLineIds = new Set(invoice.items.map((line) => line.id));
-        const currentRetentionIds = new Set((invoice.retentions || []).map((retention) => retention.id));
+        const previousEntries = Array.isArray(state.data.accountingEntries) ? state.data.accountingEntries : [];
+        const previousById = new Map(previousEntries.map((entry) => [entry.id, entry]));
 
-        let entries = state.data.accountingEntries.filter((entry) => {
-          if (entry.id.startsWith(prefix)) {
-            return currentLineIds.has(entry.id.slice(prefix.length));
+        // Reconstrói integralmente os lançamentos automáticos deste documento.
+        // Isso evita duplicidades e remove partidas de retenções excluídas ou alteradas.
+        const entries = previousEntries.filter((entry) => {
+          if (entry.sourceInvoiceId === invoice.id && ["accounting-event", "fiscal-retention"].includes(entry.origin)) {
+            return false;
           }
-          if (entry.id.startsWith(retentionPrefix)) {
-            return currentRetentionIds.has(entry.id.slice(retentionPrefix.length));
+          if (entry.id.startsWith(eventPrefix) || entry.id.startsWith(retentionPrefix)) {
+            return false;
           }
           return true;
         });
 
         const documentType = getDocumentTypeByName(invoice.type);
         const event = documentType ? getAccountingEventByDocumentTypeId(documentType.id) : null;
+        let eventEntryCount = 0;
+        let retentionEntryCount = 0;
 
         if (event && invoice.costCenterId) {
           invoice.items.forEach((line) => {
-            const id = prefix + line.id;
-            const record = {
+            const id = eventPrefix + line.id;
+            const previous = previousById.get(id);
+            entries.push({
               id,
-              code: id,
+              code: previous?.code || id,
               entryDate: invoice.issueDate,
               description: `${documentType.name} ${invoice.documentNumber || invoice.code} - ${line.itemName}`,
               costCenterId: invoice.costCenterId,
               debitAccountId: line.chartAccountId,
               creditAccountId: event.creditAccountId,
-              amount: line.totalPrice,
+              amount: roundCurrency(toDecimal(line.totalPrice)),
               origin: "accounting-event",
               sourceInvoiceId: invoice.id,
-              createdAt: new Date().toISOString(),
+              createdAt: previous?.createdAt || new Date().toISOString(),
               updatedAt: new Date().toISOString()
-            };
-            const idx = entries.findIndex((entry) => entry.id === id);
-            if (idx >= 0) {
-              entries[idx] = record;
-            } else {
-              entries.push(record);
-            }
+            });
+            eventEntryCount += 1;
           });
         }
 
-        (invoice.retentions || []).forEach((retention) => {
+        // Cada retenção gera uma partida contábil própria em Contábil > Lançamentos.
+        // Essa geração não depende da existência de evento contábil para os itens do documento.
+        (invoice.retentions || []).forEach((retention, index) => {
           const debit = getChartAccountById(retention.debitAccountId);
           const credit = getChartAccountById(retention.creditAccountId);
-          if (!debit || !credit || !isChartAccountAvailableForLinks(debit) || !isChartAccountAvailableForLinks(credit)) {
+          const amount = roundCurrency(toDecimal(retention.amount));
+          if (
+            !debit
+            || !credit
+            || !isChartAccountAvailableForLinks(debit)
+            || !isChartAccountAvailableForLinks(credit)
+            || retention.debitAccountId === retention.creditAccountId
+            || amount <= 0
+          ) {
             return;
           }
-          const id = retentionPrefix + retention.id;
-          const record = {
+
+          const retentionId = retention.id || `retention-${index + 1}`;
+          const id = retentionPrefix + retentionId;
+          const previous = previousById.get(id);
+          entries.push({
             id,
-            code: id,
+            code: previous?.code || id,
             entryDate: invoice.issueDate,
-            description: `Retenção ${retention.taxType} - ${invoice.documentNumber || invoice.code}${retention.description ? ` - ${retention.description}` : ""}`,
+            description: `Retenção ${retention.taxType || "Tributo"} - ${invoice.documentNumber || invoice.code}${retention.description ? ` - ${retention.description}` : ""}`,
             costCenterId: invoice.costCenterId || "",
             debitAccountId: retention.debitAccountId,
             creditAccountId: retention.creditAccountId,
-            amount: retention.amount,
+            amount,
             origin: "fiscal-retention",
+            batchName: "Retenções fiscais",
+            taxType: retention.taxType || "Tributo",
+            baseAmount: roundCurrency(toDecimal(retention.baseAmount)),
+            rate: toDecimal(retention.rate),
             sourceInvoiceId: invoice.id,
-            sourceRetentionId: retention.id,
-            createdAt: new Date().toISOString(),
+            sourceRetentionId: retentionId,
+            createdAt: previous?.createdAt || new Date().toISOString(),
             updatedAt: new Date().toISOString()
-          };
-          const idx = entries.findIndex((entry) => entry.id === id);
-          if (idx >= 0) {
-            entries[idx] = record;
-          } else {
-            entries.push(record);
-          }
+          });
+          retentionEntryCount += 1;
         });
 
         saveCollection("accountingEntries", entries);
+        return {
+          eventEntries: eventEntryCount,
+          retentionEntries: retentionEntryCount
+        };
       }
 
       function removeInvoiceGeneratedEntries(invoiceId) {
